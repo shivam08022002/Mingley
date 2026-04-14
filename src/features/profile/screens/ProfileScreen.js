@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
 import {
-  View, StyleSheet, ScrollView, SafeAreaView, Alert,
+  View, StyleSheet, ScrollView, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useProfileStore } from '../store/useProfileStore';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -19,6 +20,18 @@ export const ProfileScreen = React.memo(() => {
   const handleAddPhoto   = useCallback((uri) => profile.addPhoto(uri), [profile]);
   const handlePressPhoto = useCallback(() => {}, []);
   const handleSaveInterests = useCallback((arr) => profile.setInterests(arr), [profile]);
+  const handleTopUp = useCallback(() => {
+    Alert.alert(
+      'Top Up Coins',
+      'Choose a coin pack:',
+      [
+        { text: '50 coins — ₹49', onPress: () => profile.addCoins(50) },
+        { text: '150 coins — ₹129', onPress: () => profile.addCoins(150) },
+        { text: '500 coins — ₹399', onPress: () => profile.addCoins(500) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  }, [profile]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,7 +49,9 @@ export const ProfileScreen = React.memo(() => {
         {/* B. Membership card */}
         <MembershipCard
           plan={profile.plan}
+          coins={profile.coins}
           onUpgrade={handleUpgrade}
+          onTopUp={handleTopUp}
         />
 
         {/* C. Photos */}

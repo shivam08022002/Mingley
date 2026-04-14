@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Controller } from 'react-hook-form';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
-import FastImage from 'react-native-fast-image';
 
 export const CustomInput = ({
   control,
@@ -13,6 +12,8 @@ export const CustomInput = ({
   keyboardType = 'default',
   showCountryCode = false,
   isGradientBorder = false,
+  autoCapitalize,
+  error: externalError,
 }) => {
   const InputWrapper = ({ children, hasError }) => {
     if (isGradientBorder && !hasError) {
@@ -44,9 +45,10 @@ export const CustomInput = ({
           <InputWrapper hasError={!!error}>
             {showCountryCode && (
               <>
-                <TouchableOpacity style={styles.countryCodeContainer}>
-                  <Text style={styles.flag}>🇮🇳</Text>
-                  <Text style={styles.countryCode}>(+91) v</Text>
+                <TouchableOpacity style={styles.countryCodeContainer} activeOpacity={0.7}>
+                  <Image source={{ uri: 'https://flagcdn.com/w40/in.png' }} style={styles.flagImage} />
+                  <Text style={styles.countryCode}>(+91)</Text>
+                  <Text style={styles.dropdownArrow}>▼</Text>
                 </TouchableOpacity>
                 <View style={styles.divider} />
               </>
@@ -59,6 +61,7 @@ export const CustomInput = ({
               placeholder={placeholder}
               placeholderTextColor="#A0A0A0"
               keyboardType={keyboardType}
+              autoCapitalize={autoCapitalize}
               maxLength={15}
             />
           </InputWrapper>
@@ -68,6 +71,8 @@ export const CustomInput = ({
     />
   );
 };
+
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 
 const baseContainerStyle = {
   flexDirection: 'row',
@@ -103,13 +108,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  flag: {
-    fontSize: 18,
-    marginRight: 4,
+  flagImage: {
+    width: 24,
+    height: 16,
+    borderRadius: 2,
+    marginRight: 6,
   },
   countryCode: {
-    ...TYPOGRAPHY.body,
+    fontSize: 15,
     color: '#333333',
+    fontFamily: FONT,
+    fontWeight: '500',
+  },
+  dropdownArrow: {
+    fontSize: 8,
+    color: '#AAAAAA',
+    marginLeft: 5,
+    marginTop: 1,
   },
   divider: {
     height: 24,
@@ -119,8 +134,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#333333',
+    fontFamily: FONT,
     height: '100%',
   },
   errorText: {

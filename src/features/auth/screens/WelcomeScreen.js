@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 
 export const WelcomeScreen = ({ navigation }) => {
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
         colors={[COLORS.gradientStart, COLORS.gradientEnd]}
         style={styles.gradient}
@@ -35,7 +35,7 @@ export const WelcomeScreen = ({ navigation }) => {
           </View>
         </View>
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 };
 

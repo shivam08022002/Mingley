@@ -1,161 +1,239 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions,
+  View, Text, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-
-const { width } = Dimensions.get('window');
 
 const PLAN_CONFIG = {
   free: {
     label: 'Free Plan',
     tag: 'BASIC',
-    benefit: 'Unlock unlimited likes, advanced filters & more',
-    perks: ['5 likes per day', 'Basic filters only', 'Ads included'],
+    perks: ['5 likes/day', 'Basic filters', 'Ads included'],
     icon: 'flame-outline',
     colors: ['#E4415C', '#8A2387'],
-    tagColor: 'rgba(255,255,255,0.25)',
+    tagBg: 'rgba(255,255,255,0.22)',
   },
   premium: {
     label: 'Premium',
-    tag: 'PREMIUM ⭐',
-    benefit: 'Unlimited likes, see who liked you & go incognito',
+    tag: 'PREMIUM',
     perks: ['Unlimited likes', 'Advanced filters', 'No ads'],
-    icon: 'star',
+    icon: 'star-outline',
     colors: ['#f093fb', '#f5576c'],
-    tagColor: 'rgba(255,255,255,0.25)',
+    tagBg: 'rgba(255,255,255,0.22)',
   },
   pro: {
     label: 'Pro Member',
-    tag: 'PRO 💎',
-    benefit: 'Full access — priority boosts & exclusive features',
-    perks: ['All Premium perks', 'Profile boost', 'Top picks daily'],
-    icon: 'diamond',
+    tag: 'PRO',
+    perks: ['All Premium', 'Profile boost', 'Top picks'],
+    icon: 'trophy-outline',
     colors: ['#4facfe', '#00f2fe'],
-    tagColor: 'rgba(255,255,255,0.2)',
+    tagBg: 'rgba(255,255,255,0.2)',
   },
 };
 
-export const MembershipCard = React.memo(({ plan = 'free', onUpgrade }) => {
-  const config = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
+
+export const MembershipCard = React.memo(({ plan = 'free', coins = 0, onUpgrade, onTopUp }) => {
+  const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
   const isPaid = plan !== 'free';
 
   return (
-    <LinearGradient
-      colors={config.colors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={s.card}
-    >
-      {/* Top row: plan label + tag badge */}
-      <View style={s.topRow}>
-        <View style={s.iconWrap}>
-          <Icon name={config.icon} size={24} color="#fff" />
-        </View>
-        <View style={s.titleBlock}>
-          <Text style={s.planLabel}>{config.label}</Text>
-          <View style={[s.tagBadge, { backgroundColor: config.tagColor }]}>
-            <Text style={s.tagText}>{config.tag}</Text>
+    <View style={s.wrap}>
+      <LinearGradient
+        colors={cfg.colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={s.card}
+      >
+        {/* Top row: icon + title + upgrade */}
+        <View style={s.top}>
+          <View style={s.iconCircle}>
+            <Icon name={cfg.icon} size={22} color="#fff" />
           </View>
-        </View>
-        {isPaid ? (
-          <View style={s.activePill}>
-            <Icon name="checkmark-circle" size={14} color="#fff" />
-            <Text style={s.activePillText}>Active</Text>
+          <View style={s.titleCol}>
+            <Text style={s.planName}>{cfg.label}</Text>
+            <View style={[s.badge, { backgroundColor: cfg.tagBg }]}>
+              <Text style={s.badgeText}>{cfg.tag}</Text>
+            </View>
           </View>
-        ) : (
-          <TouchableOpacity style={s.upgradeBtn} onPress={onUpgrade} activeOpacity={0.85}>
-            <Text style={s.upgradeText}>Upgrade ↗</Text>
+          {isPaid ? (
+            <View style={s.activePill}>
+              <Text style={s.activeText}>Active</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={s.upgradeBtn} onPress={onUpgrade} activeOpacity={0.85}>
+              <Text style={s.upgradeText}>Upgrade</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Perks */}
+        <View style={s.perksRow}>
+          {cfg.perks.map((p, i) => (
+            <View key={i} style={s.perkItem}>
+              <Icon name="checkmark-circle" size={14} color="rgba(255,255,255,0.8)" />
+              <Text style={s.perkText}>{p}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Coins row */}
+        <View style={s.line} />
+        <View style={s.coinsRow}>
+          <View style={s.coinsLeft}>
+            <Icon name="wallet-outline" size={16} color="rgba(255,255,255,0.85)" />
+            <Text style={s.coinsLabel}>Coin Balance :</Text>
+            <Text style={s.coinsVal}>{coins}</Text>
+          </View>
+          <TouchableOpacity style={s.topUpBtn} onPress={onTopUp} activeOpacity={0.8}>
+            <Icon name="add" size={14} color="#fff" />
+            <Text style={s.topUpText}>Top Up</Text>
           </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Divider */}
-      <View style={s.divider} />
-
-      {/* Perks row */}
-      <View style={s.perksRow}>
-        {config.perks.map((perk, i) => (
-          <View key={i} style={s.perk}>
-            <Icon name="checkmark-circle-outline" size={13} color="rgba(255,255,255,0.85)" />
-            <Text style={s.perkText}>{perk}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Benefit text */}
-      <Text style={s.benefit}>{config.benefit}</Text>
-    </LinearGradient>
+        </View>
+      </LinearGradient>
+    </View>
   );
 });
 
 const s = StyleSheet.create({
-  card: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 22,
-    padding: 18,
-    shadowColor: '#E4415C',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
+  wrap: {
+    marginHorizontal: 0,
+    marginBottom: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  topRow: {
+  card: {
+    borderRadius: 20,
+    height: 200,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  // ── Top row ──
+  top: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  iconWrap: {
-    width: 46, height: 46, borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center', alignItems: 'center',
+  iconCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  titleBlock: { flex: 1, gap: 4 },
-  planLabel: {
-    fontSize: 17, fontWeight: '800', color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+  titleCol: {
+    flex: 1,
   },
-  tagBadge: {
+  planName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    fontFamily: FONT_MED,
+    marginBottom: 4,
+  },
+  badge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 8, paddingVertical: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
     borderRadius: 6,
   },
-  tagText: {
-    fontSize: 10, fontWeight: '700', color: '#fff', letterSpacing: 0.5,
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.8,
   },
   upgradeBtn: {
     backgroundColor: '#fff',
-    paddingHorizontal: 14, paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    alignSelf: 'flex-start',
+    marginRight: 24,
+    alignContent: 'center',
+    
   },
   upgradeText: {
-    fontSize: 12, fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#E4415C',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    fontFamily: FONT_MED,
   },
   activePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 10, paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 14,
   },
-  activePillText: { fontSize: 12, color: '#fff', fontWeight: '700' },
-  divider: {
-    height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginBottom: 12,
+  activeText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '700',
   },
-  perksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  perk: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // ── Perks ──
+  perksRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 14,
+  },
+  perkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   perkText: {
-    fontSize: 11, color: 'rgba(255,255,255,0.9)',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontFamily: FONT,
   },
-  benefit: {
-    fontSize: 12, color: 'rgba(255,255,255,0.75)',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
-    fontStyle: 'italic',
+  // ── Coins ──
+  line: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginBottom: 12,
+  },
+  coinsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  coinsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  coinsLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    fontFamily: FONT_MED,
+  },
+  coinsVal: {
+    fontSize: 15,
+    color: '#fff',
+    fontFamily: FONT_MED,
+  },
+  topUpBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginRight: 24,
+  },
+  topUpText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+    fontFamily: FONT_MED,
   },
 });

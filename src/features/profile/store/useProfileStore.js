@@ -6,7 +6,7 @@ const INITIAL_PROFILE = {
   occupation: 'Professional model',
   location: 'Mumbai, India',
   about: "My name is Jessica Parker and I enjoy meeting new people and finding ways to help them have an uplifting experience. I enjoy reading about fashion, exploring different cuisines, and going on spontaneous adventures.",
-  coverImage: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+  coverImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
   photos: [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
@@ -17,6 +17,7 @@ const INITIAL_PROFILE = {
   interests: ['Travelling', 'Books', 'Music', 'Dancing', 'Modeling'],
   completionPct: 78,
   plan: 'free',          // 'free' | 'premium' | 'pro'
+  coins: 150,            // coins balance
   verified: true,
   online: true,
 };
@@ -29,4 +30,8 @@ export const useProfileStore = create((set, get) => ({
   addPhoto: (uri) => set((s) => ({ photos: [...s.photos, uri] })),
   removePhoto: (uri) => set((s) => ({ photos: s.photos.filter((p) => p !== uri) })),
   upgradePlan: (plan) => set({ plan }),
+
+  // Coins system
+  addCoins: (amount) => set((s) => ({ coins: s.coins + amount })),
+  spendCoins: (amount) => set((s) => ({ coins: Math.max(0, s.coins - amount) })),
 }));

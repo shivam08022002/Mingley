@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
@@ -34,6 +35,15 @@ export const LoginScreen = ({ navigation }) => {
         style={StyleSheet.absoluteFillObject}
       />
       
+      {/* Back button – top left, outside content */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.7}
+      >
+        <Icon name="chevron-back" size={24} color="#000" />
+      </TouchableOpacity>
+
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboard}
@@ -96,10 +106,14 @@ const styles = StyleSheet.create({
   keyboard: {
     flex: 1,
   },
+  backButton: {
+    paddingLeft: SPACING.xl,
+    paddingTop: SPACING.m,
+  },
   content: {
     flex: 1,
     paddingHorizontal: SPACING.xl,
-    paddingTop: 80,
+    paddingTop: 40,
     alignItems: 'center',
   },
   header: {

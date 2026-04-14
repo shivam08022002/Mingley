@@ -77,7 +77,7 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
     <View style={sl.container}>
       <View style={sl.track} />
       <View style={[sl.fill, { left: lowPos, width: highPos - lowPos }]} />
-      <View {...panLow.panHandlers}  style={[sl.thumb, { left: lowPos - 12 }]} />
+      <View {...panLow.panHandlers} style={[sl.thumb, { left: lowPos - 12 }]} />
       <View {...panHigh.panHandlers} style={[sl.thumb, { left: highPos - 12 }]} />
     </View>
   );
@@ -112,8 +112,8 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
 
   const pickLocation = () => {
     Alert.alert('Choose Location', '', [
-      { text: 'Mumbai, India',    onPress: () => setLocation('Mumbai, India') },
-      { text: 'Delhi, India',     onPress: () => setLocation('Delhi, India') },
+      { text: 'Mumbai, India', onPress: () => setLocation('Mumbai, India') },
+      { text: 'Delhi, India', onPress: () => setLocation('Delhi, India') },
       { text: 'Bangalore, India', onPress: () => setLocation('Bangalore, India') },
       { text: 'Cancel', style: 'cancel' },
     ]);

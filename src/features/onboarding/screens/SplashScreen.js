@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, SafeAreaView } from 'react-native';
+import { View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import { styles } from '../onboarding.styles';
@@ -15,7 +15,7 @@ export const SplashScreen = ({ navigation }) => {
   }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.splashContainer}>
+    <View style={styles.splashContainer}>
       <LinearGradient
         colors={[COLORS.gradientStart, COLORS.gradientEnd]}
         style={styles.gradient}
@@ -26,6 +26,6 @@ export const SplashScreen = ({ navigation }) => {
           resizeMode={FastImage.resizeMode.contain}
         />
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 };

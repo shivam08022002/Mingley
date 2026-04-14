@@ -1,14 +1,14 @@
 import React from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions,
-} from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window');
-const COVER_H = 220;
-const AVATAR_SIZE = 90;
+const COVER_H = 240;
+const AVATAR_SIZE = 100;
+
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 
 export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) => {
   const { name, age, occupation, location, avatar, coverImage, completionPct, verified, online } = profile;
@@ -17,35 +17,37 @@ export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) 
     <View style={s.container}>
       {/* ── Cover with overlay & white text ON it ── */}
       <View style={s.coverWrap}>
-        <FastImage
+        <Image
           source={{ uri: coverImage }}
           style={s.cover}
-          resizeMode={FastImage.resizeMode.cover}
+          resizeMode="cover"
         />
-        {/* Dark gradient bottom-half so text is readable */}
+        {/* Dark gradient so text is readable */}
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.72)']}
+          colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.65)']}
           style={StyleSheet.absoluteFillObject}
         />
 
         {/* Gear icon – top-right */}
         <TouchableOpacity style={s.gearBtn} onPress={onSettings}>
-          <Icon name="settings-outline" size={20} color="#fff" />
+          <Icon name="settings-outline" size={22} color="#fff" />
         </TouchableOpacity>
+
+        {/* Verified badge – top center */}
+        {verified && (
+          <View style={s.verifiedTopBadge}>
+            <Icon name="checkmark-circle" size={20} color="#4CAF50" />
+          </View>
+        )}
 
         {/* Name + occupation overlaid ON the cover (white) */}
         <View style={s.coverTextBlock}>
           <View style={s.nameRow}>
             <Text style={s.coverName}>{name}, {age}</Text>
-            {verified && (
-              <View style={s.verifiedBadge}>
-                <Icon name="checkmark-circle" size={15} color="#4CAF50" />
-              </View>
-            )}
           </View>
           <Text style={s.coverOccupation}>{occupation}</Text>
           <View style={s.locRow}>
-            <Icon name="location-outline" size={12} color="rgba(255,255,255,0.8)" />
+            <Icon name="location-outline" size={13} color="rgba(255,255,255,0.85)" />
             <Text style={s.coverLoc}>{location}</Text>
           </View>
         </View>
@@ -54,10 +56,10 @@ export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) 
       {/* ── Avatar row (overlapping cover bottom) ── */}
       <View style={s.avatarRow}>
         <View style={s.avatarWrap}>
-          <FastImage source={{ uri: avatar }} style={s.avatar} />
+          <Image source={{ uri: avatar }} style={s.avatar} />
           {online && <View style={s.onlineDot} />}
           <TouchableOpacity style={s.cameraBtn} onPress={onEditAvatar}>
-            <Icon name="camera" size={13} color="#fff" />
+            <Icon name="camera" size={14} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -94,34 +96,49 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  cover: { ...StyleSheet.absoluteFillObject },
+  cover: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: width,
+    height: COVER_H,
+  },
   gearBtn: {
-    position: 'absolute', top: 48, right: 16,
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    position: 'absolute', top: Platform.OS === 'ios' ? 54 : 40, right: 16,
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center', alignItems: 'center',
+  },
+  verifiedTopBadge: {
+    position: 'absolute', top: Platform.OS === 'ios' ? 58 : 44,
+    alignSelf: 'center',
   },
   coverTextBlock: {
     paddingHorizontal: 20,
-    paddingBottom: 56, // leave room for avatar overlap
+    paddingBottom: 60, // leave room for avatar overlap
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   coverName: {
-    fontSize: 24, fontWeight: '800', color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
-  },
-  verifiedBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 10, padding: 2,
+    fontSize: 26, fontWeight: '800', color: '#fff',
+    fontFamily: FONT_BOLD,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   coverOccupation: {
-    fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 3,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontSize: 14, color: 'rgba(255,255,255,0.9)', marginTop: 4,
+    fontFamily: FONT,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
   coverLoc: {
-    fontSize: 12, color: 'rgba(255,255,255,0.75)',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontSize: 13, color: 'rgba(255,255,255,0.8)',
+    fontFamily: FONT,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 
   // Avatar overlapping cover
@@ -132,20 +149,20 @@ const s = StyleSheet.create({
   },
   avatarWrap: {
     width: AVATAR_SIZE, height: AVATAR_SIZE,
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 8,
+    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, elevation: 8,
   },
   avatar: {
     width: AVATAR_SIZE, height: AVATAR_SIZE,
-    borderRadius: 26, borderWidth: 3, borderColor: '#fff',
+    borderRadius: 28, borderWidth: 3, borderColor: '#fff',
   },
   onlineDot: {
-    position: 'absolute', bottom: 4, right: 4,
+    position: 'absolute', bottom: 6, right: 6,
     width: 16, height: 16, borderRadius: 8,
     backgroundColor: '#4CAF50', borderWidth: 2.5, borderColor: '#fff',
   },
   cameraBtn: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 28, height: 28, borderRadius: 14,
+    width: 30, height: 30, borderRadius: 15,
     backgroundColor: '#E4415C',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: '#fff',
@@ -156,8 +173,8 @@ const s = StyleSheet.create({
   progressTop: {
     flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6,
   },
-  progressLabel: { fontSize: 12, color: '#999' },
-  progressPct: { fontSize: 12, fontWeight: '700', color: '#E4415C' },
+  progressLabel: { fontSize: 12, color: '#999', fontFamily: FONT },
+  progressPct: { fontSize: 12, fontWeight: '700', color: '#E4415C', fontFamily: FONT_BOLD },
   progressBg: { height: 7, backgroundColor: '#F2F2F2', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
 });

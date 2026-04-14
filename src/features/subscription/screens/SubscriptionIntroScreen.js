@@ -1,8 +1,9 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView,
+  View, Text, StyleSheet,
   TouchableOpacity, Dimensions, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -10,10 +11,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 const { width, height } = Dimensions.get('window');
 
 const PERKS = [
-  { icon: 'heart', label: 'Unlimited Likes' },
+  { icon: 'heart-outline', label: 'Unlimited Likes' },
   { icon: 'eye-off-outline', label: 'Browse Invisibly' },
-  { icon: 'star', label: 'Top Picks Daily' },
-  { icon: 'options', label: 'Advanced Filters' },
+  { icon: 'star-outline', label: 'Top Picks Daily' },
+  { icon: 'options-outline', label: 'Advanced Filters' },
 ];
 
 export const SubscriptionIntroScreen = ({ navigation }) => {
@@ -42,7 +43,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
       {/* Bottom card */}
       <View style={styles.card}>
         <Text style={styles.eyebrow}>MINGLEY PREMIUM</Text>
-        <Text style={styles.title}>Say Hello to{'\n'}Premium! 👋</Text>
+        <Text style={styles.title}>Say Hello to{'\n'}Premium!</Text>
         <Text style={styles.subtitle}>
           Get full access to all features and find your perfect match without limits.
         </Text>
@@ -84,7 +85,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
 };
 
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
-const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
+const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

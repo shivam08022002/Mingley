@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { AvatarList } from '../components/AvatarList';
@@ -30,10 +31,10 @@ export const MessagesListScreen = ({ navigation }) => {
           <Icon name="options-outline" size={24} color="#E4415C" />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.searchContainer}>
         <Icon name="search-outline" size={20} color="#A0A0A0" style={styles.searchIcon} />
-        <TextInput 
+        <TextInput
           style={styles.searchInput}
           placeholder="Search"
           placeholderTextColor="#A0A0A0"
@@ -53,9 +54,9 @@ export const MessagesListScreen = ({ navigation }) => {
         keyExtractor={item => item.id}
         ListHeaderComponent={ListHeader}
         renderItem={({ item }) => (
-          <MessageItem 
-            item={item} 
-            onPress={() => navigation.navigate('Chat', { user: item })} 
+          <MessageItem
+            item={item}
+            onPress={() => navigation.navigate('Chat', { user: item })}
           />
         )}
         showsVerticalScrollIndicator={false}

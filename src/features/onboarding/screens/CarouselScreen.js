@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Dimensions, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import Carousel from 'react-native-reanimated-carousel';
 import { useSharedValue } from 'react-native-reanimated';
@@ -7,7 +8,7 @@ import { Button } from '../../../components/common/Button';
 import { Pagination } from '../components/Pagination';
 import { styles } from '../onboarding.styles';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const CAROUSEL_DATA = [
   {
@@ -32,48 +33,56 @@ const CAROUSEL_DATA = [
 
 export const CarouselScreen = ({ navigation }) => {
   const scrollX = useSharedValue(0);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const renderItem = ({ item }) => (
-    <View style={styles.slideContainer}>
-      <View style={styles.imageContainer}>
-        <FastImage
-          source={item.image}
-          style={styles.slideImage}
-          resizeMode={FastImage.resizeMode.cover}
-        />
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </View>
+    <View style={styles.slideCard}>
+      <FastImage
+        source={item.image}
+        style={styles.slideImage}
+        resizeMode={FastImage.resizeMode.cover}
+      />
     </View>
   );
 
   return (
     <SafeAreaView style={styles.carouselContainer}>
       <Carousel
-        width={width}
-        height={Dimensions.get('window').height * 0.7}
+        width={width }
+        height={height * 0.66}
         data={CAROUSEL_DATA}
+        onSnapToItem={setActiveIndex}
         onProgressChange={(_, absoluteProgress) => {
           scrollX.value = absoluteProgress * width;
         }}
         renderItem={renderItem}
-        panGestureHandlerProps={{ activeOffsetX: [-10, 10] }}
         loop={false}
+        mode="parallax"
+        modeConfig={{
+          parallaxScrollingScale: 0.80,
+          parallaxScrollingOffset: 95,
+        }}
       />
-      
+
+      {/* Text below carousel – changes with active slide */}
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{CAROUSEL_DATA[activeIndex].title}</Text>
+        <Text style={styles.description}>
+          {CAROUSEL_DATA[activeIndex].description}
+        </Text>
+      </View>
+
       <View style={styles.footer}>
         <Pagination data={CAROUSEL_DATA} scrollX={scrollX} />
-        
+
         <Button
           title="Create an account"
           onPress={() => navigation.navigate('Welcome')}
           style={styles.createAccountBtn}
           textStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
-          variant="solid" 
+          variant="solid"
         />
-        
+
         <View style={styles.signInContainer}>
           <Text style={styles.alreadyText}>Already have an account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
@@ -36,7 +37,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
             <View style={styles.avatarContainer}>
               <View style={styles.avatarWrapper}>
                  <FastImage
-                    source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
+                    source={require('../../../assets/hey.png')}
                     style={styles.avatar}
                  />
                  <TouchableOpacity style={styles.cameraIcon}>

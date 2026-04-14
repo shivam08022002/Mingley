@@ -21,6 +21,12 @@ const MONTHS = [
 ];
 const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
+// Geometric/modern font for calendar numbers (closest to Sk-Modernist)
+const FONT_NUM = Platform.OS === 'ios' ? 'Futura-Medium' : 'sans-serif-medium';
+const FONT_NUM_BOLD = Platform.OS === 'ios' ? 'Futura-Bold' : 'sans-serif-medium';
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
+
 function getDaysInMonth(month, year) {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -193,7 +199,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#111',
     marginBottom: 16,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    fontFamily: FONT_MED,
   },
   yearRow: {
     flexDirection: 'row',
@@ -211,7 +217,8 @@ const styles = StyleSheet.create({
     color: '#E4415C',
     minWidth: 100,
     textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    fontFamily: FONT_NUM_BOLD,
+    letterSpacing: 1,
   },
   monthRow: {
     flexDirection: 'row',
@@ -227,7 +234,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     minWidth: 110,
     textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontFamily: FONT_MED,
   },
   weekDayRow: {
     flexDirection: 'row',
@@ -240,7 +247,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#ABABAB',
     fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontFamily: FONT_NUM,
+    letterSpacing: 0.5,
   },
   calendar: { marginBottom: SPACING.xl },
   weekRow: {
@@ -259,7 +267,8 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: 14,
     color: '#222',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontFamily: FONT_NUM,
+    letterSpacing: 0.3,
   },
   dayTextSelected: { color: '#FFFFFF', fontWeight: '700' },
   saveButton: { borderRadius: 16 },

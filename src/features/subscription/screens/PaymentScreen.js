@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView,
-  TouchableOpacity, ScrollView, Dimensions, Platform, Alert,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -153,7 +153,10 @@ export const PaymentScreen = ({ navigation }) => {
             <Text style={s.payText}>Pay {ORDER_SUMMARY.total} Securely</Text>
           </LinearGradient>
         </TouchableOpacity>
-        <Text style={s.secureNote}>🔒 256-bit SSL encryption</Text>
+        <View style={s.secureNoteContainer}>
+          <Icon name="lock-closed-outline" size={12} color="#AAA" />
+          <Text style={s.secureNote}>256-bit SSL encryption</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -177,26 +180,26 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingBottom: 140 },
 
   // Summary card
-  summaryCard: { borderRadius: 22, overflow: 'hidden', marginBottom: 24 },
-  summaryGradient: { padding: 20 },
+  summaryCard: {  paddingHorizontal: 8, overflow: 'hidden',width: '100%',height: 200, marginBottom: 14 },
+  summaryGradient: { padding: 10, paddingRight: 0, paddingLeft: 10},
   summaryEyebrow: {
-    fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.7)',
+    fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.7)',
     letterSpacing: 1.5, marginBottom: 6,
   },
   summaryPlan: {
-    fontSize: 18, fontWeight: '800', color: '#fff',
+    fontSize: 20, fontWeight: '700', color: '#fff',
     fontFamily: FONT_MED, marginBottom: 14,
   },
-  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginBottom: 14 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  summaryKey: { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontFamily: FONT },
-  summaryVal: { fontSize: 13, color: '#fff', fontWeight: '600', fontFamily: FONT },
+  summaryDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginBottom: 12 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  summaryKey: { fontSize: 14, color: 'rgba(255,255,255,0.75)', fontFamily: FONT },
+  summaryVal: { fontSize: 14, color: '#fff', fontWeight: '700',marginRight: 16, fontFamily: FONT_MED },
   totalRow: {
-    marginTop: 8, paddingTop: 12,
+    marginTop: 6, paddingTop: 12, marginBottom: 12, marginRight: 16,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.25)',
   },
-  totalKey: { fontSize: 15, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
-  totalVal: { fontSize: 18, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
+  totalKey: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
+  totalVal: { fontSize: 20, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
 
   sectionLabel: {
     fontSize: 14, fontWeight: '700', color: '#999',

@@ -1,10 +1,12 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 
 const { width, height } = Dimensions.get('window');
+const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 
 export const styles = StyleSheet.create({
-  // Splash Screen
+  // ─── Splash Screen ─────────────────────────────
   splashContainer: {
     flex: 1,
   },
@@ -17,8 +19,8 @@ export const styles = StyleSheet.create({
     width: 250,
     height: 100,
   },
-  
-  // Get Started Screen
+
+  // ─── Get Started Screen ────────────────────────
   getStartedContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -64,25 +66,23 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginRight: SPACING.xs,
   },
-  
-  // Carousel Screen
+
+  // ─── Carousel Screen ──────────────────────────
   carouselContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingTop: height * 0.05,
   },
-  slideContainer: {
+  slideCard: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.m,
-  },
-  imageContainer: {
-    width: '100%',
-    height: height * 0.5,
-    borderRadius: 30,
+    borderRadius: 24,
     overflow: 'hidden',
-    marginBottom: SPACING.xl,
+    backgroundColor: '#F5F5F5',
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
   slideImage: {
     width: '100%',
@@ -90,58 +90,66 @@ export const styles = StyleSheet.create({
   },
   textContainer: {
     alignItems: 'center',
-    height: 120,
-    paddingHorizontal: SPACING.m,
+    paddingHorizontal: SPACING.xl,
+    marginTop: 2,
+    minHeight: 68,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    color: COLORS.primary,
-    marginBottom: SPACING.m,
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#E4415C',
+    fontFamily: FONT,
+    marginBottom: 6,
     textAlign: 'center',
   },
   description: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: '#7D7D7D',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 20,
+    fontFamily: FONT,
+    paddingHorizontal: SPACING.m,
   },
-  
-  // Pagination
+
+  // ─── Pagination ────────────────────────────────
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: SPACING.m,
+    marginVertical: 6,
   },
   dot: {
     height: 8,
     borderRadius: 4,
     marginHorizontal: 4,
   },
-  
-  // Footer
+
+  // ─── Footer ────────────────────────────────────
   footer: {
     paddingHorizontal: SPACING.xl,
-    paddingBottom: SPACING.xl * 1.5,
+    paddingBottom: 10,
   },
   signInContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: SPACING.m,
+    marginTop: 8,
   },
   alreadyText: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    fontSize: 14,
+    color: '#AAAAAA',
+    fontFamily: FONT,
   },
   signInText: {
-    ...TYPOGRAPHY.body,
-    color: '#FF4b72',
+    fontSize: 14,
+    color: '#E4415C',
     fontWeight: 'bold',
     marginLeft: 4,
+    fontFamily: FONT_BOLD,
   },
   createAccountBtn: {
-    backgroundColor: '#FF4b72',
+    backgroundColor: '#E4415C',
     borderRadius: 16,
-    height: 60,
+    height: 52,
+    marginVertical: 4,
   },
 });

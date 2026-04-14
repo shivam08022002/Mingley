@@ -31,15 +31,15 @@ const fontFamilyMedium = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-ser
 
 export const TYPOGRAPHY = {
   h1: {
-    fontFamily: fontFamilyBold,
+    fontFamily: fontFamilyMedium,
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text,
   },
   h2: {
-    fontFamily: fontFamilyBold,
+    fontFamily: fontFamilyMedium,
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text,
   },
   h3: {

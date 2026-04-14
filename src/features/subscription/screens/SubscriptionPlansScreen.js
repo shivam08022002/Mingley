@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView,
+  View, Text, StyleSheet,
   TouchableOpacity, ScrollView, Dimensions, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -18,7 +19,7 @@ const PLANS = [
   {
     id: '2', name: 'Pro Buddy', duration: '6 Months',
     price: '₹1,799', perMonth: '₹300/mo',
-    icon: 'diamond-outline', iconColor: '#8A2387',
+    icon: 'trophy-outline', iconColor: '#8A2387',
     badge: 'MOST POPULAR',
   },
   {
@@ -58,7 +59,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
         <Text style={s.title}>For Best Access</Text>
-        <Text style={s.subtitle}>Subscribe a plan  ❤️</Text>
+        <Text style={s.subtitle}>Subscribe a plan</Text>
 
         {/* Features */}
         <View style={s.featuresCard}>
@@ -79,27 +80,34 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
           {PLANS.map((plan) => {
             const active = selected === plan.id;
             return (
-              <TouchableOpacity
-                key={plan.id}
-                onPress={() => setSelected(plan.id)}
-                activeOpacity={0.85}
-              >
-                {active ? (
-                  <LinearGradient
-                    colors={['#E4415C', '#8A2387']}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={s.planCardBorder}
-                  >
-                    <View style={s.planCardInner}>
-                      <PlanContent plan={plan} active />
-                    </View>
-                  </LinearGradient>
-                ) : (
-                  <View style={s.planCardDefault}>
-                    <PlanContent plan={plan} active={false} />
+              <View key={plan.id} style={s.planCardOuter}>
+                {/* Badge positioned outside the card */}
+                {plan.badge && (
+                  <View style={[s.badgeWrap, active && s.badgeActive]}>
+                    <Text style={s.badgeText}>{plan.badge}</Text>
                   </View>
                 )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setSelected(plan.id)}
+                  activeOpacity={0.85}
+                >
+                  {active ? (
+                    <LinearGradient
+                      colors={['#E4415C', '#8A2387']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={s.planCardBorder}
+                    >
+                      <View style={s.planCardInner}>
+                        <PlanContent plan={plan} active />
+                      </View>
+                    </LinearGradient>
+                  ) : (
+                    <View style={s.planCardDefault}>
+                      <PlanContent plan={plan} active={false} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -140,16 +148,11 @@ const PlanContent = ({ plan, active }) => (
       <Text style={[pc.price, active && pc.priceActive]}>{plan.price}</Text>
       <Text style={pc.perMonth}>{plan.perMonth}</Text>
     </View>
-    {plan.badge && (
-      <View style={[pc.badge, active && pc.badgeActive]}>
-        <Text style={pc.badgeText}>{plan.badge}</Text>
-      </View>
-    )}
   </View>
 );
 
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
-const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
+const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -190,15 +193,29 @@ const s = StyleSheet.create({
     textTransform: 'uppercase', letterSpacing: 0.8,
     marginBottom: 12, fontFamily: FONT_MED,
   },
-  plansList: { gap: 12 },
+  plansList: { gap: 16 },
+
+  // Plan card outer wrapper (holds badge + card)
+  planCardOuter: {
+    position: 'relative',
+  },
+  badgeWrap: {
+    position: 'absolute', top: -10, right: 16,
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 8, zIndex: 5,
+  },
+  badgeActive: { backgroundColor: '#E4415C' },
+  badgeText: { fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+
   planCardBorder: { borderRadius: 20, padding: 2 },
   planCardInner: {
     backgroundColor: '#fff', borderRadius: 18,
-    paddingHorizontal: 16, paddingVertical: 14,
+    paddingHorizontal: 16, paddingVertical: 16,
   },
   planCardDefault: {
     backgroundColor: '#fff', borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 14,
+    paddingHorizontal: 16, paddingVertical: 16,
     borderWidth: 1.5, borderColor: '#F0F0F0',
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
   },
@@ -234,12 +251,4 @@ const pc = StyleSheet.create({
   price: { fontSize: 18, fontWeight: '800', color: '#CCC', fontFamily: FONT_MED },
   priceActive: { color: '#E4415C' },
   perMonth: { fontSize: 10, color: '#AAA', marginTop: 2 },
-  badge: {
-    position: 'absolute', top: -20, right: 0,
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeActive: { backgroundColor: '#E4415C' },
-  badgeText: { fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
 });
