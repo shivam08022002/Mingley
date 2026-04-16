@@ -13,7 +13,7 @@ const PLANS = [
   {
     id: '1', name: 'Starter', duration: '3 Months',
     price: '₹999', perMonth: '₹333/mo',
-    icon: 'star-outline', iconColor: '#E4415C',
+    icon: 'star-outline', iconColor: '#E94057',
     badge: null,
   },
   {
@@ -93,7 +93,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
                 >
                   {active ? (
                     <LinearGradient
-                      colors={['#E4415C', '#8A2387']}
+                      colors={['#E94057', '#8A2387']}
                       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       style={s.planCardBorder}
                     >
@@ -121,7 +121,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
           activeOpacity={0.88}
         >
           <LinearGradient
-            colors={['#E4415C', '#8A2387']}
+            colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.ctaBtn}
           >
@@ -138,7 +138,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
 const PlanContent = ({ plan, active }) => (
   <View style={pc.row}>
     <View style={[pc.iconWrap, { backgroundColor: active ? '#FFF0F3' : '#F5F5F5' }]}>
-      <Icon name={plan.icon} size={24} color={active ? '#E4415C' : '#999'} />
+      <Icon name={plan.icon} size={24} color={active ? '#E94057' : '#999'} />
     </View>
     <View style={pc.info}>
       <Text style={[pc.name, active && pc.nameActive]}>{plan.name}</Text>
@@ -171,7 +171,7 @@ const s = StyleSheet.create({
     fontSize: 32, fontWeight: '800', color: '#2b1c50',
     fontFamily: FONT_MED, marginBottom: 4, marginTop: 8,
   },
-  subtitle: { fontSize: 16, color: '#E4415C', fontWeight: '600', marginBottom: 20 },
+  subtitle: { fontSize: 16, color: '#E94057', fontWeight: '600', marginBottom: 20 },
   featuresCard: {
     backgroundColor: '#FAFAFA', borderRadius: 20,
     padding: 18, marginBottom: 24,
@@ -184,7 +184,7 @@ const s = StyleSheet.create({
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   featureDot: {
     width: 20, height: 20, borderRadius: 10,
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
     justifyContent: 'center', alignItems: 'center',
   },
   featureText: { fontSize: 14, color: '#444', fontFamily: FONT },
@@ -205,7 +205,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 8, zIndex: 5,
   },
-  badgeActive: { backgroundColor: '#E4415C' },
+  badgeActive: { backgroundColor: '#E94057' },
   badgeText: { fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
 
   planCardBorder: { borderRadius: 20, padding: 2 },
@@ -249,6 +249,6 @@ const pc = StyleSheet.create({
   durationActive: { color: '#888' },
   priceBlock: { alignItems: 'flex-end' },
   price: { fontSize: 18, fontWeight: '800', color: '#CCC', fontFamily: FONT_MED },
-  priceActive: { color: '#E4415C' },
+  priceActive: { color: '#E94057' },
   perMonth: { fontSize: 10, color: '#AAA', marginTop: 2 },
 });

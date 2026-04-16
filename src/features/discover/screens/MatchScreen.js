@@ -149,7 +149,7 @@ export const MatchScreen = ({ navigation, route }) => {
           }}
         >
           <LinearGradient
-            colors={['#E4415C', '#E4415C']}
+            colors={['#E94057', '#E94057']}
             style={styles.helloGradient}
           >
             <Text style={styles.sayHelloText}>Say hello</Text>
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#E4415C',
+    shadowColor: '#E94057',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   topHeartIcon: {
     fontSize: 26,
-    color: '#E4415C',
+    color: '#E94057',
   },
   cardWrapper: {
     width: CARD_WIDTH,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#E4415C',
+    shadowColor: '#E94057',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   heartIcon: {
     fontSize: 22,
-    color: '#E4415C',
+    color: '#E94057',
   },
   textSection: {
     alignItems: 'center',
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   matchTitle: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#E4415C',
+    color: '#E94057',
     textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     letterSpacing: -0.5,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   keepSwipingText: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#E4415C',
+    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

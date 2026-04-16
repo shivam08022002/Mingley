@@ -8,7 +8,7 @@ export const AvatarList = ({ data }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.itemContainer} activeOpacity={0.8}>
       <LinearGradient
-        colors={['#FF6B8B', '#8A2387']} // Mock gradient ring similar to Instagram stories
+        colors={['#E94057', '#8A2387']} // Mock gradient ring similar to Instagram stories
         style={styles.gradientRing}
       >
         <View style={styles.imageWrapper}>

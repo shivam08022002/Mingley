@@ -65,7 +65,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
                 onPress={() => setDatePickerVisible(true)}
                 activeOpacity={0.8}
               >
-                <Icon name="calendar-outline" size={24} color="#E4415C" style={styles.calendarIcon} />
+                <Icon name="calendar-outline" size={24} color="#E94057" style={styles.calendarIcon} />
                 <Text style={[styles.birthdayText, !profileDetails.birthday && styles.birthdayPlaceholder]}>
                   {profileDetails.birthday ? formatDisplayDate(profileDetails.birthday) : 'Choose birthday date'}
                 </Text>
@@ -75,7 +75,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
             <GradientButton
               title="Confirm"
               onPress={() => navigation.navigate('GenderSelection')}
-              colors={['#E4415C', '#E4415C']}
+              colors={['#E94057', '#E94057']}
               style={styles.confirmButton}
             />
           </KeyboardAvoidingView>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   skipText: {
     ...TYPOGRAPHY.body,
     fontWeight: 'bold',
-    color: '#E4415C',
+    color: '#E94057',
   },
   content: {
     flex: 1,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -166,10 +166,10 @@ const styles = StyleSheet.create({
   birthdayText: {
     ...TYPOGRAPHY.body,
     fontWeight: '600',
-    color: '#E4415C', // Selected text might be red or black, UI shows pinkish
+    color: '#E94057', // Selected text might be red or black, UI shows pinkish
   },
   birthdayPlaceholder: {
-    color: '#E4415C',
+    color: '#E94057',
   },
   confirmButton: {
     marginTop: 'auto',

@@ -11,7 +11,7 @@ const PLAN_CONFIG = {
     tag: 'BASIC',
     perks: ['5 likes/day', 'Basic filters', 'Ads included'],
     icon: 'flame-outline',
-    colors: ['#E4415C', '#8A2387'],
+    colors: ['#E94057', '#8A2387'],
     tagBg: 'rgba(255,255,255,0.22)',
   },
   premium: {
@@ -163,7 +163,7 @@ const s = StyleSheet.create({
   upgradeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#E4415C',
+    color: '#E94057',
     fontFamily: FONT_MED,
   },
   activePill: {

@@ -153,7 +153,7 @@ export const DiscoverScreen = React.memo(() => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton}>
-          <Icon name="chevron-back" size={24} color="#E4415C" />
+          <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
@@ -165,7 +165,7 @@ export const DiscoverScreen = React.memo(() => {
           style={[styles.headerButton, hasActive && styles.headerButtonActive]}
           onPress={() => setFilterVisible(true)}
         >
-          <Icon name="options-outline" size={24} color="#E4415C" />
+          <Icon name="options-outline" size={24} color="#E94057" />
           {hasActive && <View style={styles.filterDot} />}
         </TouchableOpacity>
       </View>
@@ -198,10 +198,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
   },
-  headerButtonActive: { borderColor: '#E4415C' },
+  headerButtonActive: { borderColor: '#E94057' },
   filterDot: {
     position: 'absolute', top: 10, right: 10,
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#E4415C',
+    width: 8, height: 8, borderRadius: 4, backgroundColor: '#E94057',
   },
   headerTitleContainer: { alignItems: 'center' },
   headerTitle: { ...TYPOGRAPHY.h2, color: '#000000', marginBottom: 2 },

@@ -6,6 +6,7 @@ import { InterestsSelectionScreen } from '../features/profile-setup/screens/Inte
 import { ContactsPermissionScreen } from '../features/profile-setup/screens/ContactsPermissionScreen';
 import { NotificationsPermissionScreen } from '../features/profile-setup/screens/NotificationsPermissionScreen';
 import { ChatScreen } from '../features/chat/screens/ChatScreen';
+import { CallingScreen } from '../features/chat/screens/CallingScreen';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { GalleryScreen } from '../features/profile/screens/GalleryScreen';
 import { SubscriptionIntroScreen } from '../features/subscription/screens/SubscriptionIntroScreen';
@@ -26,7 +27,12 @@ export const MainNavigator = () => {
       <Stack.Screen name="ContactsPermission" component={ContactsPermissionScreen} />
       <Stack.Screen name="NotificationsPermission" component={NotificationsPermissionScreen} />
       <Stack.Screen name="Home" component={BottomTabNavigator} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen 
+        name="Chat" 
+        component={ChatScreen} 
+        options={{ presentation: 'transparentModal', animation: 'fade' }} 
+      />
+      <Stack.Screen name="Calling" component={CallingScreen} />
 
       {/* Detail / Module flows */}
       <Stack.Screen name="Gallery" component={GalleryScreen} />

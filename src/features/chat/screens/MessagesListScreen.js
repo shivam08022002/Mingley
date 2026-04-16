@@ -28,7 +28,7 @@ export const MessagesListScreen = ({ navigation }) => {
       <View style={styles.headerTop}>
         <Text style={styles.title}>Messages</Text>
         <TouchableOpacity style={styles.filterButton}>
-          <Icon name="options-outline" size={24} color="#E4415C" />
+          <Icon name="options-outline" size={24} color="#E94057" />
         </TouchableOpacity>
       </View>
 

@@ -19,7 +19,7 @@ export const ChatBubble = ({ item }) => {
            <Icon 
              name={item.read ? 'checkmark-done' : 'checkmark'} 
              size={16} 
-             color="#E4415C" 
+             color="#E94057" 
              style={styles.checkIcon} 
            />
         )}

@@ -16,6 +16,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useFilterStore } from '../store/useFilterStore';
+import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const { height, width } = Dimensions.get('window');
 const SLIDER_TRACK = width - 48 - 8; // sheet padding * 2
@@ -123,19 +124,14 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View style={s.overlay}>
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={StyleSheet.absoluteFillObject} />
-        </TouchableWithoutFeedback>
-
-        <View style={s.sheet}>
-          {/* Handle */}
-          <View {...swipeDownPan.panHandlers} style={s.handleWrap}>
-            <View style={s.handle} />
-          </View>
+      <BottomSheetContainer 
+        height={height * 0.65} 
+        onClose={onClose}
+        containerStyle={s.containerStyle}
+      >
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Header */}
@@ -166,7 +162,7 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
             {/* ─ Location ─ */}
             <Section label="Location">
               <TouchableOpacity style={s.locationRow} onPress={pickLocation}>
-                <Icon name="location-outline" size={18} color="#E4415C" />
+                <Icon name="location-outline" size={18} color="#E94057" />
                 <Text style={s.locationText}>{location}</Text>
                 <Icon name="chevron-forward" size={18} color="#CCC" />
               </TouchableOpacity>
@@ -238,7 +234,7 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
                   value={onlineStatus}
                   onValueChange={setOnlineStatus}
                   trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                  thumbColor={onlineStatus ? '#E4415C' : '#fff'}
+                  thumbColor={onlineStatus ? '#E94057' : '#fff'}
                 />
               </View>
             </Section>
@@ -251,7 +247,7 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
                   value={verifiedOnly}
                   onValueChange={setVerifiedOnly}
                   trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                  thumbColor={verifiedOnly ? '#E4415C' : '#fff'}
+                  thumbColor={verifiedOnly ? '#E94057' : '#fff'}
                 />
               </View>
             </Section>
@@ -259,7 +255,7 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
             {/* Apply */}
             <TouchableOpacity style={s.applyBtn} onPress={handleApply}>
               <LinearGradient
-                colors={['#E4415C', '#8A2387']}
+                colors={['#E94057', '#8A2387']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={s.applyGradient}
               >
@@ -267,8 +263,7 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
               </LinearGradient>
             </TouchableOpacity>
           </ScrollView>
-        </View>
-      </View>
+        </BottomSheetContainer>
     </Modal>
   );
 });
@@ -282,31 +277,19 @@ const Section = ({ label, children }) => (
 );
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
-const PINK = '#E4415C';
+const PINK = '#E94057';
 const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 
 const s = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  containerStyle: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
   sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 40,
-    maxHeight: height * 0.9,
+    // legacy
   },
-  handle: {
-    width: 40, height: 5, borderRadius: 3,
-    backgroundColor: '#D0D0D0',
-    alignSelf: 'center',
-  },
-  handleWrap: {
-    width: '100%', paddingVertical: 12,
-    alignItems: 'center',
-    cursor: 'grab',
-  },
+  handle: {},
+  handleWrap: {},
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 4,

@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     marginTop: 10, // Make room for floating label
   },
   inputFocused: {
-    borderColor: '#E4415C',
+    borderColor: '#E94057',
   },
   labelContainer: {
     position: 'absolute',

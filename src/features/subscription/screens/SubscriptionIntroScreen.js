@@ -21,7 +21,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={['#1a0a2e', '#2d1456', '#E4415C']}
+        colors={['#1a0a2e', '#2d1456', '#E94057']}
         start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
@@ -53,7 +53,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
           {PERKS.map((p) => (
             <View key={p.label} style={styles.perkItem}>
               <View style={styles.perkIcon}>
-                <Icon name={p.icon} size={18} color="#E4415C" />
+                <Icon name={p.icon} size={18} color="#E94057" />
               </View>
               <Text style={styles.perkLabel}>{p.label}</Text>
             </View>
@@ -67,7 +67,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#E4415C', '#8A2387']}
+            colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.ctaBtn}
           >
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, paddingTop: 28, paddingBottom: 36,
   },
   eyebrow: {
-    fontSize: 11, fontWeight: '800', color: '#E4415C',
+    fontSize: 11, fontWeight: '800', color: '#E94057',
     letterSpacing: 1.5, textAlign: 'center', marginBottom: 8,
   },
   title: {
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 10,
     backgroundColor: '#fff',
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#E4415C', shadowOpacity: 0.15, shadowRadius: 4, elevation: 2,
+    shadowColor: '#E94057', shadowOpacity: 0.15, shadowRadius: 4, elevation: 2,
   },
   perkLabel: { fontSize: 12, fontWeight: '700', color: '#2d1456', fontFamily: FONT_MED },
   ctaWrap: { borderRadius: 20, overflow: 'hidden', marginBottom: 12 },

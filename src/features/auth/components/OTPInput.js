@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   inputFilled: {
-    backgroundColor: '#E4415C', // Red color from the image
+    backgroundColor: '#E94057', // Red color from the image
     borderWidth: 0,
   },
   inputEmpty: {
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     borderColor: '#E8E8E8',
   },
   inputFocused: {
-    borderColor: '#E4415C',
+    borderColor: '#E94057',
   },
   input: {
     ...TYPOGRAPHY.h1,
@@ -111,6 +111,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   textEmpty: {
-    color: '#E4415C',
+    color: '#E94057',
   },
 });

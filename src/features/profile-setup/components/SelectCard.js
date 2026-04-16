@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   containerSelected: {
-    backgroundColor: '#E4415C',
-    borderColor: '#E4415C',
+    backgroundColor: '#E94057',
+    borderColor: '#E94057',
   },
   label: {
     ...TYPOGRAPHY.body,

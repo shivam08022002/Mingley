@@ -49,13 +49,13 @@ export const SignupOptionsScreen = ({ navigation }) => {
 
         <View style={styles.socialContainer}>
           <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-facebook" size={24} color="#E4415C" />
+             <Icon name="logo-facebook" size={24} color="#E94057" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-google" size={24} color="#E4415C" />
+             <Icon name="logo-google" size={24} color="#E94057" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-apple" size={24} color="#E4415C" />
+             <Icon name="logo-apple" size={24} color="#E94057" />
           </TouchableOpacity>
         </View>
       </View>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   primaryButton: {
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
     height: 56,
     borderRadius: 16,
     justifyContent: 'center',
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     ...TYPOGRAPHY.body,
     fontWeight: 'bold',
-    color: '#E4415C',
+    color: '#E94057',
   },
   orContainer: {
     flexDirection: 'row',
@@ -169,6 +169,6 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     ...TYPOGRAPHY.bodySecondary,
-    color: '#E4415C',
+    color: '#E94057',
   },
 });

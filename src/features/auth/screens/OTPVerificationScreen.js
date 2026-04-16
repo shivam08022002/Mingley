@@ -48,7 +48,7 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="chevron-back" size={24} color="#E4415C" />
+          <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
       </View>
 
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   resendText: {
     ...TYPOGRAPHY.body,
     fontWeight: 'bold',
-    color: '#E4415C',
+    color: '#E94057',
   },
   resendDisabled: {
     opacity: 0.5,

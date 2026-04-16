@@ -20,7 +20,7 @@ export const GalleryScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#E4415C" />
+          <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
       </View>
 

@@ -70,7 +70,7 @@ export const LoginScreen = ({ navigation }) => {
               title="Submit"
               onPress={handleSubmit(onSubmit)}
               style={styles.button}
-              colors={['#FF6B8B', '#8A2387']} // Purple to pink submit button gradient
+              colors={['#E94057', '#8A2387']} // Purple to pink submit button gradient
             />
           </View>
 

@@ -72,7 +72,7 @@ export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) 
         </View>
         <View style={s.progressBg}>
           <LinearGradient
-            colors={['#E4415C', '#8A2387']}
+            colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={[s.progressFill, { width: `${completionPct}%` }]}
           />
@@ -163,7 +163,7 @@ const s = StyleSheet.create({
   cameraBtn: {
     position: 'absolute', bottom: 0, right: 0,
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: '#fff',
   },
@@ -174,7 +174,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6,
   },
   progressLabel: { fontSize: 12, color: '#999', fontFamily: FONT },
-  progressPct: { fontSize: 12, fontWeight: '700', color: '#E4415C', fontFamily: FONT_BOLD },
+  progressPct: { fontSize: 12, fontWeight: '700', color: '#E94057', fontFamily: FONT_BOLD },
   progressBg: { height: 7, backgroundColor: '#F2F2F2', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
 });

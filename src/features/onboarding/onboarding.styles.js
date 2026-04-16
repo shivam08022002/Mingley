@@ -97,7 +97,7 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#E4415C',
+    color: '#E94057',
     fontFamily: FONT,
     marginBottom: 6,
     textAlign: 'center',
@@ -141,13 +141,13 @@ export const styles = StyleSheet.create({
   },
   signInText: {
     fontSize: 14,
-    color: '#E4415C',
-    fontWeight: 'bold',
+    color: '#E94057',
+    fontWeight: '500',
     marginLeft: 4,
-    fontFamily: FONT_BOLD,
+    fontFamily: FONT,
   },
   createAccountBtn: {
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
     borderRadius: 16,
     height: 52,
     marginVertical: 4,

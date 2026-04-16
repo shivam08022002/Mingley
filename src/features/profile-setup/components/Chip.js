@@ -13,7 +13,7 @@ export const Chip = ({ label, icon, selected, onPress }) => {
       <Icon 
         name={icon} 
         size={20} 
-        color={selected ? '#FFFFFF' : '#E4415C'} 
+        color={selected ? '#FFFFFF' : '#E94057'} 
         style={styles.icon} 
       />
       <Text style={[styles.label, selected && styles.labelSelected]}>
@@ -37,9 +37,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   containerSelected: {
-    backgroundColor: '#E4415C',
-    borderColor: '#E4415C',
-    shadowColor: '#E4415C',
+    backgroundColor: '#E94057',
+    borderColor: '#E94057',
+    shadowColor: '#E94057',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

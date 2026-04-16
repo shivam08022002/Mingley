@@ -82,7 +82,7 @@ export const InterestChips = React.memo(({ interests, onSave }) => {
 
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
-const PINK = '#E4415C';
+const PINK = '#E94057';
 
 const ch = StyleSheet.create({
   container: {

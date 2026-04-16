@@ -79,7 +79,7 @@ export const CarouselScreen = ({ navigation }) => {
           title="Create an account"
           onPress={() => navigation.navigate('Welcome')}
           style={styles.createAccountBtn}
-          textStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
+          textStyle={{ color: '#FFFFFF', fontWeight: '500' }}
           variant="solid"
         />
 

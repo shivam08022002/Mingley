@@ -28,7 +28,7 @@ export const MatchesScreen = () => {
       <View style={styles.headerTop}>
         <Text style={styles.title}>Matches</Text>
         <TouchableOpacity style={styles.sortButton}>
-          <Icon name="swap-vertical" size={24} color="#E4415C" />
+          <Icon name="swap-vertical" size={24} color="#E94057" />
         </TouchableOpacity>
       </View>
       <Text style={styles.subtitle}>

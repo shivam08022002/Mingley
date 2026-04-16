@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#E4415C',
+    color: '#E94057',
     letterSpacing: 0.5,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
     textAlign: 'center',
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   getStartedText: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#E4415C',
+    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     letterSpacing: 0.4,
   },

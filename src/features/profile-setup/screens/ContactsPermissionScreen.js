@@ -31,7 +31,7 @@ export const ContactsPermissionScreen = ({ navigation }) => {
         <GradientButton
           title="Access to a contact list"
           onPress={() => navigation.navigate('NotificationsPermission')}
-          colors={['#E4415C', '#E4415C']}
+          colors={['#E94057', '#E94057']}
           style={styles.actionButton}
         />
       </View>
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   skipText: {
     ...TYPOGRAPHY.body,
     fontWeight: 'bold',
-    color: '#E4415C',
+    color: '#E94057',
   },
   content: {
     flex: 1,

@@ -42,7 +42,7 @@ const SettingsRow = React.memo(({ icon, label, onPress, isLast }) => (
     activeOpacity={0.7}
   >
     <View style={row.iconWrap}>
-      <Icon name={icon} size={18} color="#E4415C" />
+      <Icon name={icon} size={18} color="#E94057" />
     </View>
     <Text style={row.label}>{label}</Text>
     <Icon name="chevron-forward" size={18} color="#CCC" />
@@ -103,7 +103,7 @@ export const SettingsScreen = React.memo(() => {
         {/* Sign Out — at bottom, above safe area */}
         <View style={s.section}>
           <TouchableOpacity style={s.signOutBtn} onPress={handleSignOut}>
-            <Icon name="log-out-outline" size={18} color="#E4415C" />
+            <Icon name="log-out-outline" size={18} color="#E94057" />
             <Text style={s.signOutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -114,7 +114,7 @@ export const SettingsScreen = React.memo(() => {
 
 const FONT     = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
-const PINK     = '#E4415C';
+const PINK     = '#E94057';
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7F7' },

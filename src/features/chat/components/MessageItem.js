@@ -10,7 +10,7 @@ export const MessageItem = ({ item, onPress }) => {
       {/* Dynamic wrapper testing if you need story rings */}
       <View style={styles.avatarContainer}>
           <LinearGradient
-            colors={item.hasActivity ? ['#FF6B8B', '#8A2387'] : ['transparent', 'transparent']} // Active map vs simple
+            colors={item.hasActivity ? ['#E94057', '#8A2387'] : ['transparent', 'transparent']} // Active map vs simple
             style={styles.gradientRing}
           >
             <View style={[styles.imageWrapper, !item.hasActivity && { borderWidth: 0, padding: 0 }]}>
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   unreadBadge: {
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
     width: 24,
     height: 24,
     borderRadius: 12,

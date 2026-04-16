@@ -11,6 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
 import { GradientButton } from '../../../components/common/GradientButton';
+import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const { height } = Dimensions.get('window');
 
@@ -80,13 +81,14 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
-        <View style={styles.sheetContainer}>
-          <View style={styles.dragHandle} />
+      <BottomSheetContainer 
+        height={height * 0.65} 
+        onClose={onClose}
+        containerStyle={styles.containerStyle}
+      >
 
           <Text style={styles.sheetTitle}>Birthday</Text>
 
@@ -96,14 +98,14 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
               onPress={() => setYear(y => y - 1)}
               style={styles.yearBtn}
             >
-              <Icon name="chevron-back" size={22} color="#E4415C" />
+              <Icon name="chevron-back" size={22} color="#E94057" />
             </TouchableOpacity>
             <Text style={styles.yearText}>{year}</Text>
             <TouchableOpacity
               onPress={() => setYear(y => Math.min(y + 1, now.getFullYear() - 16))}
               style={styles.yearBtn}
             >
-              <Icon name="chevron-forward" size={22} color="#E4415C" />
+              <Icon name="chevron-forward" size={22} color="#E94057" />
             </TouchableOpacity>
           </View>
 
@@ -159,40 +161,20 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
           <GradientButton
             title="Save"
             onPress={handleSave}
-            colors={['#E4415C', '#E4415C']}
+            colors={['#E94057', '#E94057']}
             style={styles.saveButton}
           />
-        </View>
-      </View>
+        </BottomSheetContainer>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  containerStyle: {
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  backdrop: { ...StyleSheet.absoluteFillObject },
-  sheetContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.s,
-    paddingBottom: SPACING.xl * 2,
-    minHeight: height * 0.62,
-  },
-  dragHandle: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#D8D8D8',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 14,
-    marginTop: 4,
-  },
+  sheetContainer: {},
+  dragHandle: {},
   sheetTitle: {
     fontSize: 17,
     fontWeight: '600',
@@ -214,7 +196,7 @@ const styles = StyleSheet.create({
   yearText: {
     fontSize: 36,
     fontWeight: '800',
-    color: '#E4415C',
+    color: '#E94057',
     minWidth: 100,
     textAlign: 'center',
     fontFamily: FONT_NUM_BOLD,
@@ -263,7 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  dayCellSelected: { backgroundColor: '#E4415C' },
+  dayCellSelected: { backgroundColor: '#E94057' },
   dayText: {
     fontSize: 14,
     color: '#222',

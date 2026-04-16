@@ -44,7 +44,7 @@ export const PhoneInputScreen = ({ navigation }) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Icon name="chevron-back" size={22} color="#E4415C" />
+          <Icon name="chevron-back" size={22} color="#E94057" />
         </TouchableOpacity>
 
         <View style={styles.content}>
@@ -67,7 +67,7 @@ export const PhoneInputScreen = ({ navigation }) => {
           <GradientButton
             title="Continue"
             onPress={handleSubmit(onSubmit)}
-            colors={['#E4415C', '#E4415C']}
+            colors={['#E94057', '#E94057']}
             style={styles.button}
           />
         </View>

@@ -19,7 +19,7 @@ const PhotoItem = React.memo(({ uri, onPress }) => (
 
 const AddButton = React.memo(({ onPress }) => (
   <TouchableOpacity style={[st.thumb, st.addBtn]} onPress={onPress} activeOpacity={0.8}>
-    <Icon name="add" size={28} color="#E4415C" />
+    <Icon name="add" size={28} color="#E94057" />
   </TouchableOpacity>
 ));
 
@@ -68,7 +68,7 @@ const st = StyleSheet.create({
     fontSize: 16, fontWeight: '700', color: '#111',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
-  edit: { fontSize: 13, color: '#E4415C', fontWeight: '600' },
+  edit: { fontSize: 13, color: '#E94057', fontWeight: '600' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
   thumb: { width: THUMB, height: THUMB, borderRadius: 12, overflow: 'hidden' },
   img: { width: '100%', height: '100%' },

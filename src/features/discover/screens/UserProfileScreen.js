@@ -41,8 +41,12 @@ export const UserProfileScreen = ({ navigation, route }) => {
   }, [navigation]);
 
   const handleMessage = useCallback(() => {
-    navigation.navigate('Chat');
-  }, [navigation]);
+    navigation.navigate('Chat', { user });
+  }, [navigation, user]);
+
+  const handleCall = useCallback(() => {
+    navigation.navigate('Calling', { user });
+  }, [navigation, user]);
 
   return (
     <ScrollView
@@ -126,9 +130,14 @@ export const UserProfileScreen = ({ navigation, route }) => {
             <Text style={styles.name}>{user.name}, {user.age}</Text>
             <Text style={styles.occupation}>{user.occupation}</Text>
           </View>
-          <TouchableOpacity style={styles.sendButton} onPress={handleMessage}>
-            <Icon name="paper-plane-outline" size={20} color="#E4415C" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity style={styles.headerActionBtn} onPress={handleCall}>
+              <Icon name="call-outline" size={20} color="#E94057" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerActionBtn} onPress={handleMessage}>
+              <Icon name="paper-plane-outline" size={20} color="#E94057" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Location */}
@@ -137,7 +146,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
           <View style={styles.locationRow}>
             <Text style={styles.bodyText}>{user.location}</Text>
             <View style={styles.distanceBadge}>
-              <Icon name="location-outline" size={13} color="#E4415C" />
+              <Icon name="location-outline" size={13} color="#E94057" />
               <Text style={styles.distanceText}>{user.distance} km</Text>
             </View>
           </View>
@@ -164,7 +173,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
                 style={[styles.chip, idx < 2 && styles.chipActive]}
               >
                 {idx < 2 && (
-                  <Icon name="checkmark-done" size={13} color="#E4415C" style={{ marginRight: 4 }} />
+                  <Icon name="checkmark-done" size={13} color="#E94057" style={{ marginRight: 4 }} />
                 )}
                 <Text style={[styles.chipText, idx < 2 && styles.chipTextActive]}>
                   {interest}
@@ -213,7 +222,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
         {/* Say Hello CTA */}
         <TouchableOpacity style={styles.helloBtn} onPress={handleMessage} activeOpacity={0.85}>
           <LinearGradient
-            colors={['#E4415C', '#8A2387']}
+            colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.helloGradient}
           >
@@ -269,7 +278,7 @@ const styles = StyleSheet.create({
   smallBtn: { width: 64, height: 64, borderRadius: 32 },
   heartBtn: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: '#E4415C',
+    backgroundColor: '#E94057',
   },
   heartBtnLiked: { backgroundColor: '#C1284A' },
   btnPressed: { opacity: 0.6 },
@@ -286,10 +295,13 @@ const styles = StyleSheet.create({
     fontSize: 14, color: '#888', marginTop: 2,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
-  sendButton: {
+  headerButtons: {
+    flexDirection: 'row', gap: 10,
+  },
+  headerActionBtn: {
     width: 46, height: 46, borderRadius: 14,
     borderWidth: 1, borderColor: '#F0F0F0',
-    justifyContent: 'center', alignItems: 'center', marginLeft: 8,
+    justifyContent: 'center', alignItems: 'center',
   },
   section: { marginBottom: 22 },
   sectionLabel: {
@@ -308,8 +320,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF0F3', paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 10, gap: 3,
   },
-  distanceText: { fontSize: 12, color: '#E4415C', fontWeight: '700' },
-  readMore: { fontSize: 13, color: '#E4415C', fontWeight: '700', marginTop: 4 },
+  distanceText: { fontSize: 12, color: '#E94057', fontWeight: '700' },
+  readMore: { fontSize: 13, color: '#E94057', fontWeight: '700', marginTop: 4 },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row', alignItems: 'center',
@@ -317,13 +329,13 @@ const styles = StyleSheet.create({
     borderRadius: 20, borderWidth: 1, borderColor: '#E8E8E8',
     backgroundColor: '#FFFFFF',
   },
-  chipActive: { borderColor: '#E4415C' },
+  chipActive: { borderColor: '#E94057' },
   chipText: {
     fontSize: 13, color: '#333',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
-  chipTextActive: { color: '#E4415C', fontWeight: '700' },
-  seeAll: { fontSize: 13, color: '#E4415C', fontWeight: '700', marginBottom: 8 },
+  chipTextActive: { color: '#E94057', fontWeight: '700' },
+  seeAll: { fontSize: 13, color: '#E94057', fontWeight: '700', marginBottom: 8 },
   galleryGrid: { flexDirection: 'row', gap: 8 },
   galleryItem: { flex: 1, height: 112, borderRadius: 14, overflow: 'hidden' },
   galleryImage: { width: '100%', height: '100%' },

@@ -65,7 +65,7 @@ export const PaymentScreen = ({ navigation }) => {
         {/* Order summary card */}
         <View style={s.summaryCard}>
           <LinearGradient
-            colors={['#E4415C', '#8A2387']}
+            colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.summaryGradient}
           >
@@ -106,7 +106,7 @@ export const PaymentScreen = ({ navigation }) => {
 
                 {/* Icon */}
                 <View style={[s.methodIcon, isActive && s.methodIconActive]}>
-                  <Icon name={m.icon} size={18} color={isActive ? '#E4415C' : '#999'} />
+                  <Icon name={m.icon} size={18} color={isActive ? '#E94057' : '#999'} />
                 </View>
 
                 {/* Text */}
@@ -135,7 +135,7 @@ export const PaymentScreen = ({ navigation }) => {
         {/* Add new */}
         <TouchableOpacity style={s.addRow} onPress={() => Alert.alert('Add Payment', 'Coming soon!')}>
           <View style={s.addIcon}>
-            <Icon name="add" size={18} color="#E4415C" />
+            <Icon name="add" size={18} color="#E94057" />
           </View>
           <Text style={s.addText}>Add new payment method</Text>
         </TouchableOpacity>
@@ -145,7 +145,7 @@ export const PaymentScreen = ({ navigation }) => {
       <View style={s.footer}>
         <TouchableOpacity style={s.payWrap} onPress={handlePay} activeOpacity={0.88}>
           <LinearGradient
-            colors={['#E4415C', '#8A2387']}
+            colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.payBtn}
           >
@@ -224,9 +224,9 @@ const s = StyleSheet.create({
     borderWidth: 2, borderColor: '#D0D0D0',
     justifyContent: 'center', alignItems: 'center',
   },
-  radioActive: { borderColor: '#E4415C' },
+  radioActive: { borderColor: '#E94057' },
   radioInner: {
-    width: 10, height: 10, borderRadius: 5, backgroundColor: '#E4415C',
+    width: 10, height: 10, borderRadius: 5, backgroundColor: '#E94057',
   },
   methodIcon: {
     width: 36, height: 36, borderRadius: 10,
@@ -252,10 +252,10 @@ const s = StyleSheet.create({
   addIcon: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: '#FFF0F3', borderWidth: 1.5,
-    borderColor: '#E4415C', borderStyle: 'dashed',
+    borderColor: '#E94057', borderStyle: 'dashed',
     justifyContent: 'center', alignItems: 'center',
   },
-  addText: { fontSize: 14, color: '#E4415C', fontWeight: '600', fontFamily: FONT_MED },
+  addText: { fontSize: 14, color: '#E94057', fontWeight: '600', fontFamily: FONT_MED },
 
   // Footer
   footer: {

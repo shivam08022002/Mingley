@@ -35,7 +35,7 @@ export const InterestsSelectionScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="chevron-back" size={24} color="#E4415C" />
+          <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <Text style={styles.skipText}>Skip</Text>
@@ -63,7 +63,7 @@ export const InterestsSelectionScreen = ({ navigation }) => {
         <GradientButton
           title="Continue"
           onPress={() => navigation.navigate('ContactsPermission')}
-          colors={['#E4415C', '#E4415C']}
+          colors={['#E94057', '#E94057']}
           style={styles.continueButton}
         />
       </View>
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   skipText: {
     ...TYPOGRAPHY.body,
     fontWeight: 'bold',
-    color: '#E4415C',
+    color: '#E94057',
   },
   content: {
     flex: 1,

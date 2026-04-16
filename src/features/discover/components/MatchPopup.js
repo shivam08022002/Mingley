@@ -16,7 +16,7 @@ export const MatchPopup = ({ visible, user, currentUserImage, onSayHello, onKeep
              <View style={[styles.cardWrapper, styles.leftCard]}>
                <FastImage source={{ uri: currentUserImage }} style={styles.cardImage} />
                <View style={styles.heartBadge}>
-                   <Text style={{color: '#E4415C', fontSize: 24}}>♥</Text>
+                   <Text style={{color: '#E94057', fontSize: 24}}>♥</Text>
                </View>
              </View>
              
@@ -24,7 +24,7 @@ export const MatchPopup = ({ visible, user, currentUserImage, onSayHello, onKeep
              <View style={[styles.cardWrapper, styles.rightCard]}>
                <FastImage source={{ uri: user.image }} style={styles.cardImage} />
                <View style={[styles.heartBadge, styles.heartBadgeRight]}>
-                   <Text style={{color: '#E4415C', fontSize: 24}}>♥</Text>
+                   <Text style={{color: '#E94057', fontSize: 24}}>♥</Text>
                </View>
              </View>
           </View>
@@ -38,7 +38,7 @@ export const MatchPopup = ({ visible, user, currentUserImage, onSayHello, onKeep
             <GradientButton 
               title="Say hello" 
               onPress={onSayHello} 
-              colors={['#E4415C', '#E4415C']} 
+              colors={['#E94057', '#E94057']} 
             />
             <TouchableOpacity style={styles.keepSwipingButton} onPress={onKeepSwiping}>
               <Text style={styles.keepSwipingText}>Keep swiping</Text>
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   title: {
     ...TYPOGRAPHY.h1,
     fontSize: 32,
-    color: '#E4415C',
+    color: '#E94057',
     marginBottom: SPACING.s,
     textAlign: 'center',
   },
@@ -144,6 +144,6 @@ const styles = StyleSheet.create({
   keepSwipingText: {
     ...TYPOGRAPHY.body,
     fontWeight: 'bold',
-    color: '#E4415C',
+    color: '#E94057',
   },
 });

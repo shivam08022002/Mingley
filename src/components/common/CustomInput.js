@@ -19,7 +19,7 @@ export const CustomInput = ({
     if (isGradientBorder && !hasError) {
       return (
         <LinearGradient
-          colors={['#FF6B8B', '#8A2387']}
+          colors={['#E94057', '#8A2387']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientBorder}

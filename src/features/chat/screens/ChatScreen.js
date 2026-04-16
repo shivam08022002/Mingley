@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { ChatBubble } from '../components/ChatBubble';
+import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Mock conversation logic
 const INITIAL_MESSAGES = [
   { id: '1', text: 'Hi Jake, how are you? I saw on the app that we\'ve crossed paths several times this week 😁', time: '2:55 PM', isMine: false },
@@ -15,7 +17,7 @@ const INITIAL_MESSAGES = [
 ];
 
 export const ChatScreen = ({ navigation, route }) => {
-  const { user } = route?.params || { user: { name: 'Grace', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80' } };
+  const { user } = route?.params || { user: { name: 'Grace', image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=150&q=80' } };
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
 
@@ -52,21 +54,33 @@ export const ChatScreen = ({ navigation, route }) => {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.menuButton}>
-         <Icon name="ellipsis-vertical" size={20} color="#000" />
-      </TouchableOpacity>
+      <View style={styles.headerActions}>
+        <TouchableOpacity 
+          style={styles.callButton} 
+          onPress={() => navigation.navigate('Calling', { user })}
+        >
+           <Icon name="call" size={22} color="#E94057" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuButton}>
+           <Icon name="ellipsis-vertical" size={20} color="#000" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {renderHeader()}
-      
+    <BottomSheetContainer 
+      height={SCREEN_HEIGHT * 0.90} 
+      onClose={() => navigation.goBack()}
+      containerStyle={styles.containerStyle}
+    >
       <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        style={styles.containerInside}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 20}
       >
+        {renderHeader()}
+        
         <FlatList
           data={messages}
           keyExtractor={item => item.id}
@@ -98,91 +112,105 @@ export const ChatScreen = ({ navigation, route }) => {
           
           {inputText.trim() ? (
             <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-              <Icon name="send" size={20} color="#E4415C" />
+              <Icon name="send" size={20} color="#E94057" />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.microphoneButton}>
-              <Icon name="mic" size={24} color="#E4415C" />
+              <Icon name="mic" size={24} color="#E94057" />
             </TouchableOpacity>
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </BottomSheetContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  containerStyle: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  containerInside: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.m,
-    paddingBottom: SPACING.m,
+    paddingHorizontal: 6, // Matches children padding
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
   },
   headerUser: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginLeft: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: SPACING.m,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
   },
   userInfo: {
     justifyContent: 'center',
   },
   userName: {
-    ...TYPOGRAPHY.h2,
-    fontSize: 24,
+    ...TYPOGRAPHY.h3,
+    fontSize: 18,
     color: '#000000',
-    marginBottom: 2,
+    marginBottom: 0,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E4415C',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E94057',
     marginRight: 4,
   },
   statusText: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
     color: '#A0A0A0',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  callButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
   menuButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  keyboardView: {
-    flex: 1,
-  },
   listContent: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.l,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   dateSeparator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: 20,
   },
   line: {
     flex: 1,
@@ -190,15 +218,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
   },
   dateText: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
     color: '#A0A0A0',
-    marginHorizontal: SPACING.m,
+    marginHorizontal: 16,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.m,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
@@ -207,34 +235,34 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 50,
-    borderRadius: 25,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 1,
     borderColor: '#F0F0F0',
-    paddingHorizontal: SPACING.m,
-    marginRight: SPACING.m,
+    paddingHorizontal: 12,
+    marginRight: 12,
   },
   input: {
     flex: 1,
-    ...TYPOGRAPHY.body,
+    fontSize: 14,
     color: '#000000',
-    paddingRight: SPACING.s,
+    paddingRight: 8,
   },
   stickerIcon: {
-    padding: 4,
+    padding: 2,
   },
   microphoneButton: {
-    width: 50,
-    height: 50,
+    width: 46,
+    height: 46,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButton: {
-    width: 50,
-    height: 50,
+    width: 46,
+    height: 46,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF0F3',
-    borderRadius: 25,
+    borderRadius: 23,
   },
 });
