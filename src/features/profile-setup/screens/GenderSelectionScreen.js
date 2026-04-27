@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { SelectCard } from '../components/SelectCard';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 
 export const GenderSelectionScreen = ({ navigation }) => {
@@ -49,12 +49,13 @@ export const GenderSelectionScreen = ({ navigation }) => {
           />
         </View>
 
-        <GradientButton
+        <Button
           title="Continue"
           onPress={() => navigation.navigate('InterestsSelection')}
-          colors={['#E94057', '#E94057']}
           style={styles.continueButton}
+          textStyle={styles.buttonText}
           disabled={!gender}
+          variant="solid"
         />
       </View>
     </SafeAreaView>
@@ -83,9 +84,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
     flex: 1,
@@ -93,17 +95,26 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    fontSize: 40,
+    fontSize: 34,
+    fontWeight: 'bold',
     color: '#000000',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 60,
   },
   optionsContainer: {
-    gap: SPACING.s,
+    gap: 12,
   },
   continueButton: {
     marginTop: 'auto',
-    marginBottom: 40,
+    marginBottom: 60,
     borderRadius: 16,
+    height: 52,
+    backgroundColor: '#E94057',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

@@ -52,13 +52,15 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   label: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 12,
     color: '#A0A0A0',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
   input: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#000000',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
     height: '100%',
-    paddingVertical: 0, // Ensure text shifts correctly vertically
+    paddingVertical: 0,
   },
 });

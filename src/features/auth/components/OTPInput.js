@@ -101,11 +101,12 @@ const styles = StyleSheet.create({
     borderColor: '#E94057',
   },
   input: {
-    ...TYPOGRAPHY.h1,
     fontSize: 32,
+    fontWeight: 'bold',
     textAlign: 'center',
     width: '100%',
     height: '100%',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   textFilled: {
     color: '#FFFFFF',

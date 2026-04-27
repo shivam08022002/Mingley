@@ -16,6 +16,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useFilterStore } from '../store/useFilterStore';
+import { useChatStore } from '../../../store/useChatStore';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const { height, width } = Dimensions.get('window');
@@ -92,12 +93,30 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
     distance, setDistance,
     ageRange, setAgeRange,
     onlineStatus, setOnlineStatus,
+    nearbyOnly, setNearbyOnly,
     verifiedOnly, setVerifiedOnly,
     interests, toggleInterest,
     relationshipType, setRelationshipType,
     reset,
     ALL_INTERESTS,
   } = useFilterStore();
+
+  const isPremium        = useChatStore((s) => s.isPremium);
+  const upgradeToPremium = useChatStore((s) => s.upgradeToPremium);
+
+  const handleUpgradePrompt = () => {
+    Alert.alert(
+      '🔒 Premium Feature',
+      'Upgrade to Premium to filter by verified users.',
+      [
+        {
+          text: 'Upgrade Now (Demo)',
+          onPress: () => upgradeToPremium(),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   // Swipe-down on handle → close
   const swipeDownPan = PanResponder.create({
@@ -226,10 +245,29 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
               </View>
             </Section>
 
+            {/* ─ Nearby Users ─ */}
+            <Section label="Nearby Users">
+              <View style={s.toggleRow}>
+                <View style={s.toggleLabelRow}>
+                  <Icon name="navigate-outline" size={16} color="#E94057" style={{ marginRight: 6 }} />
+                  <Text style={s.toggleLabel}>Show only nearby users</Text>
+                </View>
+                <Switch
+                  value={nearbyOnly}
+                  onValueChange={setNearbyOnly}
+                  trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
+                  thumbColor={nearbyOnly ? '#E94057' : '#fff'}
+                />
+              </View>
+            </Section>
+
             {/* ─ Online Now ─ */}
             <Section label="Online Now">
               <View style={s.toggleRow}>
-                <Text style={s.toggleLabel}>Show only online users</Text>
+                <View style={s.toggleLabelRow}>
+                  <Icon name="radio-button-on" size={14} color="#22C55E" style={{ marginRight: 6 }} />
+                  <Text style={s.toggleLabel}>Show only online users</Text>
+                </View>
                 <Switch
                   value={onlineStatus}
                   onValueChange={setOnlineStatus}
@@ -239,17 +277,36 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
               </View>
             </Section>
 
-            {/* ─ Verified Only ─ */}
+            {/* ─ Verified Only (Premium-locked) ─ */}
             <Section label="Verified Profiles">
-              <View style={s.toggleRow}>
-                <Text style={s.toggleLabel}>Show verified profiles only</Text>
-                <Switch
-                  value={verifiedOnly}
-                  onValueChange={setVerifiedOnly}
-                  trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                  thumbColor={verifiedOnly ? '#E94057' : '#fff'}
-                />
-              </View>
+              {isPremium ? (
+                <View style={s.toggleRow}>
+                  <View style={s.toggleLabelRow}>
+                    <Icon name="shield-checkmark" size={15} color="#3B82F6" style={{ marginRight: 6 }} />
+                    <Text style={s.toggleLabel}>Show verified profiles only</Text>
+                  </View>
+                  <Switch
+                    value={verifiedOnly}
+                    onValueChange={setVerifiedOnly}
+                    trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
+                    thumbColor={verifiedOnly ? '#E94057' : '#fff'}
+                  />
+                </View>
+              ) : (
+                <TouchableOpacity style={s.lockedRow} onPress={handleUpgradePrompt} activeOpacity={0.8}>
+                  <View style={s.lockedLeft}>
+                    <Icon name="lock-closed" size={17} color="#F59E0B" style={{ marginRight: 8 }} />
+                    <View>
+                      <Text style={s.lockedLabel}>Show verified profiles only</Text>
+                      <Text style={s.lockedHint}>Upgrade to unlock</Text>
+                    </View>
+                  </View>
+                  <View style={s.upgradePill}>
+                    <Icon name="star" size={11} color="#fff" style={{ marginRight: 3 }} />
+                    <Text style={s.upgradePillText}>Premium</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
             </Section>
 
             {/* Apply */}
@@ -336,14 +393,63 @@ const s = StyleSheet.create({
   chipText: { fontSize: 13, color: '#666', fontFamily: FONT },
   chipTextActive: { color: PINK, fontWeight: '700' },
 
-  // Toggle
+  // Toggle rows
   toggleRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FAFAFA', borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12,
   },
+  toggleLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   toggleLabel: { fontSize: 14, color: '#333', fontFamily: FONT },
+
+  // Premium-locked row
+  lockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF8F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+  },
+  lockedLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  lockedLabel: {
+    fontSize: 14,
+    color: '#333',
+    fontFamily: FONT,
+    fontWeight: '500',
+  },
+  lockedHint: {
+    fontSize: 11,
+    color: '#F59E0B',
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  upgradePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  upgradePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    fontFamily: FONT_MED,
+  },
 
   // Apply
   applyBtn: { marginTop: 28, borderRadius: 16, overflow: 'hidden' },

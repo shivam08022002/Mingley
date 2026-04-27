@@ -1,12 +1,14 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Platform, Alert,
+  TouchableOpacity, Platform, Alert, Modal, FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useChatStore } from '../../../store/useChatStore';
+import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const SECTIONS = [
   {
@@ -15,6 +17,12 @@ const SECTIONS = [
       { key: 'editProfile',    icon: 'person-outline',       label: 'Edit Profile' },
       { key: 'notifications',  icon: 'notifications-outline', label: 'Notifications' },
       { key: 'privacy',        icon: 'shield-outline',        label: 'Privacy' },
+    ],
+  },
+  {
+    title: 'Finance',
+    items: [
+      { key: 'transactions', icon: 'card-outline', label: 'Transaction History' },
     ],
   },
   {
@@ -52,10 +60,14 @@ const SettingsRow = React.memo(({ icon, label, onPress, isLast }) => (
 export const SettingsScreen = React.memo(() => {
   const navigation = useNavigation();
   const logout = useAuthStore((s) => s.logout);
+  const transactions = useChatStore((s) => s.transactions);
+  const [txModalVisible, setTxModalVisible] = useState(false);
 
   const handleItem = useCallback((key) => {
     if (key === 'editProfile') {
       navigation.navigate('ProfileDetails');
+    } else if (key === 'transactions') {
+      setTxModalVisible(true);
     } else {
       Alert.alert(key, 'Coming soon!');
     }
@@ -108,6 +120,41 @@ export const SettingsScreen = React.memo(() => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Transaction History Modal */}
+      <Modal visible={txModalVisible} transparent animationType="fade" onRequestClose={() => setTxModalVisible(false)}>
+        <BottomSheetContainer onClose={() => setTxModalVisible(false)} height={600}>
+          <View style={{ flex: 1, width: '100%' }}>
+            <View style={s.txHeader}>
+              <Text style={s.txHeaderTitle}>Transaction History</Text>
+            </View>
+            <FlatList
+              data={transactions}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={s.txList}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={<Text style={s.txEmpty}>No transactions yet.</Text>}
+              renderItem={({ item }) => {
+                const isCredit = item.type === 'credit';
+                return (
+                  <View style={s.txItem}>
+                    <View style={row.iconWrap}>
+                      <Icon name={isCredit ? 'arrow-down-outline' : 'arrow-up-outline'} size={18} color={isCredit ? '#059669' : '#E94057'} />
+                    </View>
+                    <View style={s.txLeft}>
+                      <Text style={s.txTitle}>{item.title}</Text>
+                      <Text style={s.txDate}>{new Date(item.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</Text>
+                    </View>
+                    <Text style={[s.txAmount, isCredit ? s.txCredit : s.txDebit]}>
+                      {isCredit ? '+' : '-'}{item.amount} coins
+                    </Text>
+                  </View>
+                );
+              }}
+            />
+          </View>
+        </BottomSheetContainer>
+      </Modal>
     </SafeAreaView>
   );
 });
@@ -152,6 +199,25 @@ const s = StyleSheet.create({
   signOutText: {
     fontSize: 15, fontWeight: '700', color: PINK, fontFamily: FONT_MED,
   },
+  
+  // Transaction Modal Styles
+  txHeader: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
+  },
+  txHeaderTitle: { fontSize: 18, fontWeight: '700', color: '#111', fontFamily: FONT_MED },
+  txList: { paddingVertical: 16 },
+  txEmpty: { textAlign: 'center', color: '#999', marginTop: 40, fontFamily: FONT },
+  txItem: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F5F5F5',
+  },
+  txLeft: { flex: 1, marginLeft: 12 },
+  txTitle: { fontSize: 15, fontWeight: '600', color: '#222', fontFamily: FONT_MED, marginBottom: 2 },
+  txDate: { fontSize: 12, color: '#888', fontFamily: FONT },
+  txAmount: { fontSize: 15, fontWeight: '700', fontFamily: FONT_MED },
+  txCredit: { color: '#059669' },
+  txDebit: { color: '#DC2626' },
 });
 
 const row = StyleSheet.create({

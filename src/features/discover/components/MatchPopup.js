@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 
 export const MatchPopup = ({ visible, user, currentUserImage, onSayHello, onKeepSwiping }) => {
   if (!user) return null;
@@ -29,16 +29,18 @@ export const MatchPopup = ({ visible, user, currentUserImage, onSayHello, onKeep
              </View>
           </View>
 
-          <Text style={styles.title}>It's a match, Jake!</Text>
+          <Text style={styles.title}>It's a match, {user.name}!</Text>
           <Text style={styles.subtitle}>
             Start a conversation now with each other
           </Text>
 
           <View style={styles.buttonsContainer}>
-            <GradientButton 
+            <Button 
               title="Say hello" 
               onPress={onSayHello} 
-              colors={['#E94057', '#E94057']} 
+              variant="solid"
+              style={styles.sayHelloButton}
+              textStyle={styles.buttonText}
             />
             <TouchableOpacity style={styles.keepSwipingButton} onPress={onKeepSwiping}>
               <Text style={styles.keepSwipingText}>Keep swiping</Text>
@@ -53,7 +55,7 @@ export const MatchPopup = ({ visible, user, currentUserImage, onSayHello, onKeep
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(255,255,255,0.98)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: SPACING.xl,
@@ -69,26 +71,26 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   cardWrapper: {
-    width: 140,
-    height: 200,
-    borderRadius: 16,
+    width: 160,
+    height: 240,
+    borderRadius: 24,
     position: 'absolute',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 10,
     backgroundColor: '#fff',
   },
   leftCard: {
-    left: 0,
+    left: -20,
     bottom: 0,
     transform: [{ rotate: '-10deg' }],
     zIndex: 2,
   },
   rightCard: {
-    right: 0,
+    right: -20,
     top: 0,
     transform: [{ rotate: '10deg' }],
     zIndex: 1,
@@ -99,8 +101,8 @@ const styles = StyleSheet.create({
   },
   heartBadge: {
     position: 'absolute',
-    bottom: -15,
-    left: 40,
+    bottom: 20,
+    right: -10,
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -108,31 +110,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
   },
   heartBadgeRight: {
-    top: -15,
-    left: 45,
+    top: 20,
+    left: -10,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    fontSize: 32,
+    fontSize: 34,
+    fontWeight: '700',
     color: '#E94057',
-    marginBottom: SPACING.s,
+    marginBottom: 10,
     textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#5b5b5b',
     textAlign: 'center',
-    marginBottom: 40,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    marginBottom: 50,
+    lineHeight: 24,
   },
   buttonsContainer: {
     width: '100%',
-    gap: SPACING.m,
+  },
+  sayHelloButton: {
+    borderRadius: 16,
+    height: 56,
+    marginBottom: 16,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   keepSwipingButton: {
     height: 56,
@@ -142,8 +156,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   keepSwipingText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

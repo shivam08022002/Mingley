@@ -7,7 +7,7 @@ import * as yup from 'yup';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 
 const schema = yup.object().shape({
   email: yup.string().email('Invalid email format').required('Email is required'),
@@ -19,7 +19,6 @@ export const EmailInputScreen = ({ navigation }) => {
   });
 
   const onSubmit = (data) => {
-    // Navigate to OTP or Password screen based on flow
     navigation.navigate('OTPVerification', { type: 'email', value: data.email });
   };
 
@@ -30,7 +29,7 @@ export const EmailInputScreen = ({ navigation }) => {
         style={styles.keyboardView}
       >
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color={COLORS.text} />
+          <Icon name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
 
         <View style={styles.content}>
@@ -49,10 +48,12 @@ export const EmailInputScreen = ({ navigation }) => {
               error={errors.email?.message}
             />
 
-            <GradientButton 
+            <Button 
               title="Continue" 
               onPress={handleSubmit(onSubmit)}
               style={styles.continueButton}
+              textStyle={styles.buttonText}
+              variant="solid"
             />
           </View>
         </View>
@@ -64,34 +65,49 @@ export const EmailInputScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
   },
   backButton: {
-    padding: SPACING.m,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.m,
   },
   content: {
     flex: 1,
-    padding: SPACING.xl,
-    justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: 40,
   },
   header: {
-    marginBottom: SPACING.xxl,
+    marginBottom: 40,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    marginBottom: SPACING.s,
+    fontSize: 34,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
-    ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    fontSize: 16,
+    color: '#5b5b5b',
+    lineHeight: 24,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
   formContainer: {
-    gap: SPACING.l,
+    width: '100%',
   },
   continueButton: {
-    marginTop: SPACING.xl,
+    borderRadius: 16,
+    height: 52,
+    backgroundColor: '#E94057',
+    marginTop: 30,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

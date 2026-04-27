@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ const CURRENT_USER_IMAGE =
 export const MatchScreen = ({ navigation, route }) => {
   const { matchedUser } = route.params || {};
   const insets = useSafeAreaInsets();
+  const [isMatched, setIsMatched] = useState(true);
 
   // Entrance animation
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -70,9 +71,13 @@ export const MatchScreen = ({ navigation, route }) => {
       {/* Cards section */}
       <View style={styles.cardsSection}>
         {/* Heart badge between cards at top-center */}
-        <View style={styles.topHeartBadge}>
-          <Text style={styles.topHeartIcon}>♥</Text>
-        </View>
+        <TouchableOpacity 
+          style={styles.topHeartBadge}
+          onPress={() => setIsMatched(!isMatched)}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.topHeartIcon, { color: isMatched ? '#E94057' : '#A0A0A0' }]}>♥</Text>
+        </TouchableOpacity>
 
         {/* Right card – matched user (boy/other person) - slightly behind */}
         <Animated.View
@@ -128,9 +133,11 @@ export const MatchScreen = ({ navigation, route }) => {
           },
         ]}
       >
-        <Text style={styles.matchTitle}>It's a match, {matchedName}!</Text>
+        <Text style={styles.matchTitle}>
+          {isMatched ? `It's a match, ${matchedName}!` : `Unmatched ${matchedName}`}
+        </Text>
         <Text style={styles.matchSubtitle}>
-          Start a conversation now with each other
+          {isMatched ? 'Start a conversation now with each other' : 'You can no longer message this person'}
         </Text>
       </Animated.View>
 
@@ -141,20 +148,22 @@ export const MatchScreen = ({ navigation, route }) => {
           { paddingBottom: insets.bottom + 20, opacity: textAnim },
         ]}
       >
-        <TouchableOpacity
-          style={styles.sayHelloButton}
-          activeOpacity={0.85}
-          onPress={() => {
-            navigation.replace('Chat');
-          }}
-        >
-          <LinearGradient
-            colors={['#E94057', '#E94057']}
-            style={styles.helloGradient}
+        {isMatched && (
+          <TouchableOpacity
+            style={styles.sayHelloButton}
+            activeOpacity={0.85}
+            onPress={() => {
+              navigation.replace('Chat');
+            }}
           >
-            <Text style={styles.sayHelloText}>Say hello</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={['#E94057', '#E94057']}
+              style={styles.helloGradient}
+            >
+              <Text style={styles.sayHelloText}>Say hello</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={styles.keepSwipingButton}
@@ -261,10 +270,10 @@ const styles = StyleSheet.create({
   },
   matchTitle: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#E94057',
     textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    fontFamily: 'Inter',
     letterSpacing: -0.5,
     marginBottom: 10,
   },

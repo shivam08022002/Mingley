@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Chip } from '../components/Chip';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 
 // Mock datastore for interests
@@ -60,11 +60,12 @@ export const InterestsSelectionScreen = ({ navigation }) => {
           ))}
         </ScrollView>
 
-        <GradientButton
+        <Button
           title="Continue"
           onPress={() => navigation.navigate('ContactsPermission')}
-          colors={['#E94057', '#E94057']}
           style={styles.continueButton}
+          textStyle={styles.buttonText}
+          variant="solid"
         />
       </View>
     </SafeAreaView>
@@ -93,9 +94,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   skipText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
     flex: 1,
@@ -103,15 +105,17 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    fontSize: 40,
+    fontSize: 34,
+    fontWeight: 'bold',
     color: '#000000',
-    marginBottom: SPACING.s,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    marginBottom: 10,
   },
   subtitle: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#5b5b5b',
     lineHeight: 24,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
     marginBottom: 40,
   },
   chipsContainer: {
@@ -121,7 +125,15 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     marginTop: 'auto',
-    marginBottom: 40,
+    marginBottom: 20,
     borderRadius: 16,
+    height: 52,
+    backgroundColor: '#E94057',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

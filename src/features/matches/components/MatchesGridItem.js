@@ -1,31 +1,46 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 
-export const MatchesGridItem = ({ match, onPress }) => {
+export const MatchesGridItem = ({ match, onPress, onAccept, onReject }) => {
   return (
-    <TouchableOpacity 
-      style={styles.container} 
+    <TouchableOpacity
+      style={styles.container}
       onPress={onPress}
-      activeOpacity={0.9}
+      activeOpacity={0.92}
     >
       <FastImage source={{ uri: match.image }} style={styles.image} />
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={['transparent', 'rgba(0,0,0,0.82)']}
         style={styles.gradient}
       />
-      <Text style={styles.name}>{match.name}, {match.age}</Text>
-      
+
+      {/* Name & age */}
+      <Text style={styles.name} numberOfLines={1}>{match.name}, {match.age}</Text>
+
+      {/* Action row */}
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Icon name="close" size={20} color="#FFFFFF" />
+        {/* Reject */}
+        <TouchableOpacity
+          style={[styles.actionButton, styles.rejectButton]}
+          onPress={(e) => { e.stopPropagation?.(); onReject && onReject(match); }}
+          activeOpacity={0.8}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Icon name="close" size={18} color="#FF4D67" />
         </TouchableOpacity>
-        <View style={styles.divider} />
-        <TouchableOpacity style={styles.actionButton}>
-          <Icon name="heart" size={20} color="#FFFFFF" />
+
+        {/* Accept */}
+        <TouchableOpacity
+          style={[styles.actionButton, styles.acceptButton]}
+          onPress={(e) => { e.stopPropagation?.(); onAccept && onAccept(match); }}
+          activeOpacity={0.8}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Icon name="heart" size={18} color="#E94057" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -35,52 +50,50 @@ export const MatchesGridItem = ({ match, onPress }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    height: 250,
+    height: 240,
     margin: SPACING.s,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#000',
+    backgroundColor: '#EEE',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
+  image: { width: '100%', height: '100%' },
   gradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%',
   },
   name: {
     ...TYPOGRAPHY.h3,
     color: '#FFFFFF',
     position: 'absolute',
-    bottom: 60,
+    bottom: 54,
     left: SPACING.m,
     right: SPACING.m,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    fontSize: 14,
   },
   actionsRow: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 50,
+    bottom: 0, left: 0, right: 0,
+    height: 48,
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   actionButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    width: 36, height: 36, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center',
   },
-  divider: {
-    width: 1,
-    height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  rejectButton: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  acceptButton: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
   },
 });

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 
 export const NotificationsPermissionScreen = ({ navigation }) => {
   return (
@@ -28,11 +28,12 @@ export const NotificationsPermissionScreen = ({ navigation }) => {
           Get push-notification when you get the match or receive a message.
         </Text>
 
-        <GradientButton
+        <Button
           title="I want to be notified"
-          onPress={() => navigation.navigate('Home')} // Navigation to main flow after setup
-          colors={['#E94057', '#E94057']}
+          onPress={() => navigation.navigate('Home')}
           style={styles.actionButton}
+          textStyle={styles.buttonText}
+          variant="solid"
         />
       </View>
     </SafeAreaView>
@@ -50,9 +51,10 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.m,
   },
   skipText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
     flex: 1,
@@ -72,22 +74,32 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   title: {
-    ...TYPOGRAPHY.h2,
     fontSize: 28,
+    fontWeight: 'bold',
     color: '#000000',
-    marginBottom: SPACING.m,
+    marginBottom: 10,
     textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#5b5b5b',
     lineHeight: 24,
     textAlign: 'center',
     maxWidth: '80%',
     marginBottom: 60,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
   actionButton: {
     borderRadius: 16,
     width: '100%',
+    height: 52,
+    backgroundColor: '#E94057',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

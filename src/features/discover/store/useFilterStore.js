@@ -9,6 +9,7 @@ const DEFAULT_FILTERS = {
   ageRange: [20, 35],         // [min, max]
   onlineStatus: false,
   verifiedOnly: false,
+  nearbyOnly: false,          // new: show only nearby users
   interests: [],              // []string — empty = no filter
   relationshipType: 'both',   // 'casual' | 'serious' | 'both'
 };
@@ -22,6 +23,7 @@ export const useFilterStore = create((set, get) => ({
   setAgeRange: (v) => set({ ageRange: v }),
   setOnlineStatus: (v) => set({ onlineStatus: v }),
   setVerifiedOnly: (v) => set({ verifiedOnly: v }),
+  setNearbyOnly: (v) => set({ nearbyOnly: v }),
   toggleInterest: (interest) =>
     set((state) => ({
       interests: state.interests.includes(interest)

@@ -49,13 +49,13 @@ export const SignupOptionsScreen = ({ navigation }) => {
 
         <View style={styles.socialContainer}>
           <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-facebook" size={24} color="#E94057" />
+             <Icon name="logo-google" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-google" size={24} color="#E94057" />
+             <Icon name="logo-apple" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-apple" size={24} color="#E94057" />
+             <Icon name="logo-instagram" size={24} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backButton: {
-    paddingLeft: SPACING.xl,
+    paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.m,
   },
   content: {
     flex: 1,
     paddingHorizontal: SPACING.xl,
-    paddingTop: 40,
+    paddingTop: 30,
     alignItems: 'center',
   },
   logoContainer: {
@@ -97,13 +97,14 @@ const styles = StyleSheet.create({
     height: 100,
   },
   title: {
-    ...TYPOGRAPHY.h2,
+    fontSize: 24,
     color: '#000000',
+    fontWeight: 'bold',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 40,
   },
   buttonsContainer: {
     width: '100%',
-    gap: SPACING.m,
     marginBottom: 40,
   },
   primaryButton: {
@@ -112,11 +113,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
   },
   primaryButtonText: {
-    ...TYPOGRAPHY.body,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   secondaryButton: {
     backgroundColor: '#FFFFFF',
@@ -128,9 +131,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
-    ...TYPOGRAPHY.body,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   orContainer: {
     flexDirection: 'row',
@@ -144,31 +148,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
   },
   orText: {
-    ...TYPOGRAPHY.bodySecondary,
-    marginHorizontal: SPACING.m,
+    marginHorizontal: 15,
     color: '#000000',
+    fontSize: 14,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
   socialContainer: {
     flexDirection: 'row',
-    gap: SPACING.m,
+    gap: 20,
   },
   socialButton: {
     width: 65,
-    height: 65,
-    borderRadius: 20,
+    height: 55,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: '#E8E8E8',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: SPACING.xl,
+    gap: 30,
     paddingBottom: 40,
   },
   footerLink: {
-    ...TYPOGRAPHY.bodySecondary,
+    fontSize: 14,
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
 });

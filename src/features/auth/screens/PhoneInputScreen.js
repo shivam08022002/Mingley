@@ -10,10 +10,8 @@ import * as yup from 'yup';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 
-const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
-const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 
 const phoneSchema = yup.object().shape({
   phone: yup
@@ -60,15 +58,16 @@ export const PhoneInputScreen = ({ navigation }) => {
               placeholder="Enter phone number"
               keyboardType="phone-pad"
               showCountryCode={true}
-              isGradientBorder={true}
+              isGradientBorder={false}
             />
           </View>
 
-          <GradientButton
+          <Button
             title="Continue"
             onPress={handleSubmit(onSubmit)}
-            colors={['#E94057', '#E94057']}
             style={styles.button}
+            textStyle={styles.buttonText}
+            variant="solid"
           />
         </View>
       </KeyboardAvoidingView>
@@ -104,21 +103,29 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: '600',
-    color: '#1A1A2E',
-    fontFamily: FONT,
-    marginBottom: SPACING.s,
+    color: '#000000',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#7D7D7D',
-    lineHeight: 22,
-    fontFamily: FONT,
-    marginBottom: 36,
+    fontSize: 16,
+    color: '#5b5b5b',
+    lineHeight: 24,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    marginBottom: 40,
   },
   formContainer: {
-    marginBottom: 36,
+    marginBottom: 30,
   },
   button: {
     borderRadius: 16,
+    height: 52,
+    backgroundColor: '#E94057',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

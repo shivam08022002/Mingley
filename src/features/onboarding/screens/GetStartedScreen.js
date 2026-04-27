@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#E94057',
     letterSpacing: 0.5,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    fontFamily: Platform.OS === 'ios' ? 'AvenirNext-regular' : 'sans-serif-regular',
     textAlign: 'center',
     marginTop: 2,
   },
@@ -123,6 +123,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: '#8A2387',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    fontFamily: Platform.OS === 'ios' ? 'Inter-Bold' : 'sans-serif-medium',
   },
 });

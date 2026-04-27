@@ -4,6 +4,7 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 const { width, height } = Dimensions.get('window');
 const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_MEDIUM = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
 export const styles = StyleSheet.create({
   // ─── Splash Screen ─────────────────────────────
@@ -77,21 +78,24 @@ export const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#F5F5F5',
-    marginVertical: 8,
+    marginVertical: 4,
+    marginHorizontal: 40,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 10,
+    width: '80%',
   },
   slideImage: {
     width: '100%',
     height: '100%',
   },
+
   textContainer: {
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
-    marginTop: 2,
+    marginTop: 15,
     minHeight: 68,
   },
   title: {
@@ -99,7 +103,7 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#E94057',
     fontFamily: FONT,
-    marginBottom: 6,
+    marginBottom: 15,
     textAlign: 'center',
   },
   description: {
@@ -142,7 +146,8 @@ export const styles = StyleSheet.create({
   signInText: {
     fontSize: 14,
     color: '#E94057',
-    fontWeight: '500',
+    fontWeight: '600',
+    lineHeight: 20,
     marginLeft: 4,
     fontFamily: FONT,
   },
@@ -150,6 +155,13 @@ export const styles = StyleSheet.create({
     backgroundColor: '#E94057',
     borderRadius: 16,
     height: 52,
-    marginVertical: 4,
+    marginVertical: 15,
+  },
+  createAccountBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 20,
+    lineHeight: 24,
+    fontFamily: FONT,
   },
 });

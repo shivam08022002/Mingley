@@ -99,26 +99,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timerText: {
-    ...TYPOGRAPHY.h1,
     fontSize: 40,
+    fontWeight: 'bold',
     color: '#000000',
-    marginBottom: SPACING.m,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    marginBottom: 20,
   },
   subtitle: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     color: '#333333',
     textAlign: 'center',
     maxWidth: 200,
     lineHeight: 24,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
   resendContainer: {
     marginTop: 'auto',
     marginBottom: 60,
   },
   resendText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   resendDisabled: {
     opacity: 0.5,

@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CardInput } from '../components/CardInput';
 import { BottomSheetDatePicker } from '../components/BottomSheetDatePicker';
-import { GradientButton } from '../../../components/common/GradientButton';
+import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 
 export const ProfileDetailsScreen = ({ navigation }) => {
@@ -15,7 +15,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
 
   const formatDisplayDate = (dateString) => {
     if (!dateString) return;
-    return dateString; // Just returning string for mock
+    return dateString;
   };
 
   return (
@@ -51,13 +51,13 @@ export const ProfileDetailsScreen = ({ navigation }) => {
                 label="First name"
                 value={profileDetails.firstName}
                 onChangeText={(text) => setProfileDetails({ firstName: text })}
-                placeholder="David"
+                placeholder="Peter"
               />
               <CardInput
                 label="Last name"
                 value={profileDetails.lastName}
                 onChangeText={(text) => setProfileDetails({ lastName: text })}
-                placeholder="Peterson"
+                placeholder="Parker"
               />
 
               <TouchableOpacity 
@@ -72,11 +72,12 @@ export const ProfileDetailsScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            <GradientButton
+            <Button
               title="Confirm"
               onPress={() => navigation.navigate('GenderSelection')}
-              colors={['#E94057', '#E94057']}
               style={styles.confirmButton}
+              textStyle={styles.buttonText}
+              variant="solid"
             />
           </KeyboardAvoidingView>
         </View>
@@ -103,28 +104,30 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.m,
   },
   skipText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
     flex: 1,
     paddingHorizontal: SPACING.xl,
-    paddingTop: 40,
+    paddingTop: 30,
   },
   title: {
-    ...TYPOGRAPHY.h1,
-    fontSize: 40,
+    fontSize: 34,
+    fontWeight: 'bold',
     color: '#000000',
-    marginBottom: 60,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    marginBottom: 40,
   },
   avatarContainer: {
     alignItems: 'center',
     marginBottom: 40,
   },
   avatarWrapper: {
-    width: 120,
-    height: 120,
+    width: 130,
+    height: 140,
     borderRadius: 40,
     backgroundColor: '#F0F0F0',
     position: 'relative',
@@ -148,13 +151,13 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   formContainer: {
-    gap: SPACING.l,
-    marginBottom: 60,
+    gap: SPACING.m,
+    marginBottom: 40,
   },
   birthdayButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF0F3', // Light pink background
+    backgroundColor: '#FFF0F3',
     height: 60,
     borderRadius: 16,
     paddingHorizontal: SPACING.m,
@@ -164,16 +167,25 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   birthdayText: {
-    ...TYPOGRAPHY.body,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#E94057', // Selected text might be red or black, UI shows pinkish
+    color: '#E94057',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   birthdayPlaceholder: {
     color: '#E94057',
   },
   confirmButton: {
     marginTop: 'auto',
-    marginBottom: 40,
+    marginBottom: 60,
     borderRadius: 16,
+    height: 52,
+    backgroundColor: '#E94057',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

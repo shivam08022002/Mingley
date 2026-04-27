@@ -40,6 +40,7 @@ export const CarouselScreen = ({ navigation }) => {
       <FastImage
         source={item.image}
         style={styles.slideImage}
+        width={width * 0.95}
         resizeMode={FastImage.resizeMode.cover}
       />
     </View>
@@ -49,19 +50,20 @@ export const CarouselScreen = ({ navigation }) => {
     <SafeAreaView style={styles.carouselContainer}>
       <Carousel
         width={width }
-        height={height * 0.66}
+        height={height * 0.55}
         data={CAROUSEL_DATA}
         onSnapToItem={setActiveIndex}
         onProgressChange={(_, absoluteProgress) => {
           scrollX.value = absoluteProgress * width;
         }}
         renderItem={renderItem}
-        loop={false}
+        loop={true}
         mode="parallax"
         modeConfig={{
           parallaxScrollingScale: 0.80,
-          parallaxScrollingOffset: 95,
+          parallaxScrollingOffset: 140,
         }}
+        style={{ alignSelf: 'center' }}
       />
 
       {/* Text below carousel – changes with active slide */}
@@ -79,7 +81,7 @@ export const CarouselScreen = ({ navigation }) => {
           title="Create an account"
           onPress={() => navigation.navigate('Welcome')}
           style={styles.createAccountBtn}
-          textStyle={{ color: '#FFFFFF', fontWeight: '500' }}
+          textStyle={styles.createAccountBtnText}
           variant="solid"
         />
 

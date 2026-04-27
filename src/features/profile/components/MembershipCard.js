@@ -17,7 +17,7 @@ const PLAN_CONFIG = {
   premium: {
     label: 'Premium',
     tag: 'PREMIUM',
-    perks: ['Unlimited likes', 'Advanced filters', 'No ads'],
+    perks: ['Unlimited likes', 'Nearby + Verified filters', 'No ads'],
     icon: 'star-outline',
     colors: ['#f093fb', '#f5576c'],
     tagBg: 'rgba(255,255,255,0.22)',
@@ -32,12 +32,19 @@ const PLAN_CONFIG = {
   },
 };
 
+// Premium feature highlights shown on the free plan card
+const PREMIUM_BENEFITS = [
+  { icon: 'navigate',         label: 'Nearby Users',    locked: true  },
+  { icon: 'shield-checkmark', label: 'Verified Filter',  locked: true  },
+  { icon: 'heart',            label: 'Unlimited Likes',  locked: true  },
+];
+
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
-export const MembershipCard = React.memo(({ plan = 'free', coins = 0, onUpgrade, onTopUp }) => {
-  const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
-  const isPaid = plan !== 'free';
+export const MembershipCard = React.memo(({ plan = 'free', coins = 0, isPremium = false, onUpgrade, onTopUp }) => {
+  const cfg    = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
+  const isPaid = plan !== 'free' || isPremium;
 
   return (
     <View style={s.wrap}>
@@ -50,16 +57,17 @@ export const MembershipCard = React.memo(({ plan = 'free', coins = 0, onUpgrade,
         {/* Top row: icon + title + upgrade */}
         <View style={s.top}>
           <View style={s.iconCircle}>
-            <Icon name={cfg.icon} size={22} color="#fff" />
+            <Icon name={isPremium ? 'star' : cfg.icon} size={22} color="#fff" />
           </View>
           <View style={s.titleCol}>
-            <Text style={s.planName}>{cfg.label}</Text>
+            <Text style={s.planName}>{isPremium ? 'Premium Member' : cfg.label}</Text>
             <View style={[s.badge, { backgroundColor: cfg.tagBg }]}>
-              <Text style={s.badgeText}>{cfg.tag}</Text>
+              <Text style={s.badgeText}>{isPremium ? 'PREMIUM' : cfg.tag}</Text>
             </View>
           </View>
           {isPaid ? (
             <View style={s.activePill}>
+              <Icon name="checkmark-circle" size={13} color="#fff" style={{ marginRight: 4 }} />
               <Text style={s.activeText}>Active</Text>
             </View>
           ) : (
@@ -79,19 +87,18 @@ export const MembershipCard = React.memo(({ plan = 'free', coins = 0, onUpgrade,
           ))}
         </View>
 
-        {/* Coins row */}
-        <View style={s.line} />
-        <View style={s.coinsRow}>
-          <View style={s.coinsLeft}>
-            <Icon name="wallet-outline" size={16} color="rgba(255,255,255,0.85)" />
-            <Text style={s.coinsLabel}>Coin Balance :</Text>
-            <Text style={s.coinsVal}>{coins}</Text>
+        {/* Premium benefits strip (shown when free) */}
+        {!isPremium && (
+          <View style={s.benefitsStrip}>
+            {PREMIUM_BENEFITS.map((b) => (
+              <View key={b.icon} style={s.benefitItem}>
+                <Icon name="lock-closed" size={11} color="#F59E0B" style={{ marginRight: 3 }} />
+                <Text style={s.benefitText}>{b.label}</Text>
+              </View>
+            ))}
           </View>
-          <TouchableOpacity style={s.topUpBtn} onPress={onTopUp} activeOpacity={0.8}>
-            <Icon name="add" size={14} color="#fff" />
-            <Text style={s.topUpText}>Top Up</Text>
-          </TouchableOpacity>
-        </View>
+        )}
+
       </LinearGradient>
     </View>
   );
@@ -100,7 +107,7 @@ export const MembershipCard = React.memo(({ plan = 'free', coins = 0, onUpgrade,
 const s = StyleSheet.create({
   wrap: {
     marginHorizontal: 0,
-    marginBottom: 8,
+    marginBottom: 10,
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -194,46 +201,25 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.9)',
     fontFamily: FONT,
   },
-  // ── Coins ──
-  line: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    marginBottom: 12,
+  // ── Premium benefits strip ──────────────────────────────────
+  benefitsStrip: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+    marginBottom: 6,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
   },
-  coinsRow: {
+  benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  coinsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  coinsLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.75)',
-    fontFamily: FONT_MED,
-  },
-  coinsVal: {
-    fontSize: 15,
-    color: '#fff',
-    fontFamily: FONT_MED,
-  },
-  topUpBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    marginRight: 24,
-  },
-  topUpText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#fff',
-    fontFamily: FONT_MED,
+  benefitText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    fontFamily: FONT,
+    fontWeight: '600',
   },
 });
