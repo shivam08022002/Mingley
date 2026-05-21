@@ -1,25 +1,36 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Modal, Alert, KeyboardAvoidingView, Platform
+  StyleSheet, Modal, Alert, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useChatStore } from '../store/useChatStore';
 import { BottomSheetContainer } from './common/BottomSheetContainer';
 
+import { walletService } from '../services/apiServices';
+
 export const DepositModal = ({ visible, onClose }) => {
   const [utrIdText, setUtrIdText] = useState('');
+  const [amount, setAmount] = useState('');
 
-  const handleDepositSubmit = () => {
+  const handleDepositSubmit = async () => {
     if (!utrIdText.trim()) { Alert.alert('Error', 'Please enter your UTR ID.'); return; }
-    Alert.alert('Screenshot Upload', 'Please upload a screenshot of your payment.', [
-      { text: 'Mock Upload', onPress: () => {
-          Alert.alert('Success', 'Deposit request submitted. Your coins will reflect soon.');
-          onClose();
-          setUtrIdText('');
-      }},
-      { text: 'Cancel', style: 'cancel' }
-    ]);
+    if (!amount.trim()) { Alert.alert('Error', 'Please enter amount.'); return; }
+    
+    try {
+      await walletService.deposit({
+        utrId: utrIdText,
+        screenshotUrl: 'mock-screenshot-url', // Should be uploaded to storage
+        requestedCoins: parseInt(amount, 10),
+      });
+      Alert.alert('Success', 'Deposit request submitted. Your coins will reflect soon.');
+      onClose();
+      setUtrIdText('');
+      setAmount('');
+    } catch (error) {
+      console.error('Deposit error:', error);
+      Alert.alert('Error', error.message || 'Deposit failed');
+    }
   };
 
   return (
@@ -34,8 +45,9 @@ export const DepositModal = ({ visible, onClose }) => {
             <Text style={styles.bankDetailsText}>Acc: 1234567890</Text>
             <Text style={styles.bankDetailsText}>IFSC: MING999 • UPI: mingley@axl</Text>
           </View>
+          <TextInput style={styles.amountInput} placeholder="Enter Amount" placeholderTextColor="#A0A0A0" keyboardType="numeric" value={amount} onChangeText={setAmount} />
           <TextInput style={styles.amountInput} placeholder="Enter Payment UTR ID" placeholderTextColor="#A0A0A0" value={utrIdText} onChangeText={setUtrIdText} />
-          <TouchableOpacity style={[styles.modalActionBtn, !utrIdText && styles.modalActionBtnDisabled]} onPress={handleDepositSubmit} disabled={!utrIdText}>
+          <TouchableOpacity style={[styles.modalActionBtn, (!utrIdText || !amount) && styles.modalActionBtnDisabled]} onPress={handleDepositSubmit} disabled={!utrIdText || !amount}>
             <Text style={styles.modalActionBtnText}>Upload Screenshot & Submit</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -50,15 +62,23 @@ export const CashoutModal = ({ visible, onClose }) => {
   const wallet = useChatStore((s) => s.wallet);
   const withdrawCoins = useChatStore((s) => s.withdrawCoins);
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amount = parseInt(cashoutInputText, 10);
     if (!bankOrUpiText.trim()) { Alert.alert('Error', 'Please enter your Bank Details or UPI ID.'); return; }
-    const result = withdrawCoins(amount);
-    if (!result.ok) { Alert.alert('Withdrawal failed', result.reason); return; }
-    onClose();
-    setCashoutInputText('');
-    setBankOrUpiText('');
-    Alert.alert('Success', `${amount} coins withdrawn to ${bankOrUpiText}.`);
+    
+    try {
+      await walletService.withdraw({
+        coins: amount,
+        bankOrUpi: bankOrUpiText,
+      });
+      onClose();
+      setCashoutInputText('');
+      setBankOrUpiText('');
+      Alert.alert('Success', `${amount} coins withdrawn to ${bankOrUpiText}.`);
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      Alert.alert('Error', error.message || 'Withdrawal failed');
+    }
   };
 
   return (
@@ -80,6 +100,91 @@ export const CashoutModal = ({ visible, onClose }) => {
           >
             <Icon name="cash-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
             <Text style={styles.modalActionBtnText}>Withdraw</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </BottomSheetContainer>
+    </Modal>
+  );
+};
+
+export const VerifyModal = ({ visible, onClose }) => {
+  const [idProofUrl, setIdProofUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+
+  const handleVerify = async () => {
+    if (!idProofUrl.trim()) {
+      Alert.alert('Error', 'Please enter ID proof URL');
+      return;
+    }
+    if (!agreed) {
+      Alert.alert('Error', 'Please agree to the Terms of Service to proceed.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await walletService.verifyAccount({ idProofUrl });
+      Alert.alert('Success', 'Verification request submitted! A 50-coin bonus will be credited to your account once your verification is approved.');
+      onClose();
+      setIdProofUrl('');
+      setAgreed(false);
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Verification failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <BottomSheetContainer onClose={onClose} height={520}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : ''} style={{ width: '100%', flex: 1, paddingHorizontal: 20 }}>
+          <View style={{ alignItems: 'center', marginVertical: 25 }}>
+            <View style={styles.verifyIconCircle}>
+              <Icon name="shield-checkmark" size={42} color="#E94057" />
+            </View>
+            <Text style={styles.modalTitle}>Identity Verification</Text>
+            <Text style={styles.verifyBonusText}>
+              Get a 50-coin bonus credited to your account after successful verification!
+            </Text>
+          </View>
+          
+          <View style={{ marginBottom: 20 }}>
+            <Text style={styles.inputLabel}>ID Proof Document URL</Text>
+            <TextInput 
+              style={styles.amountInput} 
+              placeholder="https://example.com/your-id.jpg" 
+              placeholderTextColor="#A0A0A0" 
+              value={idProofUrl} 
+              onChangeText={setIdProofUrl}
+              autoCapitalize="none"
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={styles.checkboxContainer} 
+            onPress={() => setAgreed(!agreed)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
+              {agreed && <Icon name="checkmark" size={14} color="#FFF" />}
+            </View>
+            <Text style={styles.verifyDisclaimer}>
+              I agree to the Terms of Service regarding identity verification.
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.modalActionBtn, (!idProofUrl || !agreed || isLoading) && styles.modalActionBtnDisabled]} 
+            onPress={handleVerify} 
+            disabled={!idProofUrl || !agreed || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.modalActionBtnText}>Submit for Verification</Text>
+            )}
           </TouchableOpacity>
         </KeyboardAvoidingView>
       </BottomSheetContainer>
@@ -116,4 +221,37 @@ const styles = StyleSheet.create({
     borderRadius: 12, marginVertical: 16, width: '100%'
   },
   bankDetailsText: { fontSize: 12, color: '#555', marginTop: 6, fontWeight: '600' },
+  verifyIconCircle: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF0F3',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
+  },
+  verifyBonusText: {
+    fontSize: 14, color: '#4B5563', textAlign: 'center', lineHeight: 20,
+    marginTop: 4, paddingHorizontal: 20,
+  },
+  inputLabel: {
+    fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 12,
+  },
+  checkbox: {
+    width: 22, height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxActive: {
+    backgroundColor: '#E94057',
+    borderColor: '#E94057',
+  },
+  verifyDisclaimer: {
+    fontSize: 12, color: '#6B7280', flex: 1,
+    lineHeight: 18,
+  },
 });

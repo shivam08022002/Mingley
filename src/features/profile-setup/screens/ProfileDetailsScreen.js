@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -8,14 +8,55 @@ import { CardInput } from '../components/CardInput';
 import { BottomSheetDatePicker } from '../components/BottomSheetDatePicker';
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 export const ProfileDetailsScreen = ({ navigation }) => {
   const { profileDetails, setProfileDetails } = useProfileSetupStore();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+
+  const handleSkip = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Home');
+    } else {
+      // During registration, maybe we don't allow skip or we navigate to next step
+      navigation.navigate('GenderSelection');
+    }
+  };
 
   const formatDisplayDate = (dateString) => {
     if (!dateString) return;
     return dateString;
+  };
+
+  const handleSelectAvatar = () => {
+    const avatarChoices = [
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
+    ];
+
+    Alert.alert('Choose Profile Photo', 'Select a sample photo to use for your profile.', [
+      {
+        text: 'Style 1',
+        onPress: () => {
+          setProfileDetails({ avatar: avatarChoices[0] });
+        },
+      },
+      {
+        text: 'Style 2',
+        onPress: () => {
+          setProfileDetails({ avatar: avatarChoices[1] });
+        },
+      },
+      {
+        text: 'Style 3',
+        onPress: () => {
+          setProfileDetails({ avatar: avatarChoices[2] });
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -23,7 +64,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+            <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipText}>Skip</Text>
             </TouchableOpacity>
           </View>
@@ -35,15 +76,17 @@ export const ProfileDetailsScreen = ({ navigation }) => {
             <Text style={styles.title}>Profile details</Text>
             
             <View style={styles.avatarContainer}>
-              <View style={styles.avatarWrapper}>
-                 <FastImage
-                    source={require('../../../assets/hey.png')}
-                    style={styles.avatar}
-                 />
-                 <TouchableOpacity style={styles.cameraIcon}>
-                   <Icon name="camera" size={16} color="#FFFFFF" />
-                 </TouchableOpacity>
-              </View>
+              <TouchableOpacity onPress={handleSelectAvatar} activeOpacity={0.85}>
+                <View style={styles.avatarWrapper}>
+                   <FastImage
+                      source={profileDetails.avatar ? { uri: profileDetails.avatar } : require('../../../assets/hey.png')}
+                      style={styles.avatar}
+                   />
+                   <View style={styles.cameraIcon}>
+                     <Icon name="camera" size={16} color="#FFFFFF" />
+                   </View>
+                </View>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.formContainer}>

@@ -134,11 +134,11 @@ const CardContent = ({ user, onPress }) => (
     onPress={onPress}
     disabled={!onPress}
   >
-    <FastImage source={{ uri: user.image }} style={styles.image} />
+    <FastImage source={{ uri: user.avatar || user.image }} style={styles.image} />
 
     <View style={styles.distanceBadge}>
       <Icon name="location-outline" size={13} color="#FFFFFF" />
-      <Text style={styles.distanceText}>{user.distance} km</Text>
+      <Text style={styles.distanceText}>{user.distance || 0} km</Text>
     </View>
 
     {/* Swipe-up hint arrow */}
@@ -151,8 +151,8 @@ const CardContent = ({ user, onPress }) => (
       colors={['transparent', 'rgba(0,0,0,0.85)']}
       style={styles.gradient}
     >
-      <Text style={styles.name}>{user.name}, {user.age}</Text>
-      <Text style={styles.occupation}>{user.occupation}</Text>
+      <Text style={styles.name}>{user.fullName || user.name}, {user.age}</Text>
+      <Text style={styles.occupation}>{user.occupation || user.city}</Text>
     </LinearGradient>
   </TouchableOpacity>
 );

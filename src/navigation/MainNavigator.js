@@ -1,10 +1,5 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ProfileDetailsScreen } from '../features/profile-setup/screens/ProfileDetailsScreen';
-import { GenderSelectionScreen } from '../features/profile-setup/screens/GenderSelectionScreen';
-import { InterestsSelectionScreen } from '../features/profile-setup/screens/InterestsSelectionScreen';
-import { ContactsPermissionScreen } from '../features/profile-setup/screens/ContactsPermissionScreen';
-import { NotificationsPermissionScreen } from '../features/profile-setup/screens/NotificationsPermissionScreen';
 import { ChatScreen } from '../features/chat/screens/ChatScreen';
 import { CallingScreen } from '../features/chat/screens/CallingScreen';
 import { BottomTabNavigator } from './BottomTabNavigator';
@@ -14,19 +9,29 @@ import { SubscriptionPlansScreen } from '../features/subscription/screens/Subscr
 import { PaymentScreen } from '../features/subscription/screens/PaymentScreen';
 import { MatchScreen } from '../features/discover/screens/MatchScreen';
 import { UserProfileScreen } from '../features/discover/screens/UserProfileScreen';
+import { FilterScreen } from '../features/discover/screens/FilterScreen';
 import { SettingsScreen } from '../features/profile/screens/SettingsScreen';
+import { EditProfileScreen } from '../features/profile/screens/EditProfileScreen';
+import { ProfileDetailsScreen } from '../features/profile-setup/screens/ProfileDetailsScreen';
+import { GenderSelectionScreen } from '../features/profile-setup/screens/GenderSelectionScreen';
+import { InterestsSelectionScreen } from '../features/profile-setup/screens/InterestsSelectionScreen';
+import { ContactsPermissionScreen } from '../features/profile-setup/screens/ContactsPermissionScreen';
+import { NotificationsPermissionScreen } from '../features/profile-setup/screens/NotificationsPermissionScreen';
 
 const Stack = createNativeStackNavigator();
 
 export const MainNavigator = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      initialRouteName="Home"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen name="Home" component={BottomTabNavigator} />
       <Stack.Screen name="ProfileDetails" component={ProfileDetailsScreen} />
       <Stack.Screen name="GenderSelection" component={GenderSelectionScreen} />
       <Stack.Screen name="InterestsSelection" component={InterestsSelectionScreen} />
       <Stack.Screen name="ContactsPermission" component={ContactsPermissionScreen} />
       <Stack.Screen name="NotificationsPermission" component={NotificationsPermissionScreen} />
-      <Stack.Screen name="Home" component={BottomTabNavigator} />
       <Stack.Screen 
         name="Chat" 
         component={ChatScreen} 
@@ -47,11 +52,13 @@ export const MainNavigator = () => {
         options={{ animation: 'fade' }}
       />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+      <Stack.Screen name="Filter" component={FilterScreen} options={{ presentation: 'transparentModal', animation: 'fade' }} />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
         options={{ animation: 'slide_from_right' }}
       />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ animation: 'slide_from_bottom' }} />
     </Stack.Navigator>
   );
 };

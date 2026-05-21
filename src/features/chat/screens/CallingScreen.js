@@ -10,12 +10,14 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useChatStore } from '../../../store/useChatStore';
+import { callService } from '../../../services/apiServices';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -92,6 +94,11 @@ export const CallingScreen = ({ navigation, route }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
+  /* ── Call API State ── */
+  const [callId, setCallId] = useState(null);
+  const [agoraToken, setAgoraToken] = useState(null);
+  const [apiError, setApiError] = useState(null);
+
   /* ── Zustand wallet ── */
   const coins       = useChatStore((s) => s.wallet.coins);
   const deductCoins = useChatStore((s) => s.deductCoins);
@@ -104,6 +111,48 @@ export const CallingScreen = ({ navigation, route }) => {
 
   const isBilling    = time >= BILLING_DELAY;
   const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0 && isBilling;
+
+  /* ── Mount effect: start Call API sessions ── */
+  useEffect(() => {
+    let activeCallId = null;
+    const targetId = user.id || user._id || 'd0000001-0000-0000-0000-000000000009';
+
+    const startCallOnServer = async () => {
+      try {
+        const response = await callService.initiateCall(targetId, route?.params?.callType || 'audio');
+        const newCallId = response.callId || response.id || response.data?.id || response.data?.callId;
+        if (newCallId) {
+          activeCallId = newCallId;
+          setCallId(newCallId);
+
+          // Get Agora token
+          const tokenRes = await callService.getAgoraToken(newCallId);
+          const token = tokenRes.token || tokenRes.agoraToken || tokenRes.data?.token || tokenRes.data?.agoraToken;
+          if (token) {
+            setAgoraToken(token);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to initiate call:', error);
+        const errMsg = error.message || (typeof error === 'string' ? error : 'Call initiation failed');
+        setApiError(errMsg);
+        Alert.alert('Call Failed', errMsg, [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
+    };
+
+    startCallOnServer();
+
+    // Cleanup: end call on server when leaving screen
+    return () => {
+      if (activeCallId) {
+        callService.endCall(activeCallId).catch((err) => {
+          console.error('Failed to end call on server:', err);
+        });
+      }
+    };
+  }, [user, route?.params?.callType]);
 
   /* ── Mount effect: start animations + timer ── */
   useEffect(() => {
@@ -227,6 +276,17 @@ export const CallingScreen = ({ navigation, route }) => {
             <Animated.View style={[styles.pulseDot, { opacity: pulseAnim }]} />
             <Text style={styles.timeLabel}>{formatTime()}</Text>
           </View>
+
+          {agoraToken && (
+            <View style={{ marginTop: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+              <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '700' }}>Connected to Agora</Text>
+            </View>
+          )}
+          {apiError && (
+            <View style={{ marginTop: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.2)' }}>
+              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '600' }}>{apiError}</Text>
+            </View>
+          )}
         </View>
 
         {/* ── PiP: self-view in bottom-right, above control panel ──

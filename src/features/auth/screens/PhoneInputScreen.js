@@ -18,16 +18,24 @@ const phoneSchema = yup.object().shape({
     .string()
     .required('Phone number is required')
     .min(10, 'Must be a valid phone number'),
+  password: yup.string().required('Password is required').min(6, 'Must be at least 6 characters'),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref('password'), null], 'Passwords must match')
+    .required('Confirm password is required'),
 });
 
+import { useProfileSetupStore } from '../../profile-setup/store/useProfileSetupStore';
+
 export const PhoneInputScreen = ({ navigation }) => {
-  const { control, handleSubmit } = useForm({
+  const { setAuthDetails } = useProfileSetupStore();
+  const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(phoneSchema),
-    defaultValues: { phone: '' },
+    defaultValues: { phone: '', password: '', confirmPassword: '' },
   });
 
   const onSubmit = (data) => {
-    navigation.navigate('OTPVerification', { phone: data.phone });
+    setAuthDetails({ ...data, email: '' }); // Clear email if continuing with phone
+    navigation.navigate('OTPVerification', { type: 'phone', value: data.phone });
   };
 
   return (
@@ -59,6 +67,23 @@ export const PhoneInputScreen = ({ navigation }) => {
               keyboardType="phone-pad"
               showCountryCode={true}
               isGradientBorder={false}
+              error={errors.phone?.message}
+            />
+
+            <CustomInput
+              control={control}
+              name="password"
+              placeholder="Password"
+              secureTextEntry={true}
+              error={errors.password?.message}
+            />
+
+            <CustomInput
+              control={control}
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              secureTextEntry={true}
+              error={errors.confirmPassword?.message}
             />
           </View>
 

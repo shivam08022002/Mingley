@@ -2,30 +2,44 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { decodeEmoji } from '../../../utils/stringUtils';
 
 const { width } = Dimensions.get('window');
 const COVER_H = 240;
 const AVATAR_SIZE = 100;
 
-const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_REG = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 
-export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) => {
-  const { name, age, occupation, location, avatar, coverImage, completionPct, verified, online } = profile;
+export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSettings, onPressNotifications, hasNotifications }) => {
+  const {
+    fullName,
+    avatar,
+    verified,
+    isVerified,
+    online,
+    isOnline,
+    bio,
+    location,
+    completionPct = 0,
+  } = profile;
+  const showVerified = typeof isVerified === 'boolean' ? isVerified : verified;
+  const showOnline = typeof isOnline === 'boolean' ? isOnline : online;
+  const profileCompletion = Math.max(0, Math.min(100, Number(completionPct) || 100));
 
   return (
     <View style={s.container}>
       {/* ── Cover with overlay & white text ON it ── */}
       <View style={s.coverWrap}>
         <Image
-          source={{ uri: coverImage }}
+          source={{ uri: avatar || 'https://via.placeholder.com/800x400' }}
           style={s.cover}
           resizeMode="cover"
         />
         {/* Dark gradient so text is readable */}
         <LinearGradient
           colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.65)']}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
 
         {/* Gear icon – top-right */}
@@ -33,22 +47,15 @@ export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) 
           <Icon name="settings-outline" size={22} color="#fff" />
         </TouchableOpacity>
 
-        {/* Verified badge – top center */}
-        {verified && (
-          <View style={s.verifiedTopBadge}>
-            <Icon name="checkmark-circle" size={20} color="#4CAF50" />
-          </View>
-        )}
-
-        {/* Name + occupation overlaid ON the cover (white) */}
+        {/* Name overlaid ON the cover (white) */}
         <View style={s.coverTextBlock}>
           <View style={s.nameRow}>
-            <Text style={s.coverName}>{name}, {age}</Text>
-          </View>
-          <Text style={s.coverOccupation}>{occupation}</Text>
-          <View style={s.locRow}>
-            <Icon name="location-outline" size={13} color="rgba(255,255,255,0.85)" />
-            <Text style={s.coverLoc}>{location}</Text>
+            <Text style={s.coverName}>{decodeEmoji(fullName) || 'New User'}</Text>
+            {showVerified && (
+              <View style={s.verifiedInlineBadge}>
+                <Icon name="checkmark-circle" size={20} color="#4CAF50" />
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -56,28 +63,52 @@ export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) 
       {/* ── Avatar row (overlapping cover bottom) ── */}
       <View style={s.avatarRow}>
         <View style={s.avatarWrap}>
-          <Image source={{ uri: avatar }} style={s.avatar} />
-          {online && <View style={s.onlineDot} />}
+          <Image source={{ uri: avatar || 'https://via.placeholder.com/300x300' }} style={s.avatar} />
+          {showOnline && <View style={s.onlineDot} />}
           <TouchableOpacity style={s.cameraBtn} onPress={onEditAvatar}>
             <Icon name="camera" size={14} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* ── Completion bar ── */}
-      <View style={s.progressWrap}>
-        <View style={s.progressTop}>
-          <Text style={s.progressLabel}>Profile completion</Text>
-          <Text style={s.progressPct}>{completionPct}%</Text>
+      {/* ── Bio & Location ── */}
+      <View style={s.bioLocContainer}>
+        <View style={s.headerRow}>
+          <View style={{ flex: 1 }}>
+            <View style={s.locRow}>
+              <Icon name="location" size={16} color="#E94057" />
+              <Text style={s.locText}>{location?.city || 'Location not set'}{location?.country ? `, ${location.country}` : ''}</Text>
+            </View>
+            <Text style={s.bioText} numberOfLines={3}>{decodeEmoji(bio) || 'Add a bio to your profile'}</Text>
+          </View>
+
+          {/* Notification Icon inside bio card */}
+          <TouchableOpacity 
+            style={s.notifIcon} 
+            onPress={onPressNotifications}
+            activeOpacity={0.7}
+          >
+            <Icon name="notifications" size={26} color="#E94057" />
+            {hasNotifications && <View style={s.notifDot} />}
+          </TouchableOpacity>
         </View>
-        <View style={s.progressBg}>
+      </View>
+
+      {/* ── Profile Completion Bar ── */}
+      <View style={s.completionContainer}>
+        <View style={s.completionHeader}>
+          <Text style={s.completionLabel}>Profile completion</Text>
+          <Text style={s.completionValue}>{profileCompletion}%</Text>
+        </View>
+        <View style={s.progressBarBackground}>
           <LinearGradient
             colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={[s.progressFill, { width: `${completionPct}%` }]}
+            style={[s.progressBarFill, { width: `${profileCompletion}%` }]}
           />
         </View>
       </View>
+
     </View>
   );
 });
@@ -85,7 +116,7 @@ export const ProfileHeader = React.memo(({ profile, onEditAvatar, onSettings }) 
 const s = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    marginBottom: 4,
+    marginBottom: 6,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 10,
@@ -115,45 +146,42 @@ const s = StyleSheet.create({
   },
   coverTextBlock: {
     paddingHorizontal: 20,
-    paddingBottom: 60, // leave room for avatar overlap
+    paddingBottom: 68, // leave room for avatar overlap
   },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  verifiedInlineBadge: {
+    marginLeft: 2,
+  },
   coverName: {
-    fontSize: 26, fontWeight: '800', color: '#fff',
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#fff',
     fontFamily: FONT_BOLD,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
-  coverOccupation: {
-    fontSize: 14, color: 'rgba(255,255,255,0.9)', marginTop: 4,
-    fontFamily: FONT,
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
-  coverLoc: {
-    fontSize: 13, color: 'rgba(255,255,255,0.8)',
-    fontFamily: FONT,
-    textShadowColor: 'rgba(0,0,0,0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-
   // Avatar overlapping cover
   avatarRow: {
     marginTop: -(AVATAR_SIZE / 2),
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 8,
+    zIndex: 3,
   },
   avatarWrap: {
     width: AVATAR_SIZE, height: AVATAR_SIZE,
     shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, elevation: 8,
   },
   avatar: {
-    width: AVATAR_SIZE, height: AVATAR_SIZE,
-    borderRadius: 28, borderWidth: 3, borderColor: '#fff',
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    borderWidth: 4,
+    borderColor: '#fff',
   },
   onlineDot: {
     position: 'absolute', bottom: 6, right: 6,
@@ -167,14 +195,95 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: '#fff',
   },
-
-  // Progress
-  progressWrap: { paddingHorizontal: 20, paddingBottom: 18 },
-  progressTop: {
-    flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6,
+  bioLocContainer: {
+    backgroundColor: '#FFF',
+    marginHorizontal: 20,
+    marginTop: 0,
+    borderRadius: 28,
+    paddingTop: 20,
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
   },
-  progressLabel: { fontSize: 12, color: '#999', fontFamily: FONT },
-  progressPct: { fontSize: 12, fontWeight: '700', color: '#E94057', fontFamily: FONT_BOLD },
-  progressBg: { height: 7, backgroundColor: '#F2F2F2', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  locRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 4,
+  },
+  locText: {
+    fontSize: 15,
+    color: '#666',
+    marginLeft: 4,
+    fontWeight: '600',
+    fontFamily: FONT_BOLD,
+  },
+  bioText: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 23,
+    fontWeight: '400',
+    paddingRight: 4,
+    fontFamily: FONT_REG,
+  },
+  notifIcon: {
+    width: 56,
+    height: 56,
+    backgroundColor: '#FFF0F3',
+    borderRadius: 18,
+    marginLeft: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E94057',
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+  },
+  completionContainer: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  completionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  completionLabel: {
+    fontSize: 14,
+    color: '#AAA',
+    fontWeight: '600',
+  },
+  completionValue: {
+    fontSize: 14,
+    color: '#E94057',
+    fontWeight: '800',
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 99,
+  },
 });

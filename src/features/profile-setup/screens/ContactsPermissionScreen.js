@@ -5,11 +5,23 @@ import FastImage from 'react-native-fast-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 
+import { useAuthStore } from '../../../store/useAuthStore';
+
 export const ContactsPermissionScreen = ({ navigation }) => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  const handleSkip = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Home');
+    } else {
+      navigation.navigate('NotificationsPermission');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={handleSkip}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>

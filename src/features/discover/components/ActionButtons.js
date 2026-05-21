@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
 
-export const ActionButtons = ({ onDislike, onLike, onSuperlike }) => {
+export const ActionButtons = ({ onDislike, onLike, onSuperchat }) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={[styles.button, styles.smallButton]} onPress={onDislike}>
@@ -14,8 +14,8 @@ export const ActionButtons = ({ onDislike, onLike, onSuperlike }) => {
         <Icon name="heart" size={40} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, styles.smallButton]} onPress={onSuperlike}>
-        <Icon name="star" size={32} color="#8A2BE2" />
+      <TouchableOpacity style={[styles.button, styles.smallButton]} onPress={onSuperchat}>
+        <Icon name="chatbubble-ellipses" size={32} color="#8A2BE2" />
       </TouchableOpacity>
     </View>
   );

@@ -1,51 +1,108 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet,
-  TouchableOpacity, ScrollView, Dimensions, Platform,
+  TouchableOpacity, ScrollView, Platform, ActivityIndicator, Dimensions, Alert
 } from 'react-native';
+
+const { width } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSubscriptionStore } from '../store/useSubscriptionStore';
 
-const { width } = Dimensions.get('window');
-
-const PLANS = [
-  {
-    id: '1', name: 'Starter', duration: '3 Months',
-    price: '₹999', perMonth: '₹333/mo',
-    icon: 'star-outline', iconColor: '#E94057',
-    badge: null,
-  },
-  {
-    id: '2', name: 'Pro Buddy', duration: '6 Months',
-    price: '₹1,799', perMonth: '₹300/mo',
-    icon: 'trophy-outline', iconColor: '#8A2387',
-    badge: 'MOST POPULAR',
-  },
-  {
-    id: '3', name: 'Advanced', duration: '12 Months',
-    price: '₹2,999', perMonth: '₹250/mo',
-    icon: 'rocket-outline', iconColor: '#4169E1',
-    badge: 'BEST VALUE',
-  },
-];
-
-const FEATURES = [
-  'Find out who liked your profile',
-  'Contact popular & new users',
-  'Browse profiles invisibly',
-  'Advanced matching filters',
-  'Unlimited super likes',
-];
+const DEFAULT_ICONS = ['star-outline', 'trophy-outline', 'rocket-outline', 'flash-outline'];
 
 export const SubscriptionPlansScreen = ({ navigation }) => {
-  const [selected, setSelected] = useState('2');
+  const { plans, fetchPlans, isLoading, setSelectedPlan, subscribe } = useSubscriptionStore();
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
+  useEffect(() => {
+    if (plans.length > 0 && !selected) {
+      setSelected(plans[0].id || plans[0]._id);
+    }
+  }, [plans, selected]);
+
+  const handleContinue = async () => {
+    const selectedMappedPlan = mappedPlans.find((plan) => plan.id === selected);
+    if (selectedMappedPlan) {
+      if (selectedMappedPlan.isFree) {
+        try {
+          await subscribe({
+            planId: selectedMappedPlan.id,
+            autoRenew: false,
+            paymentMethod: 'Free',
+            paymentId: `free-plan-${Date.now()}`,
+            orderId: `free-order-${Date.now()}`,
+            signature: 'free-signature',
+          });
+          Alert.alert(
+            'Subscription Activated! 🎉',
+            'You are now on the Free plan.',
+            [{ text: 'Continue', onPress: () => navigation.navigate('Home') }]
+          );
+        } catch (error) {
+          Alert.alert('Subscription Failed', error.message || 'Something went wrong.');
+        }
+      } else {
+        setSelectedPlan(selectedMappedPlan);
+        navigation.navigate('Payment');
+      }
+    }
+  };
+
+  const mappedPlans = plans.map((p, idx) => {
+    const name = p.name?.toLowerCase() || '';
+    let colors = ['#E94057', '#8A2387']; // Default
+    let textColor = '#FFF';
+
+    if (name.includes('gold')) {
+      colors = ['#F5A623', '#F5A623'];
+      textColor = '#FFF';
+    } else if (name.includes('silver')) {
+      colors = ['#8892B0', '#8892B0'];
+      textColor = '#FFF';
+    } else if (name.includes('platinum')) {
+      colors = ['#4A90E2', '#4A90E2'];
+      textColor = '#FFF';
+    } else if (name.includes('free')) {
+      colors = ['#bcb0b0ff', '#aca5a5ff'];
+      textColor = '#666';
+    }
+
+    return {
+      id: p.id || p._id,
+      name: p.name,
+      duration: (p.id === 'free' || p.durationDays === 0) ? 'Lifetime' : (p.durationDays ? `${p.durationDays} Days` : (p.duration || `${p.validityDays} Days`)),
+      price: `₹${p.price}`,
+      perMonth: p.perMonth || (p.durationDays > 30 ? `₹${Math.round(p.price / (p.durationDays / 30))}/mo` : (p.validityDays > 30 ? `₹${Math.round(p.price / (p.validityDays / 30))}/mo` : '')),
+      features: Array.isArray(p.features) ? p.features : [],
+      icon: p.icon || (name.includes('free') ? 'star-outline' : DEFAULT_ICONS[idx % DEFAULT_ICONS.length]),
+      badge: p.badge || (p.isPopular ? 'MOST POPULAR' : (idx === 1 ? 'MOST POPULAR' : idx === 2 ? 'BEST VALUE' : null)),
+      colors,
+      textColor,
+      isFree: (p.id === 'free' || name.includes('free'))
+    };
+  });
+  const activePlan = mappedPlans.find((plan) => plan.id === selected);
+  const planFeatures = activePlan?.features || [];
+
+  if (isLoading && plans.length === 0) {
+    return (
+      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#E94057" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={s.container}>
       <LinearGradient
         colors={['#fff0f3', '#ffffff', '#f3f0ff']}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       {/* Header */}
@@ -58,56 +115,60 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-        <Text style={s.title}>For Best Access</Text>
-        <Text style={s.subtitle}>Subscribe a plan</Text>
+        <View style={s.topSection}>
+          <Text style={s.title}>Upgrade to Premium</Text>
+          <Text style={s.subtitle}>Get more matches and unlimited features with our premium plans</Text>
+        </View>
 
-        {/* Features */}
-        <View style={s.featuresCard}>
-          <Text style={s.featuresTitle}>What you'll get</Text>
-          {FEATURES.map((f, i) => (
-            <View key={i} style={s.featureRow}>
-              <View style={s.featureDot}>
-                <Icon name="checkmark" size={12} color="#fff" />
+        {/* Features list with better UI */}
+        <View style={s.featuresContainer}>
+          {planFeatures.map((f, i) => (
+            <View key={i} style={s.featureItem}>
+              <View style={s.featureIconBg}>
+                <Icon name="checkmark" size={14} color="#E94057" />
               </View>
               <Text style={s.featureText}>{f}</Text>
             </View>
           ))}
         </View>
 
-        {/* Plans */}
-        <Text style={s.sectionLabel}>Select your plan</Text>
-        <View style={s.plansList}>
-          {PLANS.map((plan) => {
+        {/* Plans - Vertical Column */}
+        <View style={s.plansColumn}>
+          {mappedPlans.map((plan) => {
             const active = selected === plan.id;
             return (
-              <View key={plan.id} style={s.planCardOuter}>
-                {/* Badge positioned outside the card */}
+              <TouchableOpacity
+                key={plan.id}
+                onPress={() => setSelected(plan.id)}
+                activeOpacity={0.9}
+                style={[
+                  s.planCard, 
+                  active && s.planCardActive,
+                  active && { backgroundColor: plan.colors[0], borderColor: plan.colors[1] }
+                ]}
+              >
                 {plan.badge && (
-                  <View style={[s.badgeWrap, active && s.badgeActive]}>
-                    <Text style={s.badgeText}>{plan.badge}</Text>
+                  <View style={[s.badgeWrapNew, active && { backgroundColor: '#FFF' }]}>
+                    <Text style={[s.badgeTextNew, active && { color: plan.colors[0] }]}>{plan.badge}</Text>
                   </View>
                 )}
-                <TouchableOpacity
-                  onPress={() => setSelected(plan.id)}
-                  activeOpacity={0.85}
-                >
-                  {active ? (
-                    <LinearGradient
-                      colors={['#E94057', '#8A2387']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                      style={s.planCardBorder}
-                    >
-                      <View style={s.planCardInner}>
-                        <PlanContent plan={plan} active />
-                      </View>
-                    </LinearGradient>
-                  ) : (
-                    <View style={s.planCardDefault}>
-                      <PlanContent plan={plan} active={false} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </View>
+                
+                <View style={s.planHeader}>
+                  <Text style={[s.planNameNew, active && s.activeTextWhite]}>{plan.name}</Text>
+                  <View style={[s.planIconWrap, active && s.planIconWrapActive]}>
+                    <Icon name={plan.icon} size={24} color={active ? plan.colors[0] : '#E94057'} />
+                  </View>
+                </View>
+
+                <View style={s.planPriceSection}>
+                  <Text style={[s.planPriceNew, active && s.activeTextWhite]}>{plan.price}</Text>
+                  <Text style={[s.planDurationNew, active && s.activeTextWhiteSub]}>{plan.duration}</Text>
+                </View>
+
+                {plan.perMonth ? (
+                  <Text style={[s.planPerMonthNew, active && s.activeTextWhiteSub]}>{plan.perMonth}</Text>
+                ) : null}
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -117,7 +178,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
       <View style={s.footer}>
         <TouchableOpacity
           style={s.ctaWrap}
-          onPress={() => navigation.navigate('Payment')}
+          onPress={handleContinue}
           activeOpacity={0.88}
         >
           <LinearGradient
@@ -137,15 +198,15 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
 
 const PlanContent = ({ plan, active }) => (
   <View style={pc.row}>
-    <View style={[pc.iconWrap, { backgroundColor: active ? '#FFF0F3' : '#F5F5F5' }]}>
-      <Icon name={plan.icon} size={24} color={active ? '#E94057' : '#999'} />
+    <View style={[pc.iconWrap, { backgroundColor: active ? (plan.isFree ? '#EEE' : '#FFF0F3') : '#F5F5F5' }]}>
+      <Icon name={plan.icon} size={24} color={active ? (plan.isFree ? '#666' : '#E94057') : '#999'} />
     </View>
     <View style={pc.info}>
-      <Text style={[pc.name, active && pc.nameActive]}>{plan.name}</Text>
-      <Text style={[pc.duration, active && pc.durationActive]}>{plan.duration}</Text>
+      <Text style={[pc.name, active && { color: plan.textColor || '#2b1c50' }]}>{plan.name}</Text>
+      <Text style={[pc.duration, active && { color: plan.textColor || '#888', opacity: 0.8 }]}>{plan.duration}</Text>
     </View>
     <View style={pc.priceBlock}>
-      <Text style={[pc.price, active && pc.priceActive]}>{plan.price}</Text>
+      <Text style={[pc.price, active && { color: plan.isFree ? '#666' : '#E94057' }]}>{plan.price}</Text>
       <Text style={pc.perMonth}>{plan.perMonth}</Text>
     </View>
   </View>
@@ -165,60 +226,120 @@ const s = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     justifyContent: 'center', alignItems: 'center',
   },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#2b1c50', fontFamily: FONT_MED },
-  scroll: { paddingHorizontal: 20, paddingBottom: 120 },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#2b1c50', fontFamily: FONT_MED },
+  scroll: { paddingBottom: 120 },
+  topSection: { paddingHorizontal: 24, marginTop: 12 },
   title: {
-    fontSize: 32, fontWeight: '800', color: '#2b1c50',
-    fontFamily: FONT_MED, marginBottom: 4, marginTop: 8,
+    fontSize: 28, fontWeight: '800', color: '#111',
+    fontFamily: FONT_MED, marginBottom: 8,
   },
-  subtitle: { fontSize: 16, color: '#E94057', fontWeight: '600', marginBottom: 20 },
-  featuresCard: {
-    backgroundColor: '#FAFAFA', borderRadius: 20,
-    padding: 18, marginBottom: 24,
-    borderWidth: 1, borderColor: '#F0F0F0',
+  subtitle: { fontSize: 15, color: '#666', lineHeight: 22, fontFamily: FONT, marginBottom: 24 },
+  
+  featuresContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
   },
-  featuresTitle: {
-    fontSize: 15, fontWeight: '700', color: '#2b1c50',
-    fontFamily: FONT_MED, marginBottom: 14,
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 12,
   },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  featureDot: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: '#E94057',
-    justifyContent: 'center', alignItems: 'center',
+  featureIconBg: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFF0F3',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  featureText: { fontSize: 14, color: '#444', fontFamily: FONT },
-  sectionLabel: {
-    fontSize: 14, fontWeight: '700', color: '#999',
-    textTransform: 'uppercase', letterSpacing: 0.8,
-    marginBottom: 12, fontFamily: FONT_MED,
+  featureText: {
+    fontSize: 15,
+    color: '#444',
+    fontFamily: FONT,
+    fontWeight: '500',
   },
-  plansList: { gap: 16 },
 
-  // Plan card outer wrapper (holds badge + card)
-  planCardOuter: {
+  plansColumn: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    gap: 16,
+  },
+  planCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 20,
+    borderWidth: 2,
+    borderColor: '#F0F0F0',
     position: 'relative',
+    justifyContent: 'space-between',
+    minHeight: 160,
   },
-  badgeWrap: {
-    position: 'absolute', top: -10, right: 16,
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 8, zIndex: 5,
+  planCardActive: {
+    // Dynamic styles applied inline based on plan.colors
   },
-  badgeActive: { backgroundColor: '#E94057' },
-  badgeText: { fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  badgeWrapNew: {
+    position: 'absolute',
+    top: -12,
+    right: 20,
+    backgroundColor: '#E94057',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  badgeTextNew: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  planHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  planNameNew: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
+  },
+  planIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  planIconWrapActive: {
+    backgroundColor: '#FFF',
+  },
+  planPriceSection: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  planPriceNew: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#111',
+  },
+  planDurationNew: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+  },
+  planPerMonthNew: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 4,
+  },
+  activeTextWhite: { color: '#FFF' },
+  activeTextWhiteSub: { color: 'rgba(255, 255, 255, 0.8)' },
 
-  planCardBorder: { borderRadius: 20, padding: 2 },
-  planCardInner: {
-    backgroundColor: '#fff', borderRadius: 18,
-    paddingHorizontal: 16, paddingVertical: 16,
-  },
-  planCardDefault: {
-    backgroundColor: '#fff', borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 16,
-    borderWidth: 1.5, borderColor: '#F0F0F0',
-    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 20, paddingBottom: 34, paddingTop: 12,
@@ -230,7 +351,7 @@ const s = StyleSheet.create({
     height: 56, flexDirection: 'row',
     justifyContent: 'center', alignItems: 'center', gap: 10,
   },
-  ctaText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
+  ctaText: { fontSize: 16, fontWeight: '700', color: '#fff', fontFamily: FONT_MED },
   footerNote: { fontSize: 11, color: '#AAA', textAlign: 'center', fontFamily: FONT },
 });
 
@@ -242,13 +363,13 @@ const pc = StyleSheet.create({
   },
   info: { flex: 1 },
   name: {
-    fontSize: 16, fontWeight: '700', color: '#555', fontFamily: FONT_MED,
+    fontSize: 16, fontWeight: '600', color: '#555', fontFamily: FONT_MED,
   },
   nameActive: { color: '#2b1c50' },
   duration: { fontSize: 12, color: '#AAA', marginTop: 2 },
   durationActive: { color: '#888' },
   priceBlock: { alignItems: 'flex-end' },
-  price: { fontSize: 18, fontWeight: '800', color: '#CCC', fontFamily: FONT_MED },
+  price: { fontSize: 18, fontWeight: '700', color: '#CCC', fontFamily: FONT_MED },
   priceActive: { color: '#E94057' },
   perMonth: { fontSize: 10, color: '#AAA', marginTop: 2 },
 });

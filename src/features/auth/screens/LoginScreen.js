@@ -10,22 +10,32 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
 
+import { authService } from '../../../services/apiServices';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { safeStorage } from '../../../services/api';
+
 const loginSchema = yup.object().shape({
-  phone: yup
+  identifier: yup
     .string()
-    .required('Phone number is required')
-    .min(10, 'Must be a valid phone number')
-    .max(10, 'Must be a valid phone number'),
+    .required('Email or phone number is required'),
+  password: yup.string().required('Password is required'),
 });
 
 export const LoginScreen = ({ navigation }) => {
-  const { control, handleSubmit } = useForm({
+  const login = useAuthStore(state => state.login);
+  const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
-    defaultValues: { phone: '' },
+    defaultValues: { identifier: '', password: '' },
   });
 
-  const onSubmit = (data) => {
-    navigation.navigate('OTPVerification', { phone: data.phone });
+  const onSubmit = async (data) => {
+    // Instead of logging in directly, we navigate to the OTP screen.
+    // We pass the login data to the OTP screen so it can perform the final login with the OTP.
+    navigation.navigate('OTPVerification', { 
+      type: 'login', 
+      identifier: data.identifier, 
+      password: data.password 
+    });
   };
 
   return (
@@ -54,12 +64,27 @@ export const LoginScreen = ({ navigation }) => {
           <View style={styles.formContainer}>
             <CustomInput
               control={control}
-              name="phone"
-              placeholder="XXX XXX XXXX"
-              keyboardType="phone-pad"
-              showCountryCode={true}
-              isGradientBorder={false}
+              name="identifier"
+              placeholder="Email or phone number"
+              keyboardType="default"
+              autoCapitalize="none"
+              error={errors.identifier?.message}
             />
+
+            <CustomInput
+              control={control}
+              name="password"
+              placeholder="Password"
+              secureTextEntry={true}
+              error={errors.password?.message}
+            />
+
+            <TouchableOpacity 
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate('ForgotPassword')}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            </TouchableOpacity>
 
             <Button
               title="Submit"
@@ -136,6 +161,17 @@ const styles = StyleSheet.create({
   formContainer: {
     width: '100%',
     marginBottom: 40,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    color: '#E94057',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   button: {
     borderRadius: 16,

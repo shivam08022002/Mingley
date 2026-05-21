@@ -1,27 +1,60 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useChatStore } from '../../../store/useChatStore';
+import { decodeEmoji } from '../../../utils/stringUtils';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 
-// ── Gift catalogue (shared with ChatScreen) ───────────────────────────────
-export const GIFTS = [
-  { id: 'rose',   icon: 'flower',     label: 'Rose',   cost: 10  },
-  { id: 'coffee', icon: 'cafe',       label: 'Coffee', cost: 30  },
-  { id: 'dinner', icon: 'restaurant', label: 'Dinner', cost: 100 },
-];
+// ── Gift catalogue mapping for display ─────────────────────────────────────
+const GIFT_EMOJIS = {
+  'heart': '❤️',
+  'rose': '🌹',
+  'gift box': '🎁',
+  'coffee date': '☕',
+  'diamond ring': '💎',
+  'dinner': '🍴',
+  'teddy bear': '🧸',
+  'castle': '🏰',
+};
 
 export const ChatBubble = React.memo(({ item }) => {
+  if (!item) return null;
   const isMine = item.isMine;
+  const deleteMessage = useChatStore(s => s.deleteChatMessage);
+
+  const handleLongPress = () => {
+    if (!isMine) return;
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: () => deleteMessage(item.chatId, item.id) 
+        }
+      ]
+    );
+  };
 
   // ── Gift bubble ──────────────────────────────────────────────────────────
   if (item.type === 'gift') {
+    const key = (item.giftName || '').toLowerCase();
+    const displayEmoji = item.emoji || GIFT_EMOJIS[key] || '🎁';
+    
     return (
-      <View style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}>
+      <TouchableOpacity 
+        onLongPress={handleLongPress}
+        activeOpacity={0.9}
+        style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
+      >
         <View style={[styles.giftBubble, isMine ? styles.giftBubbleMine : styles.giftBubbleTheirs]}>
-          <Icon name={item.icon} size={28} color="#E94057" style={styles.giftEmoji} />
+          <Text style={styles.giftEmojiLarge}>{displayEmoji}</Text>
           <View style={styles.giftInfo}>
             <Text style={[styles.giftLabel, isMine ? styles.giftLabelMine : styles.giftLabelTheirs]}>
-              {isMine ? `You sent a ${item.giftName}` : `${item.giftName} received!`}
+              {isMine ? `${item.giftName} sent` : `${item.giftName} received`}
             </Text>
             <View style={styles.giftCostRow}>
               <Icon name="cash-outline" size={11} color={isMine ? '#E94057' : '#888'} />
@@ -35,70 +68,102 @@ export const ChatBubble = React.memo(({ item }) => {
           <Text style={styles.time}>{item.time}</Text>
           {isMine && (
             <Icon
-              name={item.read ? 'checkmark-done' : 'checkmark'}
+              name={item.read || item.isRead ? 'checkmark-done' : 'checkmark'}
               size={16}
-              color="#E94057"
+              color="#FFF"
               style={styles.checkIcon}
             />
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   }
 
-  // ── Coin-transfer bubble ─────────────────────────────────────────────────
+  // ── Coin-transfer bubble ──────────────────────────────────────────────────
   if (item.type === 'coins') {
     return (
-      <View style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}>
+      <TouchableOpacity 
+        onLongPress={handleLongPress}
+        activeOpacity={0.9}
+        style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
+      >
         <View style={[styles.coinsBubble, isMine ? styles.coinsBubbleMine : styles.coinsBubbleTheirs]}>
-          <Icon name="cash-outline" size={22} color="#F59E0B" style={{ marginRight: 8 }} />
+          <View style={{ marginRight: 12 }}>
+            <Icon name="cash" size={24} color={isMine ? '#FFF' : '#F59E0B'} />
+          </View>
           <View>
             <Text style={[styles.coinsAmount, isMine ? styles.coinsAmountMine : styles.coinsAmountTheirs]}>
               {item.amount} coins
             </Text>
-            <Text style={styles.coinsSub}>{isMine ? 'You sent coins' : 'Coins received!'}</Text>
+            <Text style={[styles.coinsSub, isMine ? styles.coinsSubMine : styles.coinsSubTheirs]}>
+              {isMine ? 'Coins sent' : 'Coins received'}
+            </Text>
           </View>
         </View>
         <View style={[styles.footer, isMine ? styles.footerMine : styles.footerTheirs]}>
           <Text style={styles.time}>{item.time}</Text>
           {isMine && (
-            <Icon name="checkmark-done" size={16} color="#E94057" style={styles.checkIcon} />
+            <Icon
+              name={item.read || item.isRead ? 'checkmark-done' : 'checkmark'}
+              size={16}
+              color="#FFF"
+              style={styles.checkIcon}
+            />
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   }
 
   // ── Standard text bubble ─────────────────────────────────────────────────
   return (
-    <View style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}>
+    <TouchableOpacity 
+      onLongPress={handleLongPress}
+      activeOpacity={0.9}
+      style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
+    >
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-        <Text style={[styles.text, isMine ? styles.textMine : styles.textTheirs]}>
-          {item.text}
-        </Text>
+        {item.imageUrl && item.imageUrl !== '' ? (
+          <View style={styles.imageContainer}>
+            <FastImage
+              source={{ uri: item.imageUrl }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+            {item.text && item.text !== '[image]' && (
+              <Text style={[styles.text, isMine ? styles.textMine : styles.textTheirs, { marginTop: 8 }]}>
+                {decodeEmoji(item.text)}
+              </Text>
+            )}
+          </View>
+        ) : (
+          <Text style={[styles.text, isMine ? styles.textMine : styles.textTheirs]}>
+            {decodeEmoji(item.text)}
+          </Text>
+        )}
       </View>
       <View style={[styles.footer, isMine ? styles.footerMine : styles.footerTheirs]}>
         <Text style={styles.time}>{item.time}</Text>
         {isMine && (
           <Icon
-            name={item.read ? 'checkmark-done' : 'checkmark'}
+            name={item.read || item.isRead ? 'checkmark-done' : 'checkmark'}
             size={16}
-            color="#E94057"
+            color="#FFF" // White checkmark on pink background
             style={styles.checkIcon}
           />
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 });
 
 const styles = StyleSheet.create({
   container: {
     marginVertical: SPACING.s,
-    maxWidth: '80%',
+    maxWidth: '85%',
   },
-  containerMine: { alignSelf: 'flex-end' },
-  containerTheirs: { alignSelf: 'flex-start' },
+  containerMine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
+  containerTheirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
 
   // ── Text bubble ───────────────────────────────────────────────────────────
   bubble: {
@@ -106,22 +171,34 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.m,
   },
   bubbleMine: {
-    backgroundColor: '#FFF0F3',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 0,
+    backgroundColor: '#E94057', // Brand Pink
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 4,
   },
   bubbleTheirs: {
-    backgroundColor: '#F5F5F5',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 16,
+    backgroundColor: '#F3F4F6', // Light Grey
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 20,
   },
-  text: { ...TYPOGRAPHY.body, lineHeight: 22 },
-  textMine: { color: '#000' },
-  textTheirs: { color: '#000' },
+  text: { ...TYPOGRAPHY.body, fontSize: 15, lineHeight: 22 },
+  textMine: { color: '#FFF' },
+  textTheirs: { color: '#1F2937' },
+
+  // ── Image bubble ──────────────────────────────────────────────────────────
+  imageContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  image: {
+    width: 240,
+    height: 180,
+    borderRadius: 8,
+    backgroundColor: '#EEE',
+  },
 
   // ── Gift bubble ───────────────────────────────────────────────────────────
   giftBubble: {
@@ -133,8 +210,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   giftBubbleMine: {
-    backgroundColor: '#FFF0F3',
-    borderColor: '#FFD6DE',
+    backgroundColor: '#E94057',
+    borderColor: '#E94057',
     borderBottomRightRadius: 0,
   },
   giftBubbleTheirs: {
@@ -142,14 +219,15 @@ const styles = StyleSheet.create({
     borderColor: '#E8E8E8',
     borderBottomLeftRadius: 0,
   },
+  giftEmojiLarge: { fontSize: 32, marginRight: 12 },
   giftEmoji: { marginRight: 10 },
   giftInfo: { flexShrink: 1 },
   giftLabel: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
-  giftLabelMine: { color: '#333' },
+  giftLabelMine: { color: '#FFF' },
   giftLabelTheirs: { color: '#555' },
   giftCostRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   giftCost: { fontSize: 11, fontWeight: '700' },
-  giftCostMine: { color: '#E94057' },
+  giftCostMine: { color: '#FFF', opacity: 0.9 },
   giftCostTheirs: { color: '#888' },
 
   // ── Coin-transfer bubble ──────────────────────────────────────────────────
@@ -162,8 +240,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   coinsBubbleMine: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
+    backgroundColor: '#E94057',
+    borderColor: '#E94057',
     borderBottomRightRadius: 0,
   },
   coinsBubbleTheirs: {
@@ -172,9 +250,11 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 0,
   },
   coinsAmount: { fontSize: 15, fontWeight: '800' },
-  coinsAmountMine: { color: '#92400E' },
+  coinsAmountMine: { color: '#FFF' },
   coinsAmountTheirs: { color: '#333' },
-  coinsSub: { fontSize: 11, color: '#888', marginTop: 1 },
+  coinsSub: { fontSize: 11, marginTop: 1 },
+  coinsSubMine: { color: 'rgba(255,255,255,0.7)' },
+  coinsSubTheirs: { color: '#999' },
 
   // ── Footer ────────────────────────────────────────────────────────────────
   footer: { flexDirection: 'row', marginTop: 4, alignItems: 'center' },

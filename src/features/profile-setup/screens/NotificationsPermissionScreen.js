@@ -5,11 +5,25 @@ import FastImage from 'react-native-fast-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 
+import { useAuthStore } from '../../../store/useAuthStore';
+
 export const NotificationsPermissionScreen = ({ navigation }) => {
+  const login = useAuthStore(state => state.login);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  const handleFinishOnboarding = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Home');
+    } else {
+      // Finalize registration onboarding
+      login({ id: 'new-user', name: 'User' }); // The actual user data is already in tokens
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={handleFinishOnboarding}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
@@ -30,7 +44,7 @@ export const NotificationsPermissionScreen = ({ navigation }) => {
 
         <Button
           title="I want to be notified"
-          onPress={() => navigation.navigate('Home')}
+          onPress={handleFinishOnboarding}
           style={styles.actionButton}
           textStyle={styles.buttonText}
           variant="solid"

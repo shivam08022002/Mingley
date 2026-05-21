@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { decodeEmoji } from '../../../utils/stringUtils';
 
 export const MessageItem = ({ item, onPress }) => {
   return (
@@ -21,7 +22,7 @@ export const MessageItem = ({ item, onPress }) => {
 
       <View style={styles.contentContainer}>
         <View style={styles.topRow}>
-          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.name}>{decodeEmoji(item.name)}</Text>
           <Text style={styles.time}>{item.time}</Text>
         </View>
 
@@ -30,7 +31,7 @@ export const MessageItem = ({ item, onPress }) => {
             style={[styles.messagePreview, item.unread && styles.unreadMessagePreview]} 
             numberOfLines={1}
           >
-            {item.isTyping ? 'Typing..' : item.lastMessage}
+            {item.isTyping ? 'Typing..' : decodeEmoji(item.lastMessage)}
           </Text>
           {!!item.unread && (
             <View style={styles.unreadBadge}>

@@ -25,8 +25,68 @@ const INTERESTS = [
   { id: '14', label: 'Video games', icon: 'game-controller-outline' },
 ];
 
+import { authService } from '../../../services/apiServices';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { safeStorage } from '../../../services/api';
+
 export const InterestsSelectionScreen = ({ navigation }) => {
-  const { interests, toggleInterest } = useProfileSetupStore();
+  const { interests, toggleInterest, authDetails, profileDetails, gender, clearProfileSetup } = useProfileSetupStore();
+  const login = useAuthStore(state => state.login);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  const handleSkip = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Home');
+    } else {
+      handleRegister();
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      const userData = {
+        email: authDetails.email,
+        phone: authDetails.phone || '',
+        password: authDetails.password,
+        confirmPassword: authDetails.confirmPassword,
+        fullName: `${profileDetails.firstName} ${profileDetails.lastName}`,
+        gender: gender.toLowerCase(),
+        dateOfBirth: profileDetails.birthday || new Date().toISOString(),
+        avatar: profileDetails.avatar || 'https://via.placeholder.com/150',
+        interests: interests, // Including interests as well
+      };
+
+      const response = await authService.register(userData);
+      
+      // Handle different possible response structures
+      const registeredUser = response.user || response.data?.user || (response.id ? response : null);
+      const tokens = response.tokens || response.data?.tokens || {
+        accessToken: response.accessToken || response.data?.accessToken,
+        refreshToken: response.refreshToken || response.data?.refreshToken
+      };
+
+      if (registeredUser) {
+        if (tokens.accessToken) {
+          await safeStorage.setItem('accessToken', tokens.accessToken);
+        }
+        if (tokens.refreshToken) {
+          await safeStorage.setItem('refreshToken', tokens.refreshToken);
+        }
+
+        // Save registered user info to store but don't set isAuthenticated yet
+        // We'll call login() at the end of the onboarding flow
+        clearProfileSetup();
+        navigation.navigate('ContactsPermission');
+      } else {
+        // Fallback
+        clearProfileSetup();
+        navigation.navigate('ContactsPermission');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert(error.message || 'Registration failed');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,7 +97,7 @@ export const InterestsSelectionScreen = ({ navigation }) => {
         >
           <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={handleSkip}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
@@ -62,7 +122,7 @@ export const InterestsSelectionScreen = ({ navigation }) => {
 
         <Button
           title="Continue"
-          onPress={() => navigation.navigate('ContactsPermission')}
+          onPress={handleRegister}
           style={styles.continueButton}
           textStyle={styles.buttonText}
           variant="solid"

@@ -8,31 +8,41 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
-
-import { useProfileSetupStore } from '../../profile-setup/store/useProfileSetupStore';
+import { authService } from '../../../services/apiServices';
 
 const schema = yup.object().shape({
-  email: yup.string().email('Invalid email format').required('Email is required'),
-  password: yup.string().required('Password is required').min(6, 'Must be at least 6 characters'),
+  otp: yup.string().required('OTP is required').min(4, 'OTP must be at least 4 characters'),
+  newPassword: yup.string().required('New password is required').min(6, 'Must be at least 6 characters'),
   confirmPassword: yup.string()
-    .oneOf([yup.ref('password'), null], 'Passwords must match')
+    .oneOf([yup.ref('newPassword'), null], 'Passwords must match')
     .required('Confirm password is required'),
 });
 
-export const EmailInputScreen = ({ navigation }) => {
-  const { setAuthDetails } = useProfileSetupStore();
+export const ResetPasswordScreen = ({ navigation, route }) => {
+  const { identifier } = route.params || {};
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-    }
+    defaultValues: { otp: '', newPassword: '', confirmPassword: '' },
   });
 
-  const onSubmit = (data) => {
-    setAuthDetails({ ...data, phone: '' }); // Clear phone if continuing with email
-    navigation.navigate('OTPVerification', { type: 'email', value: data.email });
+  const onSubmit = async (data) => {
+    if (!identifier) {
+      alert('Identification missing. Please try the forgot password process again.');
+      return;
+    }
+
+    try {
+      await authService.resetPassword({
+        identifier,
+        otp: data.otp,
+        newPassword: data.newPassword,
+      });
+      alert('Password reset successfully');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Reset password error:', error);
+      alert(error.message || 'Something went wrong');
+    }
   };
 
   return (
@@ -44,41 +54,40 @@ export const EmailInputScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Icon name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-
+ 
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Sign up</Text>
-            <Text style={styles.subtitle}>Create an account to get started.</Text>
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.subtitle}>Enter the OTP sent to {identifier || 'your device'} and your new password.</Text>
           </View>
-
+ 
           <View style={styles.formContainer}>
             <CustomInput
               control={control}
-              name="email"
-              placeholder="Email address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={errors.email?.message}
+              name="otp"
+              placeholder="Enter OTP"
+              keyboardType="number-pad"
+              error={errors.otp?.message}
             />
-
+ 
             <CustomInput
               control={control}
-              name="password"
-              placeholder="Password"
+              name="newPassword"
+              placeholder="New Password"
               secureTextEntry={true}
-              error={errors.password?.message}
+              error={errors.newPassword?.message}
             />
-
+ 
             <CustomInput
               control={control}
               name="confirmPassword"
-              placeholder="Confirm Password"
+              placeholder="Confirm New Password"
               secureTextEntry={true}
               error={errors.confirmPassword?.message}
             />
-
+ 
             <Button 
-              title="Continue" 
+              title="Reset Password" 
               onPress={handleSubmit(onSubmit)}
               style={styles.continueButton}
               textStyle={styles.buttonText}

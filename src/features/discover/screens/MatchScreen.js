@@ -58,7 +58,7 @@ export const MatchScreen = ({ navigation, route }) => {
     ]).start();
   }, []);
 
-  const matchedName = matchedUser?.name?.split(' ')[0] || 'Jake';
+  const matchedName = (matchedUser?.fullName || matchedUser?.name)?.split(' ')[0] || 'Jake';
 
   return (
     <Animated.View style={[styles.container, { opacity: overlayOpacity }]}>
@@ -90,7 +90,7 @@ export const MatchScreen = ({ navigation, route }) => {
           <FastImage
             source={{
               uri:
-                matchedUser?.image ||
+                matchedUser?.avatar || matchedUser?.image ||
                 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80',
             }}
             style={styles.cardImage}

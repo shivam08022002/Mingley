@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,9 +7,19 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { OTPInput } from '../components/OTPInput';
 import { useAuthStore } from '../../../store/useAuthStore';
 
+import { authService } from '../../../services/apiServices';
+import { safeStorage } from '../../../services/api';
+
 export const OTPVerificationScreen = ({ navigation, route }) => {
-  const { phone } = route?.params || { phone: '1234567890' };
+  const { type, identifier, value, password, phone } = route?.params || {};
   const login = useAuthStore(state => state.login);
+  const [isLoading, setIsLoading] = useState(false);
+  const isVerifying = useRef(false);
+  
+  // Use identifier if present, otherwise fallback to value (passed from EmailInputScreen)
+  const userIdentifier = identifier || value;
+  const userPhone = phone || (type === 'phone' ? value : null);
+
   const { control, watch } = useForm({
     defaultValues: { otp: '' },
   });
@@ -18,11 +28,58 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
   const [timer, setTimer] = useState(42);
 
   useEffect(() => {
-    if (otpValue?.length === 4) {
-      // Mock logic to login on completion
-      login({ phone, id: 'user-123' });
-    }
-  }, [otpValue, login, phone]);
+    const verifyAndLogin = async () => {
+      if (otpValue?.length === 4 && !isVerifying.current) {
+        isVerifying.current = true;
+        setIsLoading(true);
+        try {
+          if (type === 'login') {
+            const response = await authService.login({
+              identifier: userIdentifier,
+              password,
+              twoFactorCode: otpValue,
+              fcmToken: 'mock-device-token',
+            });
+
+            // Handle different possible response structures
+            const userData = response.user || response.data?.user || (response.id ? response : null);
+            const tokens = response.tokens || response.data?.tokens || {
+              accessToken: response.accessToken || response.data?.accessToken,
+              refreshToken: response.refreshToken || response.data?.refreshToken
+            };
+
+            if (userData) {
+              if (tokens.accessToken) {
+                await safeStorage.setItem('accessToken', tokens.accessToken);
+              }
+              if (tokens.refreshToken) {
+                await safeStorage.setItem('refreshToken', tokens.refreshToken);
+              }
+              login(userData);
+            } else {
+              // Fallback: if we got a 200 but couldn't find user data, 
+              // at least try to login with mock data or alert
+              console.warn('Login successful but no user data found in response:', response);
+              login({ identifier: userIdentifier, id: 'unknown-id' });
+            }
+          } else {
+              // For registration flows (email/phone), we treat OTP as a dummy verification step
+              // and continue to the next page (ProfileDetails)
+              setIsLoading(false);
+              navigation.navigate('ProfileDetails');
+            }
+        } catch (error) {
+          console.error('OTP Verification/Login error:', error);
+          Alert.alert('Verification Failed', error.message || 'The OTP entered is incorrect.');
+          isVerifying.current = false;
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    verifyAndLogin();
+  }, [otpValue, login, type, userIdentifier, password, userPhone]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -55,10 +112,18 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
       <View style={styles.content}>
         <Text style={styles.timerText}>{formatTimer(timer)}</Text>
         <Text style={styles.subtitle}>
-          Type the verification code we've sent you
+          Type the verification code we've sent to {userIdentifier}
         </Text>
 
         <OTPInput control={control} name="otp" />
+
+        {isLoading && (
+          <ActivityIndicator 
+            size="large" 
+            color="#E94057" 
+            style={{ marginTop: 20 }} 
+          />
+        )}
 
         <TouchableOpacity 
           style={styles.resendContainer}

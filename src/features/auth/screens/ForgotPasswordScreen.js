@@ -8,31 +8,26 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
-
-import { useProfileSetupStore } from '../../profile-setup/store/useProfileSetupStore';
+import { authService } from '../../../services/apiServices';
 
 const schema = yup.object().shape({
-  email: yup.string().email('Invalid email format').required('Email is required'),
-  password: yup.string().required('Password is required').min(6, 'Must be at least 6 characters'),
-  confirmPassword: yup.string()
-    .oneOf([yup.ref('password'), null], 'Passwords must match')
-    .required('Confirm password is required'),
+  identifier: yup.string().required('Email or phone number is required'),
 });
 
-export const EmailInputScreen = ({ navigation }) => {
-  const { setAuthDetails } = useProfileSetupStore();
+export const ForgotPasswordScreen = ({ navigation }) => {
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-    }
+    defaultValues: { identifier: '' },
   });
 
-  const onSubmit = (data) => {
-    setAuthDetails({ ...data, phone: '' }); // Clear phone if continuing with email
-    navigation.navigate('OTPVerification', { type: 'email', value: data.email });
+  const onSubmit = async (data) => {
+    try {
+      await authService.forgotPassword(data.identifier);
+      navigation.navigate('ResetPassword', { identifier: data.identifier });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      alert(error.message || 'Something went wrong');
+    }
   };
 
   return (
@@ -47,34 +42,18 @@ export const EmailInputScreen = ({ navigation }) => {
 
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Sign up</Text>
-            <Text style={styles.subtitle}>Create an account to get started.</Text>
+            <Text style={styles.title}>Forgot Password</Text>
+            <Text style={styles.subtitle}>Enter your email or phone number to reset your password.</Text>
           </View>
 
           <View style={styles.formContainer}>
             <CustomInput
               control={control}
-              name="email"
-              placeholder="Email address"
-              keyboardType="email-address"
+              name="identifier"
+              placeholder="Email or phone number"
+              keyboardType="default"
               autoCapitalize="none"
-              error={errors.email?.message}
-            />
-
-            <CustomInput
-              control={control}
-              name="password"
-              placeholder="Password"
-              secureTextEntry={true}
-              error={errors.password?.message}
-            />
-
-            <CustomInput
-              control={control}
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              secureTextEntry={true}
-              error={errors.confirmPassword?.message}
+              error={errors.identifier?.message}
             />
 
             <Button 

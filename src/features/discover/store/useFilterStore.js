@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 
-const ALL_INTERESTS = ['Music', 'Travel', 'Gym', 'Movies', 'Reading', 'Cooking', 'Art', 'Dancing', 'Photography', 'Yoga'];
-
 const DEFAULT_FILTERS = {
   interestedIn: 'girls',      // 'girls' | 'boys' | 'both'
   location: 'Mumbai, India',
@@ -48,6 +46,4 @@ export const useFilterStore = create((set, get) => ({
       s.relationshipType !== DEFAULT_FILTERS.relationshipType
     );
   },
-
-  ALL_INTERESTS,
 }));

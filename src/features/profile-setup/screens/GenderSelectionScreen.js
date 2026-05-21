@@ -6,12 +6,22 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { SelectCard } from '../components/SelectCard';
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 export const GenderSelectionScreen = ({ navigation }) => {
   const { gender, setGender } = useProfileSetupStore();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
 
   const handleSelect = (selectedGender) => {
     setGender(selectedGender);
+  };
+
+  const handleSkip = () => {
+    if (isAuthenticated) {
+      navigation.navigate('Home');
+    } else {
+      navigation.navigate('InterestsSelection');
+    }
   };
 
   return (
@@ -23,7 +33,7 @@ export const GenderSelectionScreen = ({ navigation }) => {
         >
           <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={handleSkip}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>

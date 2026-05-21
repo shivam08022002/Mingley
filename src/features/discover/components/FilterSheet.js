@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
   TouchableOpacity,
+  ActivityIndicator,
   TouchableWithoutFeedback,
   Switch,
   ScrollView,
@@ -15,8 +16,10 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { useFilterStore } from '../store/useFilterStore';
 import { useChatStore } from '../../../store/useChatStore';
+import { userService } from '../../../services/apiServices';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const { height, width } = Dimensions.get('window');
@@ -85,6 +88,8 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
   );
 });
 
+import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
+
 // ─── Main FilterSheet ───────────────────────────────────────────────────────
 export const FilterSheet = React.memo(({ visible, onClose }) => {
   const {
@@ -98,20 +103,60 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
     interests, toggleInterest,
     relationshipType, setRelationshipType,
     reset,
-    ALL_INTERESTS,
   } = useFilterStore();
 
-  const isPremium        = useChatStore((s) => s.isPremium);
-  const upgradeToPremium = useChatStore((s) => s.upgradeToPremium);
+  const [allInterests, setAllInterests] = useState([]);
+  const [loadingInterests, setLoadingInterests] = useState(false);
 
-  const handleUpgradePrompt = () => {
+  useEffect(() => {
+    const fetchInterestsAndPreferences = async () => {
+      setLoadingInterests(true);
+      try {
+        const [intRes, meRes] = await Promise.all([
+          userService.getInterests(),
+          userService.getMe()
+        ]);
+        
+        setAllInterests(intRes.data?.interests || []);
+        
+        // Sync filter store with backend preferences
+        const pref = meRes.data?.preference;
+        if (pref) {
+          useFilterStore.setState({
+            interestedIn: pref.interestedIn || 'both',
+            distance: pref.maxDistance || 50,
+            ageRange: [pref.minAge || 18, pref.maxAge || 40],
+            relationshipType: pref.relationshipType || 'both',
+            nearbyOnly: pref.nearbyOnly || false,
+            onlineStatus: pref.onlineOnly || false,
+            verifiedOnly: pref.verifiedOnly || false,
+            location: pref.location || ''
+          });
+        }
+      } catch (error) {
+        console.error('Fetch filter data error:', error);
+      } finally {
+        setLoadingInterests(false);
+      }
+    };
+    if (visible) fetchInterestsAndPreferences();
+  }, [visible]);
+
+  const { currentStatus } = useSubscriptionStore();
+  const isPremium = currentStatus?.isActive || false;
+  const navigation = useNavigation();
+
+  const handleUpgradePrompt = (feature) => {
     Alert.alert(
       '🔒 Premium Feature',
-      'Upgrade to Premium to filter by verified users.',
+      `Upgrade to a premium plan to use ${feature}.`,
       [
         {
-          text: 'Upgrade Now (Demo)',
-          onPress: () => upgradeToPremium(),
+          text: 'Upgrade Now',
+          onPress: () => {
+            onClose();
+            navigation.navigate('SubscriptionPlans');
+          },
         },
         { text: 'Cancel', style: 'cancel' },
       ]
@@ -127,7 +172,30 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
     },
   });
 
-  const handleApply = useCallback(() => onClose(), [onClose]);
+  const handleApply = useCallback(async () => {
+    try {
+      const {
+        interestedIn, distance, ageRange, onlineStatus,
+        verifiedOnly, nearbyOnly, relationshipType, location
+      } = useFilterStore.getState();
+
+      await userService.updatePreferences({
+        interestedIn,
+        minAge: ageRange[0],
+        maxAge: ageRange[1],
+        maxDistance: distance,
+        relationshipType,
+        nearbyOnly,
+        onlineOnly: onlineStatus,
+        verifiedOnly,
+        location
+      });
+      onClose();
+    } catch (error) {
+      console.error('Update preferences error:', error);
+      onClose(); // Still close if it fails, or show alert
+    }
+  }, [onClose]);
   const handleClear = useCallback(() => reset(), [reset]);
 
   const pickLocation = () => {
@@ -229,20 +297,34 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
 
             {/* ─ Interests ─ */}
             <Section label="Interests">
-              <View style={s.chipsWrap}>
-                {ALL_INTERESTS.map((item) => {
-                  const active = interests.includes(item);
-                  return (
-                    <TouchableOpacity
-                      key={item}
-                      style={[s.chip, active && s.chipActive]}
-                      onPress={() => toggleInterest(item)}
-                    >
-                      <Text style={[s.chipText, active && s.chipTextActive]}>{item}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              {loadingInterests ? (
+                <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator color="#E94057" size="large" />
+                </View>
+              ) : (
+                <View style={s.chipsWrap}>
+                  {allInterests.map((item) => {
+                    const active = interests.includes(item.name);
+                    return (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[s.chip, active && s.chipActive]}
+                        onPress={() => toggleInterest(item.name)}
+                      >
+                        {item.icon && (
+                          <Icon 
+                            name={item.icon} 
+                            size={14} 
+                            color={active ? '#E94057' : '#666'} 
+                            style={{ marginRight: 6 }} 
+                          />
+                        )}
+                        <Text style={[s.chipText, active && s.chipTextActive]}>{item.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
             </Section>
 
             {/* ─ Nearby Users ─ */}
@@ -293,7 +375,11 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
                   />
                 </View>
               ) : (
-                <TouchableOpacity style={s.lockedRow} onPress={handleUpgradePrompt} activeOpacity={0.8}>
+                <TouchableOpacity 
+                  style={s.lockedRow} 
+                  onPress={() => handleUpgradePrompt('Verified Profiles')} 
+                  activeOpacity={0.8}
+                >
                   <View style={s.lockedLeft}>
                     <Icon name="lock-closed" size={17} color="#F59E0B" style={{ marginRight: 8 }} />
                     <View>
@@ -335,26 +421,42 @@ const Section = ({ label, children }) => (
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const PINK = '#E94057';
-const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
-const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT = Platform.OS === 'ios' ? 'System' : 'sans-serif';
+const FONT_MED = Platform.OS === 'ios' ? 'System' : 'sans-serif-medium';
 
 const s = StyleSheet.create({
   containerStyle: {
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingTop: 16,
   },
-  sheet: {
-    // legacy
-  },
-  handle: {},
-  handleWrap: {},
   headerRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#111', fontFamily: FONT_MED },
-  clearBtn: { fontSize: 13, color: PINK, fontWeight: '600' },
-  section: { marginTop: 20 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: '#333', marginBottom: 10, fontFamily: FONT_MED },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#111',
+    fontFamily: FONT_MED,
+  },
+  clearBtn: {
+    fontSize: 14,
+    color: PINK,
+    fontWeight: '600',
+    fontFamily: FONT_MED,
+  },
+  section: {
+    marginBottom: 28,
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+    fontFamily: FONT_MED,
+    letterSpacing: 0.3,
+  },
 
   // Segment
   segRow: { flexDirection: 'row', gap: 8 },
@@ -385,13 +487,31 @@ const s = StyleSheet.create({
   // Chips
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: '#E8E6EA',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 8,
+    marginRight: 8,
   },
-  chipActive: { backgroundColor: '#FFF0F3', borderColor: PINK },
-  chipText: { fontSize: 13, color: '#666', fontFamily: FONT },
-  chipTextActive: { color: PINK, fontWeight: '700' },
+  chipActive: {
+    backgroundColor: '#FFF0F3',
+    borderColor: PINK,
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#666',
+    fontFamily: FONT,
+    fontWeight: '500',
+  },
+  chipTextActive: {
+    color: PINK,
+    fontWeight: '700',
+  },
 
   // Toggle rows
   toggleRow: {

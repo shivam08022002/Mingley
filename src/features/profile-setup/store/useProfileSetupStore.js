@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 
 export const useProfileSetupStore = create((set) => ({
+  authDetails: {
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  },
   profileDetails: {
     firstName: '',
     lastName: '',
@@ -9,6 +15,10 @@ export const useProfileSetupStore = create((set) => ({
   },
   gender: '',
   interests: [],
+
+  setAuthDetails: (details) => set((state) => ({
+    authDetails: { ...state.authDetails, ...details }
+  })),
 
   setProfileDetails: (details) => set((state) => ({
     profileDetails: { ...state.profileDetails, ...details }
@@ -25,6 +35,12 @@ export const useProfileSetupStore = create((set) => ({
   }),
 
   clearProfileSetup: () => set({
+    authDetails: {
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+    },
     profileDetails: {
       firstName: '',
       lastName: '',

@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Modal, Platform, Dimensions,
+  Modal, Platform, Dimensions, ActivityIndicator, Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { userService } from '../../../services/apiServices';
 
-const ALL = ['Music', 'Travel', 'Gym', 'Movies', 'Reading', 'Cooking', 'Art', 'Dancing', 'Photography', 'Yoga', 'Modelling', 'Travelling'];
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
+const PINK = '#E94057';
 
-const Chip = React.memo(({ label, active, onPress }) => (
+const Chip = React.memo(({ label, active, icon, onPress }) => (
   <TouchableOpacity
     style={[ch.chip, active && ch.chipActive]}
     onPress={onPress}
     activeOpacity={0.75}
   >
+    {icon && (
+      <Icon 
+        name={icon} 
+        size={14} 
+        color={active ? PINK : '#666'} 
+        style={{ marginRight: 6 }} 
+      />
+    )}
     <Text style={[ch.chipText, active && ch.chipTextActive]}>{label}</Text>
   </TouchableOpacity>
 ));
@@ -20,6 +31,24 @@ const Chip = React.memo(({ label, active, onPress }) => (
 export const InterestChips = React.memo(({ interests, onSave }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selected, setSelected] = useState(interests);
+  const [allInterests, setAllInterests] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInterests = async () => {
+      setLoading(true);
+      try {
+        const response = await userService.getInterests();
+        const data = response.data?.interests || [];
+        setAllInterests(data);
+      } catch (error) {
+        console.error('Fetch interests error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInterests();
+  }, []);
 
   const toggle = (item) => {
     setSelected((prev) =>
@@ -27,9 +56,15 @@ export const InterestChips = React.memo(({ interests, onSave }) => {
     );
   };
 
-  const handleSave = () => {
-    onSave(selected);
-    setModalVisible(false);
+  const handleSave = async () => {
+    try {
+      await userService.updateInterests(selected);
+      onSave(selected);
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Update interests error:', error);
+      Alert.alert('Error', 'Failed to update interests');
+    }
   };
 
   return (
@@ -41,11 +76,17 @@ export const InterestChips = React.memo(({ interests, onSave }) => {
         </TouchableOpacity>
       </View>
       <View style={ch.chipsRow}>
-        {interests.map((item, i) => (
-          <View key={i} style={[ch.chip, ch.chipActive]}>
-            <Text style={[ch.chipText, ch.chipTextActive]}>{item}</Text>
-          </View>
-        ))}
+        {interests.map((item, i) => {
+          const interestObj = allInterests.find(ai => ai.name === item);
+          return (
+            <View key={i} style={[ch.chip, ch.chipActive]}>
+              {interestObj?.icon && (
+                <Icon name={interestObj.icon} size={14} color={PINK} style={{ marginRight: 6 }} />
+              )}
+              <Text style={[ch.chipText, ch.chipTextActive]}>{item}</Text>
+            </View>
+          );
+        })}
       </View>
 
       {/* Edit Modal */}
@@ -59,17 +100,22 @@ export const InterestChips = React.memo(({ interests, onSave }) => {
                 <Icon name="close" size={22} color="#333" />
               </TouchableOpacity>
             </View>
-            <Text style={ch.hint}>Select up to 8 interests</Text>
-            <View style={ch.chipsRow}>
-              {ALL.map((item) => (
-                <Chip
-                  key={item}
-                  label={item}
-                  active={selected.includes(item)}
-                  onPress={() => toggle(item)}
-                />
-              ))}
-            </View>
+            <Text style={ch.hint}>Select your interests</Text>
+            {loading ? (
+              <ActivityIndicator color={PINK} style={{ marginVertical: 20 }} />
+            ) : (
+              <View style={ch.chipsRow}>
+                {allInterests.map((item) => (
+                  <Chip
+                    key={item.id}
+                    label={item.name}
+                    icon={item.icon}
+                    active={selected.includes(item.name)}
+                    onPress={() => toggle(item.name)}
+                  />
+                ))}
+              </View>
+            )}
             <TouchableOpacity style={ch.saveBtn} onPress={handleSave}>
               <Text style={ch.saveBtnText}>Save ({selected.length} selected)</Text>
             </TouchableOpacity>
@@ -80,14 +126,10 @@ export const InterestChips = React.memo(({ interests, onSave }) => {
   );
 });
 
-const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
-const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
-const PINK = '#E94057';
-
 const ch = StyleSheet.create({
   container: {
-    backgroundColor: '#fff', marginHorizontal: 16,
-    borderRadius: 18, padding: 16, marginBottom: 16,
+    backgroundColor: '#fff', marginHorizontal: 8,
+    borderRadius: 18, padding: 12, marginBottom: 16,
     shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   header: {
@@ -96,15 +138,33 @@ const ch = StyleSheet.create({
   },
   title: { fontSize: 16, fontWeight: '700', color: '#111', fontFamily: FONT_MED },
   edit: { fontSize: 13, color: PINK, fontWeight: '600' },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#E8E6EA',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 4,
+    marginRight: 4,
   },
-  chipActive: { backgroundColor: '#FFF0F3', borderColor: PINK },
-  chipText: { fontSize: 13, color: '#666', fontFamily: FONT },
-  chipTextActive: { color: PINK, fontWeight: '700' },
+  chipActive: {
+    backgroundColor: '#FFF0F3',
+    borderColor: PINK,
+  },
+  chipText: {
+    fontSize: 11,
+    color: '#666',
+    fontFamily: FONT,
+    fontWeight: '500',
+  },
+  chipTextActive: {
+    color: PINK,
+    fontWeight: '700',
+  },
   // Modal
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
