@@ -35,7 +35,7 @@ export const MainNavigator = () => {
       <Stack.Screen 
         name="Chat" 
         component={ChatScreen} 
-        options={{ presentation: 'transparentModal', animation: 'fade' }} 
+        options={{ animation: 'slide_from_bottom' }} 
       />
       <Stack.Screen name="Calling" component={CallingScreen} />
 

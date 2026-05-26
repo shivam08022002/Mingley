@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Modal, Alert, KeyboardAvoidingView, Platform, ActivityIndicator
@@ -12,6 +12,12 @@ import { walletService } from '../services/apiServices';
 export const DepositModal = ({ visible, onClose }) => {
   const [utrIdText, setUtrIdText] = useState('');
   const [amount, setAmount] = useState('');
+  const wallet = useChatStore((s) => s.wallet);
+  const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
+
+  useEffect(() => {
+    if (visible) fetchWalletBalance();
+  }, [visible, fetchWalletBalance]);
 
   const handleDepositSubmit = async () => {
     if (!utrIdText.trim()) { Alert.alert('Error', 'Please enter your UTR ID.'); return; }
@@ -61,6 +67,11 @@ export const CashoutModal = ({ visible, onClose }) => {
   const [bankOrUpiText, setBankOrUpiText] = useState('');
   const wallet = useChatStore((s) => s.wallet);
   const withdrawCoins = useChatStore((s) => s.withdrawCoins);
+  const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
+
+  useEffect(() => {
+    if (visible) fetchWalletBalance();
+  }, [visible, fetchWalletBalance]);
 
   const handleWithdraw = async () => {
     const amount = parseInt(cashoutInputText, 10);
@@ -98,7 +109,7 @@ export const CashoutModal = ({ visible, onClose }) => {
             onPress={handleWithdraw}
             disabled={!cashoutInputText || parseInt(cashoutInputText, 10) > wallet.coins || !bankOrUpiText}
           >
-            <Icon name="cash-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+            <Icon name="wallet-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
             <Text style={styles.modalActionBtnText}>Withdraw</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>

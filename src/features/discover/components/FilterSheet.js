@@ -91,7 +91,7 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 
 // ─── Main FilterSheet ───────────────────────────────────────────────────────
-export const FilterSheet = React.memo(({ visible, onClose }) => {
+export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
   const {
     interestedIn, setInterestedIn,
     location, setLocation,
@@ -190,12 +190,15 @@ export const FilterSheet = React.memo(({ visible, onClose }) => {
         verifiedOnly,
         location
       });
+      if (onApply) {
+        onApply();
+      }
       onClose();
     } catch (error) {
       console.error('Update preferences error:', error);
       onClose(); // Still close if it fails, or show alert
     }
-  }, [onClose]);
+  }, [onClose, onApply]);
   const handleClear = useCallback(() => reset(), [reset]);
 
   const pickLocation = () => {

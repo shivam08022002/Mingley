@@ -20,6 +20,7 @@ export const EditProfileScreen = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -37,10 +38,11 @@ export const EditProfileScreen = () => {
     try {
       const res = await userService.getMe();
       const data = res.data || res;
+      setIsVerified(data.isVerified || data.verified || false);
       setFormData({
         fullName: data.fullName || '',
         bio: decodeEmoji(data.bio || ''),
-        gender: data.gender || '',
+        gender: data.gender === 'man' ? 'male' : data.gender === 'woman' ? 'female' : data.gender || '',
         dateOfBirth: data.dateOfBirth || '',
         avatar: data.avatar || ''
       });
@@ -57,7 +59,7 @@ export const EditProfileScreen = () => {
       await userService.updateMe({
         fullName: formData.fullName,
         bio: formData.bio,
-        gender: formData.gender,
+        gender: formData.gender === 'male' ? 'man' : formData.gender === 'female' ? 'woman' : formData.gender,
         dateOfBirth: formData.dateOfBirth,
         avatar: formData.avatar
       });
@@ -117,6 +119,12 @@ export const EditProfileScreen = () => {
               </TouchableOpacity>
             </View>
             <Text style={styles.avatarHint}>Change Profile Picture</Text>
+            {isVerified && (
+              <View style={styles.verifiedBadge}>
+                <Icon name="checkmark-circle" size={14} color="#4CAF50" />
+                <Text style={styles.verifiedText}>Verified Profile</Text>
+              </View>
+            )}
           </View>
 
           {/* Form Fields */}
@@ -240,5 +248,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
     borderWidth: 1, borderColor: '#EEE'
   },
-  dateText: { fontSize: 15, color: '#111' }
+  dateText: { fontSize: 15, color: '#111' },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E6F4EA',
+    borderWidth: 1,
+    borderColor: '#A3E2AB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginTop: 8,
+    gap: 6,
+  },
+  verifiedText: {
+    color: '#137333',
+    fontSize: 12,
+    fontWeight: '700',
+  }
 });

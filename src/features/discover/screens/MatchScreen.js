@@ -11,6 +11,8 @@ import {
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useProfileStore } from '../../profile/store/useProfileStore';
+import { useMatchesStore } from '../../matches/store/useMatchesStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,6 +23,8 @@ export const MatchScreen = ({ navigation, route }) => {
   const { matchedUser } = route.params || {};
   const insets = useSafeAreaInsets();
   const [isMatched, setIsMatched] = useState(true);
+  
+  const { profile, fetchProfile } = useProfileStore();
 
   // Entrance animation
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -29,6 +33,10 @@ export const MatchScreen = ({ navigation, route }) => {
   const textAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Unconditionally load current user profile details and matches list on visit
+    fetchProfile();
+    useMatchesStore.getState().fetchMatches();
+
     Animated.sequence([
       Animated.timing(overlayOpacity, {
         toValue: 1,
@@ -56,9 +64,9 @@ export const MatchScreen = ({ navigation, route }) => {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fetchProfile]);
 
-  const matchedName = (matchedUser?.fullName || matchedUser?.name)?.split(' ')[0] || 'Jake';
+  const currentUserName = profile?.fullName?.split(' ')[0] || 'Priya';
 
   return (
     <Animated.View style={[styles.container, { opacity: overlayOpacity }]}>
@@ -106,7 +114,7 @@ export const MatchScreen = ({ navigation, route }) => {
           ]}
         >
           <FastImage
-            source={{ uri: CURRENT_USER_IMAGE }}
+            source={{ uri: profile?.avatar || profile?.image || CURRENT_USER_IMAGE }}
             style={styles.cardImage}
           />
           {/* Heart badge on bottom-left of girl card */}
@@ -115,6 +123,7 @@ export const MatchScreen = ({ navigation, route }) => {
           </View>
         </Animated.View>
       </View>
+
 
       {/* Text section */}
       <Animated.View
@@ -134,7 +143,7 @@ export const MatchScreen = ({ navigation, route }) => {
         ]}
       >
         <Text style={styles.matchTitle}>
-          {isMatched ? `It's a match, ${matchedName}!` : `Unmatched ${matchedName}`}
+          {isMatched ? `It's a match, ${currentUserName}!` : `Unmatched ${currentUserName}`}
         </Text>
         <Text style={styles.matchSubtitle}>
           {isMatched ? 'Start a conversation now with each other' : 'You can no longer message this person'}

@@ -2,8 +2,8 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Rect, Path, Circle } from 'react-native-svg';
 
-const ICON_W = 52;
-const ICON_H = 42;
+const ICON_W = 60;
+const ICON_H = 48;
 const VIEWBOX = '0 0 60 48';
 
 // Tab 1 — Discover (two stacked cards — updated SVG, no top bar)

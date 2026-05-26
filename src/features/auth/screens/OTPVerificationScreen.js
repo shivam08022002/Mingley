@@ -55,12 +55,14 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
               if (tokens.refreshToken) {
                 await safeStorage.setItem('refreshToken', tokens.refreshToken);
               }
-              login(userData);
+              navigation.navigate('ContactsPermission', { userData });
             } else {
               // Fallback: if we got a 200 but couldn't find user data, 
               // at least try to login with mock data or alert
               console.warn('Login successful but no user data found in response:', response);
-              login({ identifier: userIdentifier, id: 'unknown-id' });
+              navigation.navigate('ContactsPermission', { 
+                userData: { identifier: userIdentifier, id: 'unknown-id' } 
+              });
             }
           } else {
               // For registration flows (email/phone), we treat OTP as a dummy verification step

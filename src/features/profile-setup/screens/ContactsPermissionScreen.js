@@ -1,20 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from 'react-native-fast-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
-
 import { useAuthStore } from '../../../store/useAuthStore';
+import { userService } from '../../../services/apiServices';
 
-export const ContactsPermissionScreen = ({ navigation }) => {
+export const ContactsPermissionScreen = ({ navigation, route }) => {
+  const { userData } = route?.params || {};
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const [loading, setLoading] = useState(false);
 
   const handleSkip = () => {
     if (isAuthenticated) {
       navigation.navigate('Home');
     } else {
-      navigation.navigate('NotificationsPermission');
+      navigation.navigate('NotificationsPermission', { userData });
+    }
+  };
+
+  const handleAccessContacts = async () => {
+    setLoading(true);
+    try {
+      const mockPhoneNumbers = ['+1987654321', '+1122334455', '+1555666777'];
+      await userService.uploadContacts(mockPhoneNumbers);
+      Alert.alert('Contacts Synced', 'Your contacts have been successfully synced.');
+      navigation.navigate('NotificationsPermission', { userData });
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', e.message || 'Failed to sync contacts.');
+      navigation.navigate('NotificationsPermission', { userData });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,7 +60,8 @@ export const ContactsPermissionScreen = ({ navigation }) => {
 
         <Button
           title="Access to a contact list"
-          onPress={() => navigation.navigate('NotificationsPermission')}
+          onPress={handleAccessContacts}
+          loading={loading}
           style={styles.actionButton}
           textStyle={styles.buttonText}
           variant="solid"

@@ -12,7 +12,7 @@ import { FilterSheet } from '../components/FilterSheet';
 import { SuperchatModal } from '../components/SuperchatModal';
 import { useFilterStore } from '../store/useFilterStore';
 import { useDiscoverStore } from '../store/useDiscoverStore';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
@@ -22,23 +22,92 @@ import { useSubscriptionStore } from '../../subscription/store/useSubscriptionSt
 
 import { useProfileStore } from '../../profile/store/useProfileStore';
 
+const areFiltersEqual = (f1, f2) => {
+  if (!f1 || !f2) return false;
+  return (
+    f1.interestedIn === f2.interestedIn &&
+    f1.location === f2.location &&
+    f1.distance === f2.distance &&
+    f1.ageRange?.[0] === f2.ageRange?.[0] &&
+    f1.ageRange?.[1] === f2.ageRange?.[1] &&
+    f1.onlineStatus === f2.onlineStatus &&
+    f1.verifiedOnly === f2.verifiedOnly &&
+    f1.nearbyOnly === f2.nearbyOnly &&
+    f1.relationshipType === f2.relationshipType &&
+    JSON.stringify(f1.interests || []) === JSON.stringify(f2.interests || [])
+  );
+};
+
 export const DiscoverScreen = React.memo(() => {
   const navigation = useNavigation();
   const filters = useFilterStore();
   const fetchProfile = useProfileStore((s) => s.fetchProfile);
+  const profile = useProfileStore((s) => s.profile);
   const { currentStatus } = useSubscriptionStore();
   const {
-    profiles, fetchProfiles, swipe, isLoading,
+    profiles, fetchProfiles, swipe, isLoading, resetPage,
   } = useDiscoverStore();
   
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [isSuperchatVisible, setSuperchatVisible] = useState(false);
   const swipeRef = useRef(null);
+  const lastFiltersRef = useRef(null);
 
-  useEffect(() => {
-    fetchProfile();
-    fetchProfiles(useFilterStore.getState());
-  }, [fetchProfile, fetchProfiles]);
+  const handleReload = useCallback(async () => {
+    resetPage();
+    const currentFilters = {
+      interestedIn: useFilterStore.getState().interestedIn,
+      location: useFilterStore.getState().location,
+      distance: useFilterStore.getState().distance,
+      ageRange: useFilterStore.getState().ageRange,
+      onlineStatus: useFilterStore.getState().onlineStatus,
+      verifiedOnly: useFilterStore.getState().verifiedOnly,
+      nearbyOnly: useFilterStore.getState().nearbyOnly,
+      relationshipType: useFilterStore.getState().relationshipType,
+      interests: useFilterStore.getState().interests,
+    };
+    lastFiltersRef.current = currentFilters;
+    await fetchProfiles(currentFilters);
+  }, [resetPage, fetchProfiles]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+      
+      const currentFilters = {
+        interestedIn: filters.interestedIn,
+        location: filters.location,
+        distance: filters.distance,
+        ageRange: filters.ageRange,
+        onlineStatus: filters.onlineStatus,
+        verifiedOnly: filters.verifiedOnly,
+        nearbyOnly: filters.nearbyOnly,
+        relationshipType: filters.relationshipType,
+        interests: filters.interests,
+      };
+
+      if (!lastFiltersRef.current || !areFiltersEqual(lastFiltersRef.current, currentFilters)) {
+        resetPage();
+        fetchProfiles(currentFilters);
+        lastFiltersRef.current = currentFilters;
+      }
+      
+      // Reset card position if it was swiped up (for super like) and returned
+      swipeRef.current?.reset();
+    }, [fetchProfile, fetchProfiles, resetPage, filters])
+  );
+
+  const displayLocation = useMemo(() => {
+    if (profile?.location?.city) {
+      const city = profile.location.city;
+      const country = profile.location.country || '';
+      return country ? `${city}, ${country}` : city;
+    }
+    if (profile?.city) {
+      return profile.city;
+    }
+    return filters.location || 'Chicago, Il';
+  }, [profile, filters.location]);
 
   const handleSwipeLeft = useCallback(async (user) => {
     await swipe(user.id || user._id, 'pass');
@@ -128,9 +197,20 @@ export const DiscoverScreen = React.memo(() => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            }
+          }}
+        >
+          <Icon name="chevron-back" size={24} color="#E94057" />
+        </TouchableOpacity>
+
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Discover</Text>
-          <Text style={styles.headerSubtitle}>{filters.location}</Text>
+          <Text style={styles.headerSubtitle}>{displayLocation}</Text>
         </View>
 
         <TouchableOpacity
@@ -153,7 +233,7 @@ export const DiscoverScreen = React.memo(() => {
       />
 
       {/* Filter Sheet */}
-      <FilterSheet visible={isFilterVisible} onClose={() => setFilterVisible(false)} />
+      <FilterSheet visible={isFilterVisible} onClose={() => setFilterVisible(false)} onApply={handleReload} />
 
       {/* Superchat Modal */}
       <SuperchatModal
@@ -172,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingHorizontal: SPACING.xl, paddingTop: SPACING.m,
   },
   headerButton: {
-    width: 50, height: 50, borderRadius: 16,
+    width: 52, height: 52, borderRadius: 16,
     borderWidth: 1, borderColor: '#F0F0F0',
     backgroundColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
@@ -182,11 +262,11 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 10, right: 10,
     width: 8, height: 8, borderRadius: 4, backgroundColor: '#E94057',
   },
-  headerTitleContainer: { flex: 1, alignItems: 'center', marginLeft: 50 },
+  headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { ...TYPOGRAPHY.h2, color: '#1F1F1F', marginBottom: 2, fontSize: 28, fontWeight: '600', fontFamily: TITLE_MED },
   headerSubtitle: { ...TYPOGRAPHY.caption, color: '#7A7A7A', fontFamily: TITLE_FONT },
   cardsContainer: {
-    flex: 1, marginTop: 16, marginBottom: 16,
+    flex: 1, marginTop: 8, marginBottom: 8,
     justifyContent: 'center', alignItems: 'center',
   },
   noMoreText: {
@@ -194,3 +274,4 @@ const styles = StyleSheet.create({
     textAlign: 'center', paddingHorizontal: 32,
   },
 });
+

@@ -85,7 +85,7 @@ export const SuperchatModal = ({ visible, onClose, user }) => {
           <Text style={s.subtitle}>Direct message to {user?.fullName || user?.name || 'User'}</Text>
 
           <View style={s.promoBanner}>
-            <Icon name="shield-checkmark" size={20} color="#8A2BE2" />
+            <Icon name="shield-checkmark" size={20} color="#E94057" />
             <Text style={s.promoText}>Send a Superchat. If you don't get a reply, you'll get a full refund!</Text>
           </View>
 
@@ -106,7 +106,7 @@ export const SuperchatModal = ({ visible, onClose, user }) => {
 
           <Section label="Superchat Amount">
             <View style={s.inputContainer}>
-              <Icon name="flash" size={20} color="#8A2BE2" style={s.inputIcon} />
+              <Icon name="flash" size={20} color="#7C3AED" style={s.inputIcon} />
               <TextInput
                 style={s.amountInput}
                 placeholder="Enter amount"
@@ -115,7 +115,7 @@ export const SuperchatModal = ({ visible, onClose, user }) => {
                 onChangeText={setCoinAmount}
                 placeholderTextColor="#BBB"
               />
-              <Text style={{ fontWeight: '600', color: '#8A2BE2' }}>Coins</Text>
+              <Text style={{ fontWeight: '600', color: '#E94057' }}>Coins</Text>
             </View>
           </Section>
 
@@ -137,7 +137,7 @@ export const SuperchatModal = ({ visible, onClose, user }) => {
             disabled={isLoading || !message.trim()}
           >
             <LinearGradient
-              colors={['#8A2BE2', '#4B0082']}
+              colors={['#E94057', '#8A2387']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.sendBtn}
             >
@@ -197,7 +197,7 @@ const s = StyleSheet.create({
   promoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#FFF0F3',
     padding: 12,
     borderRadius: 12,
     marginBottom: 20,
@@ -206,7 +206,7 @@ const s = StyleSheet.create({
   promoText: {
     flex: 1,
     fontSize: 13,
-    color: '#6B21A8',
+    color: '#E94057',
     fontWeight: '600',
     lineHeight: 18,
   },
@@ -234,7 +234,7 @@ const s = StyleSheet.create({
   amountValue: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#8A2BE2',
+    color: '#E94057',
   },
   section: {
     marginBottom: 24,

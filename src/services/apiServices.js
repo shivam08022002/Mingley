@@ -417,6 +417,15 @@ export const userService = {
       throw error.response?.data || error.message;
     }
   },
+
+  uploadContacts: async (phoneNumbers) => {
+    try {
+      const response = await api.post('/v1/users/contact', { phoneNumbers });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export const chatService = {

@@ -7,7 +7,8 @@ import { Button } from '../../../components/common/Button';
 
 import { useAuthStore } from '../../../store/useAuthStore';
 
-export const NotificationsPermissionScreen = ({ navigation }) => {
+export const NotificationsPermissionScreen = ({ navigation, route }) => {
+  const { userData } = route?.params || {};
   const login = useAuthStore(state => state.login);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
 
@@ -16,7 +17,7 @@ export const NotificationsPermissionScreen = ({ navigation }) => {
       navigation.navigate('Home');
     } else {
       // Finalize registration onboarding
-      login({ id: 'new-user', name: 'User' }); // The actual user data is already in tokens
+      login(userData || { id: 'new-user', name: 'User' }); // The actual user data is already in tokens
     }
   };
 

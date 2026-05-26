@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ScrollView, Alert, Platform, ActivityIndicator,
@@ -9,7 +9,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { MatchesGridItem } from '../components/MatchesGridItem';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useMatchesStore } from '../store/useMatchesStore';
 import { discoverService } from '../../../services/apiServices';
 
@@ -22,10 +22,13 @@ export const MatchesScreen = () => {
   const [likes, setLikes] = useState([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
 
-  useEffect(() => {
-    fetchMatches();
-    fetchLikes();
-  }, [fetchMatches]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchMatches();
+      fetchLikes();
+    }, [fetchMatches])
+  );
+
 
   const fetchLikes = async () => {
     setLoadingLikes(true);
@@ -71,12 +74,40 @@ export const MatchesScreen = () => {
   };
 
   const handleShowDetails = (item) => {
-    const user = item.user || item;
+    const rawUser = item.user || item;
+    // Merge fullProfile data if available from API response (v1/matches)
+    const fullProfile = rawUser.fullProfile || item.fullProfile || {};
+    const user = { ...rawUser, ...fullProfile };
     navigation.navigate('UserProfile', { user, isFromMatches: true });
   };
 
-  const handleLikeProfile = (user) => {
+  const handleLikeProfile = (item) => {
+    const fullProfile = item.fullProfile || {};
+    const user = { ...item, ...fullProfile };
     navigation.navigate('UserProfile', { user, isFromLikes: true });
+  };
+
+  const handleAcceptLike = async (item) => {
+    try {
+      const res = await discoverService.swipe({ targetId: item.id || item._id, action: 'like' });
+      if (res?.isMatch || res?.data?.isMatch) {
+        navigation.navigate('Match', { matchedUser: item });
+      }
+      fetchMatches();
+      fetchLikes();
+    } catch (e) {
+      console.error('Accept like error:', e);
+    }
+  };
+
+  const handleDeclineLike = async (item) => {
+    try {
+      await discoverService.swipe({ targetId: item.id || item._id, action: 'pass' });
+      fetchMatches();
+      fetchLikes();
+    } catch (e) {
+      console.error('Decline like error:', e);
+    }
   };
 
   // ── Render helpers ────────────────────────────────────────────────────────
@@ -96,12 +127,33 @@ export const MatchesScreen = () => {
     >
       <FastImage source={{ uri: item.avatar || item.image }} style={styles.likeCardImage} />
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={['transparent', 'rgba(0,0,0,0.85)']}
         style={styles.likeCardGradient}
       />
       <View style={styles.likeCardInfo}>
         <Text style={styles.likeCardName} numberOfLines={1}>{item.fullName || item.name}</Text>
         <Text style={styles.likeCardSub}>{item.age ? `${item.age} · ` : ''}{item.location?.city || 'Near you'}</Text>
+      </View>
+
+      {/* Decline / Accept Likes Row */}
+      <View style={styles.likeCardActions}>
+        <TouchableOpacity
+          style={styles.likeCardBtn}
+          onPress={(e) => { e.stopPropagation(); handleDeclineLike(item); }}
+          activeOpacity={0.7}
+        >
+          <Icon name="close" size={16} color="#FF4D67" />
+        </TouchableOpacity>
+        
+        <View style={styles.likeCardDivider} />
+        
+        <TouchableOpacity
+          style={styles.likeCardBtn}
+          onPress={(e) => { e.stopPropagation(); handleAcceptLike(item); }}
+          activeOpacity={0.7}
+        >
+          <Icon name="heart" size={16} color="#E94057" />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -245,10 +297,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
   },
   likeCardImage: { width: '100%', height: '100%' },
-  likeCardGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%' },
-  likeCardInfo: { position: 'absolute', bottom: 10, left: 10, right: 10 },
+  likeCardGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%' },
+  likeCardInfo: { position: 'absolute', bottom: 46, left: 10, right: 10 },
   likeCardName: { color: '#FFF', fontSize: 14, fontWeight: '800', marginBottom: 2 },
   likeCardSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' },
+  likeCardActions: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  likeCardBtn: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  likeCardDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#F0F0F0',
+  },
   emptyLikesBox: { 
     marginHorizontal: SPACING.l, padding: 20, backgroundColor: '#FAFAFA', 
     borderRadius: 16, borderStyle: 'dashed', borderWidth: 1, borderColor: '#DDD',

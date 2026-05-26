@@ -34,6 +34,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
       'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=600&q=80',
       'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
+      'https://i.ibb.co/bpR70mc/image.png',
     ];
 
     Alert.alert('Choose Profile Photo', 'Select a sample photo to use for your profile.', [
@@ -53,6 +54,12 @@ export const ProfileDetailsScreen = ({ navigation }) => {
         text: 'Style 3',
         onPress: () => {
           setProfileDetails({ avatar: avatarChoices[2] });
+        },
+      },
+      {
+        text: 'Style 4 (Male)',
+        onPress: () => {
+          setProfileDetails({ avatar: avatarChoices[3] });
         },
       },
       { text: 'Cancel', style: 'cancel' },

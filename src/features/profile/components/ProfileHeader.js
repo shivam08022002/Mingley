@@ -3,15 +3,18 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions, Image }
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { decodeEmoji } from '../../../utils/stringUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const COVER_H = 240;
 const AVATAR_SIZE = 100;
 
 const FONT_REG = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 
 export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSettings, onPressNotifications, hasNotifications }) => {
+  const insets = useSafeAreaInsets();
   const {
     fullName,
     avatar,
@@ -21,11 +24,15 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSetting
     isOnline,
     bio,
     location,
+    gender,
+    age,
     completionPct = 0,
   } = profile;
   const showVerified = typeof isVerified === 'boolean' ? isVerified : verified;
   const showOnline = typeof isOnline === 'boolean' ? isOnline : online;
   const profileCompletion = Math.max(0, Math.min(100, Number(completionPct) || 100));
+
+  const topOffset = insets.top > 0 ? insets.top + 8 : 12;
 
   return (
     <View style={s.container}>
@@ -42,19 +49,28 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSetting
           style={StyleSheet.absoluteFill}
         />
 
+        {/* Verified Top Badge – adjacent to Gear icon */}
+        {showVerified && (
+          <View style={[s.verifiedBadgeTop, { top: topOffset + 6 }]}>
+            <Icon name="checkmark-circle" size={12} color="#4CAF50" />
+            <Text style={s.verifiedBadgeText}>Verified</Text>
+          </View>
+        )}
+
         {/* Gear icon – top-right */}
-        <TouchableOpacity style={s.gearBtn} onPress={onSettings}>
+        <TouchableOpacity style={[s.gearBtn, { top: topOffset }]} onPress={onSettings}>
           <Icon name="settings-outline" size={22} color="#fff" />
         </TouchableOpacity>
 
         {/* Name overlaid ON the cover (white) */}
         <View style={s.coverTextBlock}>
           <View style={s.nameRow}>
-            <Text style={s.coverName}>{decodeEmoji(fullName) || 'New User'}</Text>
-            {showVerified && (
-              <View style={s.verifiedInlineBadge}>
-                <Icon name="checkmark-circle" size={20} color="#4CAF50" />
-              </View>
+            <Text style={s.coverName}>{`${decodeEmoji(fullName) || 'New User'}${age ? `, ${age}` : ''}`}</Text>
+            {(gender?.toLowerCase() === 'female' || gender?.toLowerCase() === 'woman') && (
+              <Icon name="female" size={20} color="#E94057" style={{ marginLeft: 4 }} />
+            )}
+            {(gender?.toLowerCase() === 'male' || gender?.toLowerCase() === 'man') && (
+              <Icon name="male" size={20} color="#3B82F6" style={{ marginLeft: 4 }} />
             )}
           </View>
         </View>
@@ -83,12 +99,12 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSetting
           </View>
 
           {/* Notification Icon inside bio card */}
-          <TouchableOpacity 
-            style={s.notifIcon} 
+          <TouchableOpacity
+            style={s.notifIcon}
             onPress={onPressNotifications}
             activeOpacity={0.7}
           >
-            <Icon name="notifications" size={26} color="#E94057" />
+            <Icon name="notifications-outline" size={24} color="#E94057" />
             {hasNotifications && <View style={s.notifDot} />}
           </TouchableOpacity>
         </View>
@@ -135,32 +151,50 @@ const s = StyleSheet.create({
     height: COVER_H,
   },
   gearBtn: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 54 : 40, right: 16,
+    position: 'absolute', top: Platform.OS === 'ios' ? 44 : 26, right: 16,
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center', alignItems: 'center',
   },
-  verifiedTopBadge: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 58 : 44,
-    alignSelf: 'center',
+  verifiedBadgeTop: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 32,
+    right: 70,
+    height: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.16)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(76, 175, 79, 0.05)',
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  verifiedBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: FONT_MED,
   },
   coverTextBlock: {
     paddingHorizontal: 20,
-    paddingBottom: 68, // leave room for avatar overlap
+    paddingBottom: 68,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  verifiedInlineBadge: {
-    marginLeft: 2,
-  },
   coverName: {
-    fontSize: 30,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     color: '#fff',
-    fontFamily: FONT_BOLD,
+    fontFamily: FONT_MED,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -257,8 +291,8 @@ const s = StyleSheet.create({
   },
   completionContainer: {
     marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 2,
   },
   completionHeader: {
     flexDirection: 'row',

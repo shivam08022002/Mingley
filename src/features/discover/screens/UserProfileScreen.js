@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Dimensions, Platform, Alert,
+  Animated, FlatList,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
@@ -12,20 +13,37 @@ import { SuperchatModal } from '../components/SuperchatModal';
 import { userService } from '../../../services/apiServices';
 import { decodeEmoji } from '../../../utils/stringUtils';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 
+const IMAGE_HEIGHT = height * 0.40;
+
 export const UserProfileScreen = ({ navigation, route }) => {
-  const { user, isFromMatches } = route.params || {};
+  const { user, isFromMatches, isFromLikes } = route.params || {};
   const insets = useSafeAreaInsets();
   const [expanded, setExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
   const [rejected, setRejected] = useState(false);
   const [isSuperchatVisible, setSuperchatVisible] = useState(false);
   const [allInterests, setAllInterests] = useState([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Build image gallery: avatar + gallery images
+  const images = (() => {
+    const arr = [];
+    if (user?.avatar || user?.image) arr.push(user.avatar || user.image);
+    const extraImages = (user?.gallery && user.gallery.length > 0) ? user.gallery : (user?.images || []);
+    if (extraImages.length) {
+      extraImages.forEach((img) => {
+        if (img !== arr[0]) arr.push(img);
+      });
+    }
+    return arr.length > 0 ? arr : ['https://via.placeholder.com/500'];
+  })();
 
   useEffect(() => {
     const fetchInterests = async () => {
@@ -84,271 +102,380 @@ export const UserProfileScreen = ({ navigation, route }) => {
 
   if (!user) return null;
 
+  const locationText = (() => {
+    if (typeof user.location === 'string') return decodeEmoji(user.location);
+    if (user.location?.city) {
+      return `${user.location.city}${user.location.country ? `, ${user.location.country}` : ''}`;
+    }
+    return user.city || 'Near you';
+  })();
+
+  const handleImageScroll = (event) => {
+    const idx = Math.round(event.nativeEvent.contentOffset.x / width);
+    setActiveImageIndex(idx);
+  };
+
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      bounces
-      contentContainerStyle={{ paddingBottom: 40 }}
-    >
-      {/* ── Hero image ── */}
-      <View style={styles.imageContainer}>
-        <FastImage
-          source={{ uri: user.avatar || user.image }}
-          style={styles.mainImage}
-          resizeMode={FastImage.resizeMode.cover}
-        />
-        <LinearGradient
-          colors={['rgba(0,0,0,0.5)', 'transparent', 'transparent', 'rgba(255,255,255,0.95)']}
-          style={StyleSheet.absoluteFillObject}
-        />
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {/* ── Hero Image Carousel ── */}
+        <View style={styles.imageContainer}>
+          <Animated.ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: false }
+            )}
+            onMomentumScrollEnd={handleImageScroll}
+            scrollEventThrottle={16}
+          >
+            {images.map((img, i) => (
+              <FastImage
+                key={i}
+                source={{ uri: img }}
+                style={styles.heroImage}
+                resizeMode={FastImage.resizeMode.cover}
+              />
+            ))}
+          </Animated.ScrollView>
 
-        {/* Back */}
-        <TouchableOpacity
-          style={[styles.backButton, { top: insets.top + 12 }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="chevron-back" size={22} color="#333" />
-        </TouchableOpacity>
+          {/* Top gradient for badges */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.45)', 'transparent']}
+            style={styles.topGradient}
+            pointerEvents="none"
+          />
+          {/* Bottom gradient for smooth transition */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.02)', '#F8F8F8']}
+            style={styles.bottomGradient}
+            pointerEvents="none"
+          />
 
-        {/* Online badge */}
-        {(user.isOnline || user.online) && (
-          <View style={[styles.onlineBadge, { top: insets.top + 16 }]}>
-            <View style={styles.onlineDot} />
-            <Text style={styles.onlineText}>Online</Text>
-          </View>
-        )}
+          {/* Back button */}
+          <TouchableOpacity
+            style={[styles.backButton, { top: insets.top + 10 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="chevron-back" size={22} color="#FFF" />
+          </TouchableOpacity>
 
-        {/* Verified badge */}
-        {(user.isVerified || user.verified) && (
-          <View style={[styles.verifiedBadge, { top: insets.top + 16 }]}>
-            <Icon name="checkmark-circle" size={16} color="#4CAF50" />
-            <Text style={styles.verifiedText}>Verified</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Action Buttons Row */}
-      <View style={styles.actionButtonsRow}>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.smallBtn, rejected && styles.btnPressed]}
-          onPress={handleReject}
-          activeOpacity={0.8}
-        >
-          <Icon name="close" size={28} color="#E86B32" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.heartBtn, liked && styles.heartBtnLiked]}
-          onPress={handleLike}
-          activeOpacity={0.8}
-        >
-          <Icon name="heart" size={36} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.smallBtn]}
-          onPress={handleSuperchat}
-          activeOpacity={0.8}
-        >
-          <Icon name="chatbubble-ellipses" size={26} color="#8A2BE2" />
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Content ── */}
-      <View style={styles.content}>
-        {/* Name row */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.name}>{decodeEmoji(user.fullName || user.name)}, {user.age}</Text>
-              {(user.isVerified || user.verified) && (
-                <Icon name="checkmark-circle" size={24} color="#4CAF50" style={{ marginLeft: 8 }} />
-              )}
+          {/* Online / Verified badge */}
+          {(user.isOnline || user.online) && (
+            <View style={[styles.topRightBadge, { top: insets.top + 14 }]}>
+              <View style={styles.onlineDot} />
+              <Text style={styles.badgeText}>Online</Text>
             </View>
-            <Text style={styles.occupation}>{decodeEmoji(user.occupation || user.city)}</Text>
-          </View>
-          {isFromMatches && (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity style={styles.headerActionBtn} onPress={handleCall}>
-                <Icon name="call-outline" size={20} color="#E94057" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.headerActionBtn} onPress={handleMessage}>
-                <Icon name="paper-plane-outline" size={20} color="#E94057" />
-              </TouchableOpacity>
+          )}
+          {(user.isVerified || user.verified) && !(user.isOnline || user.online) && (
+            <View style={[styles.topRightBadge, { top: insets.top + 14 }]}>
+              <Icon name="checkmark-circle" size={14} color="#4CAF50" />
+              <Text style={styles.badgeText}>Verified</Text>
+            </View>
+          )}
+
+          {/* Image pagination dots */}
+          {images.length > 1 && (
+            <View style={styles.paginationDots}>
+              {images.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    i === activeImageIndex && styles.dotActive,
+                  ]}
+                />
+              ))}
             </View>
           )}
         </View>
 
-        {/* Location */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Location</Text>
-          <View style={styles.locationRow}>
-            <Text style={styles.bodyText}>{decodeEmoji(user.location || user.city)}</Text>
-            <View style={styles.distanceBadge}>
-              <Icon name="location-outline" size={13} color="#E94057" />
-              <Text style={styles.distanceText}>{user.distance || 0} km</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* About */}
-        <View style={styles.section}>
-          <View style={styles.rowCenter}>
-            <Icon name="person-outline" size={20} color="#E94057" style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionLabel, { marginBottom: 0 }]}>About</Text>
-          </View>
-          <Text style={styles.bodyTextBio} numberOfLines={expanded ? undefined : 3}>
-            {decodeEmoji(user.bio || user.about)}
-          </Text>
-          <TouchableOpacity onPress={() => setExpanded(!expanded)} style={{ alignSelf: 'flex-start' }}>
-            <Text style={styles.readMore}>{expanded ? 'Read less' : 'Read more'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Interests */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Interests</Text>
-          <View style={styles.chipsWrap}>
-            {(user.interests || []).map((interest, idx) => {
-              const interestName = typeof interest === 'string' ? interest : interest.name;
-              const interestObj = allInterests.find(i => i.name === interestName);
-              return (
-                <View
-                  key={idx}
-                  style={[styles.chip, idx < 2 && styles.chipActive]}
-                >
-                  {interestObj?.icon ? (
-                    <Icon name={interestObj.icon} size={14} color={idx < 2 ? '#E94057' : '#666'} style={{ marginRight: 6 }} />
-                  ) : idx < 2 ? (
-                    <Icon name="checkmark-done" size={13} color="#E94057" style={{ marginRight: 4 }} />
-                  ) : null}
-                  <Text style={[styles.chipText, idx < 2 && styles.chipTextActive]}>
-                    {interestName}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Gallery */}
-        {user.gallery && user.gallery.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.locationRow}>
-              <Text style={styles.sectionLabel}>Gallery</Text>
+        {/* ── Content ── */}
+        <View style={styles.content}>
+          {/* ── Floating Action Buttons Row inside content ── */}
+          {!(isFromMatches || isFromLikes) && (
+            <View style={styles.actionButtonsRowInside}>
               <TouchableOpacity
-                onPress={() => navigation.navigate('Gallery', { images: user.gallery, initialIndex: 0 })}
+                style={[styles.actionBtn, styles.smallActionBtn, rejected && styles.btnPressed]}
+                onPress={handleReject}
+                activeOpacity={0.8}
               >
-                <Text style={styles.seeAll}>See all</Text>
+                <Icon name="close" size={26} color="#F27121" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.heartActionBtn, liked && styles.heartBtnLiked]}
+                onPress={handleLike}
+                activeOpacity={0.8}
+              >
+                <Icon name="heart" size={32} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.smallActionBtn]}
+                onPress={handleSuperchat}
+                activeOpacity={0.8}
+              >
+                <Icon name="flash" size={24} color="#7C3AED" />
               </TouchableOpacity>
             </View>
-            <View style={styles.galleryGrid}>
-              {(user.gallery || []).slice(0, 3).map((img, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={styles.galleryItem}
-                  onPress={() => navigation.navigate('Gallery', { images: user.gallery, initialIndex: i })}
-                >
-                  <FastImage source={{ uri: img }} style={styles.galleryImage} />
-                </TouchableOpacity>
-              ))}
+          )}
+
+          <View style={styles.nameRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.nameAgeRow}>
+                <Text style={styles.name}>
+                  {decodeEmoji(user.fullName || user.name)}
+                </Text>
+                {!!user.age && <Text style={styles.age}>, {user.age}</Text>}
+                {(user.gender?.toLowerCase() === 'female' || user.gender?.toLowerCase() === 'woman') && (
+                  <Icon name="female" size={20} color="#E94057" style={{ marginLeft: 8, alignSelf: 'center' }} />
+                )}
+                {(user.gender?.toLowerCase() === 'male' || user.gender?.toLowerCase() === 'man') && (
+                  <Icon name="male" size={20} color="#3B82F6" style={{ marginLeft: 8, alignSelf: 'center' }} />
+                )}
+              </View>
+
+              <View style={styles.badgeRow}>
+                {/* Verified / Not Verified Badge */}
+                {(() => {
+                  const isUserVerified = !!(user.isVerified || user.verified);
+                  return (
+                    <View style={[styles.statusBadge, isUserVerified ? styles.verifiedBadge : styles.unverifiedBadge]}>
+                      <Icon
+                        name={isUserVerified ? 'checkmark-circle' : 'close-circle'}
+                        size={12}
+                        color={isUserVerified ? '#4CAF50' : '#888'}
+                      />
+                      <Text style={[styles.statusBadgeText, isUserVerified ? styles.verifiedBadgeText : styles.unverifiedBadgeText]}>
+                        {isUserVerified ? 'Verified' : 'Not Verified'}
+                      </Text>
+                    </View>
+                  );
+                })()}
+
+                {/* Match Score Badge */}
+                {user.matchScore !== undefined && (
+                  <View style={styles.matchScoreBadgeInline}>
+                    <Icon name="flame" size={12} color="#FFF" style={{ marginRight: 2 }} />
+                    <Text style={styles.matchScoreTextInline}>{user.matchScore}% Match</Text>
+                  </View>
+                )}
+              </View>
             </View>
-            {(user.gallery || []).length > 3 && (
-              <View style={[styles.galleryGrid, { marginTop: 8 }]}>
-                {(user.gallery || []).slice(3, 6).map((img, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={styles.galleryItem}
-                    onPress={() => navigation.navigate('Gallery', { images: user.gallery, initialIndex: i + 3 })}
-                  >
-                    <FastImage source={{ uri: img }} style={styles.galleryImage} />
-                  </TouchableOpacity>
-                ))}
+            {isFromMatches && (
+              <View style={styles.headerButtons}>
+                <TouchableOpacity style={styles.headerActionBtn} onPress={handleMessage}>
+                  <Icon name="paper-plane-outline" size={20} color="#E94057" />
+                </TouchableOpacity>
               </View>
             )}
           </View>
-        )}
 
-        {/* Superchat Text Only (No box) */}
-        {!isFromMatches && (
-          <TouchableOpacity 
-            style={styles.textOnlyBanner}
-            onPress={handleSuperchat}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.textOnlyBannerText}>
-              Send a message to reach directly into DM! ⚡
+          {/* Location Card */}
+          <View style={styles.locationCard}>
+            <View style={styles.locationLeft}>
+              <Text style={styles.locationTitle}>Location</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <Text style={styles.locationCity}>{locationText}</Text>
+                <Icon name="location-sharp" size={14} color="#E94057" style={{ marginLeft: 6 }} />
+              </View>
+            </View>
+            <View style={styles.distanceBadgeRight}>
+              <Text style={styles.distanceBadgeText}>{user.distance != null ? user.distance : 0} km</Text>
+            </View>
+          </View>
+
+          {/* Occupation / Bio line */}
+          {user.occupation ? (
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Icon name="briefcase-outline" size={16} color="#E94057" />
+                <Text style={styles.infoRowText}>{decodeEmoji(user.occupation)}</Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* About */}
+          <View style={styles.section}>
+            <View style={styles.sectionTitleRow}>
+              <Icon name="person-outline" size={18} color="#E94057" style={{ marginRight: 8 }} />
+              <Text style={styles.sectionLabel}>About</Text>
+            </View>
+            <Text style={styles.bodyTextBio}>
+              {decodeEmoji(user.bio || user.about || 'No bio available.')}
             </Text>
-            <Icon name="chevron-forward" size={14} color="#8A2BE2" />
-          </TouchableOpacity>
-        )}
+          </View>
 
-        {/* Bottom CTA Button */}
-        <TouchableOpacity 
-          style={styles.helloBtn} 
-          onPress={isFromMatches ? handleMessage : handleSuperchat} 
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={isFromMatches ? ['#E94057', '#8A2387'] : ['#8A2BE2', '#4B0082']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.helloGradient}
-          >
-            <Text style={styles.helloText}>{isFromMatches ? 'Send a Message' : 'Send Superchat'}</Text>
-            <Icon name={isFromMatches ? 'paper-plane' : 'flash'} size={18} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+          {/* Interests */}
+          {(user.interests || []).length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Icon name="heart-outline" size={18} color="#E94057" style={{ marginRight: 8 }} />
+                <Text style={styles.sectionLabel}>Interests</Text>
+              </View>
+              <View style={styles.chipsWrap}>
+                {(user.interests || []).map((interest, idx) => {
+                  const interestName = typeof interest === 'string' ? interest : interest.name;
+                  const interestObj = allInterests.find(i => i.name === interestName);
+                  const isHighlighted = idx < 3;
+                  return (
+                    <View
+                      key={idx}
+                      style={[styles.chip, isHighlighted && styles.chipActive]}
+                    >
+                      {interestObj?.icon ? (
+                        <Icon name={interestObj.icon} size={14} color={isHighlighted ? '#E94057' : '#777'} style={{ marginRight: 6 }} />
+                      ) : isHighlighted ? (
+                        <Icon name="sparkles" size={13} color="#E94057" style={{ marginRight: 5 }} />
+                      ) : null}
+                      <Text style={[styles.chipText, isHighlighted && styles.chipTextActive]}>
+                        {interestName}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Gallery */}
+          {(() => {
+            const galleryImages = (user.gallery && user.gallery.length > 0) ? user.gallery : (user.images || []);
+            if (!galleryImages.length) return null;
+            return (
+              <View style={styles.section}>
+                <View style={styles.sectionTitleRow}>
+                  <Icon name="images-outline" size={18} color="#E94057" style={{ marginRight: 8 }} />
+                  <Text style={[styles.sectionLabel, { flex: 1 }]}>Gallery</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Gallery', { images: galleryImages, initialIndex: 0 })}
+                  >
+                    <Text style={styles.seeAll}>See all</Text>
+                  </TouchableOpacity>
+                </View>
+                {(() => {
+                  const rows = [];
+                  for (let i = 0; i < galleryImages.length; i += 3) {
+                    rows.push(galleryImages.slice(i, i + 3));
+                  }
+                  return rows.map((rowImages, rowIndex) => (
+                    <View key={rowIndex} style={[styles.galleryGrid, rowIndex > 0 && { marginTop: 10 }]}>
+                      {rowImages.map((img, colIndex) => {
+                        const originalIndex = rowIndex * 3 + colIndex;
+                        return (
+                          <TouchableOpacity
+                            key={colIndex}
+                            style={styles.galleryItem}
+                            onPress={() => navigation.navigate('Gallery', { images: galleryImages, initialIndex: originalIndex })}
+                          >
+                            <FastImage source={{ uri: img }} style={styles.galleryImage} />
+                          </TouchableOpacity>
+                        );
+                      })}
+                      {rowImages.length < 3 && Array.from({ length: 3 - rowImages.length }).map((_, emptyIdx) => (
+                        <View key={`empty-${emptyIdx}`} style={styles.galleryItemPlaceholder} />
+                      ))}
+                    </View>
+                  ));
+                })()}
+              </View>
+            );
+          })()}
+
+          {/* Superchat Text Banner (non-match) */}
+          {!(isFromMatches || isFromLikes) && (
+            <TouchableOpacity
+              style={styles.superchatBanner}
+              onPress={handleSuperchat}
+              activeOpacity={0.7}
+            >
+              <Icon name="flash" size={18} color="#7C3AED" />
+              <Text style={styles.superchatBannerText}>
+                Send a Superchat to stand out! 💬
+              </Text>
+              <Icon name="chevron-forward" size={16} color="#E94057" />
+            </TouchableOpacity>
+          )}
+
+          {/* Bottom CTA Button */}
+          {!isFromLikes && (
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={isFromMatches ? handleMessage : handleSuperchat}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#E94057', '#8A2387']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                style={styles.ctaGradient}
+              >
+                <Icon name={isFromMatches ? 'paper-plane' : 'chatbubble-ellipses'} size={20} color="#fff" style={{ marginRight: 10 }} />
+                <Text style={styles.ctaText}>{isFromMatches ? 'Send a Message' : 'Send Superchat'}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
 
       <SuperchatModal
         visible={isSuperchatVisible}
         onClose={() => setSuperchatVisible(false)}
         user={user}
       />
-    </ScrollView>
+    </View>
   );
 };
-
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F8F8',
   },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+
+  // ── Hero image carousel ──────────────────────────────────────────────────
   imageContainer: {
     width: width,
-    height: width * 1.1,
+    height: IMAGE_HEIGHT,
     position: 'relative',
+    backgroundColor: '#E0E0E0',
   },
-  mainImage: {
-    width: '100%',
-    height: '100%',
+  heroImage: {
+    width: width,
+    height: IMAGE_HEIGHT,
+  },
+  topGradient: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 100,
+  },
+  bottomGradient: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: 60,
   },
   backButton: {
     position: 'absolute',
     left: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
   },
-  onlineBadge: {
+  topRightBadge: {
     position: 'absolute',
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
@@ -360,39 +487,40 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#4CAF50',
   },
-  onlineText: {
+  badgeText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: '#FFFFFF',
     fontFamily: FONT_MED,
   },
-  verifiedBadge: {
+  paginationDots: {
     position: 'absolute',
-    right: 20,
+    bottom: 20,
+    alignSelf: 'center',
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    gap: 4,
+    gap: 6,
   },
-  verifiedText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
-    marginLeft: 4,
-    fontFamily: FONT_MED,
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  dotActive: {
+    backgroundColor: '#FFFFFF',
+    width: 24,
+    borderRadius: 4,
   },
 
-  // Action buttons row
-  actionButtonsRow: {
+  // ── Floating action buttons ────────────────────────────────────────────────
+  actionButtonsRowInside: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -35,
+    marginTop: -66,
+    marginBottom: 24,
     zIndex: 10,
-    gap: 20,
+    gap: 18,
   },
   actionBtn: {
     backgroundColor: '#FFFFFF',
@@ -400,80 +528,150 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  smallBtn: { width: 64, height: 64 },
-  heartBtn: { 
-    width: 86, height: 86, 
+  smallActionBtn: { width: 56, height: 56 },
+  heartActionBtn: {
+    width: 72, height: 72,
     backgroundColor: '#E94057',
+    shadowColor: '#E94057',
+    shadowOpacity: 0.35,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 12,
   },
-  heartBtnLiked: { backgroundColor: '#E94057', transform: [{ scale: 0.95 }] },
-  btnPressed: { opacity: 0.6 },
+  heartBtnLiked: { backgroundColor: '#E94057', transform: [{ scale: 0.92 }] },
+  btnPressed: { opacity: 0.5 },
 
-  textOnlyBanner: {
+  // ── Content ────────────────────────────────────────────────────────────────
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 20,
+    backgroundColor: '#F8F8F8',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -32,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 28,
+  },
+  nameAgeRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+  },
+  name: {
+    fontSize: 22, fontWeight: '600', color: '#1A1A2E',
+    fontFamily: FONT_MED,
+    letterSpacing: -0.3,
+  },
+  age: {
+    fontSize: 20, fontWeight: '400', color: '#555',
+    fontFamily: FONT,
+    letterSpacing: -0.3,
+  },
+  locationCard: {
+    marginBottom: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginTop: 4,
-    gap: 8,
+    justifyContent: 'space-between',
   },
-  textOnlyBannerText: {
-    fontSize: 12.5,
-    color: '#8A2BE2',
-    fontWeight: '700',
+  locationLeft: {
     flex: 1,
-    fontFamily: FONT_BOLD,
   },
-
-  // Content
-  content: { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 20 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  name: {
-    fontSize: 28, fontWeight: '600', color: '#111',
+  locationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A2E',
     fontFamily: FONT_MED,
-    letterSpacing: -0.5,
+    marginBottom: 4,
   },
-  occupation: {
-    fontSize: 15, color: '#999', marginTop: 0,
+  locationCity: {
+    fontSize: 14,
+    color: '#666',
     fontFamily: FONT,
+  },
+  distanceBadgeRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 4,
+  },
+  distanceBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#E94057',
+    fontFamily: FONT_MED,
   },
   headerButtons: {
-    flexDirection: 'row', gap: 12,
+    flexDirection: 'row', gap: 10,
   },
   headerActionBtn: {
-    width: 48, height: 48, borderRadius: 16,
-    borderWidth: 1.5, borderColor: '#F5F5F5',
+    width: 44, height: 44, borderRadius: 14,
+    borderWidth: 1.5, borderColor: '#F0F0F0',
     justifyContent: 'center', alignItems: 'center',
     backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  section: { marginBottom: 24 },
-  sectionLabel: {
-    fontSize: 18, fontWeight: '600', color: '#000',
-    fontFamily: FONT_MED,
-    marginBottom: 10,
+
+  // Info card
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  rowCenter: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  locationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  bodyText: {
-    fontSize: 15, color: '#666', lineHeight: 24,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  infoRowText: {
+    fontSize: 15, color: '#555',
     fontFamily: FONT,
+    fontWeight: '500',
+  },
+
+  // Sections
+  section: { marginBottom: 30 },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionLabel: {
+    fontSize: 16, fontWeight: '600', color: '#1A1A2E',
+    fontFamily: FONT_MED,
   },
   bodyTextBio: {
-    fontSize: 15, color: '#444', lineHeight: 24,
+    fontSize: 15, color: '#555', lineHeight: 24,
     fontFamily: FONT,
   },
-  distanceBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFF0F3', paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 12, gap: 4,
+  readMore: {
+    fontSize: 14, color: '#E94057', fontWeight: '600', marginTop: 8,
+    fontFamily: FONT_MED,
   },
-  distanceText: { fontSize: 13, color: '#E94057', fontWeight: '600', fontFamily: FONT_MED },
-  readMore: { fontSize: 14, color: '#E94057', fontWeight: '600', marginTop: 6, fontFamily: FONT_MED },
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+
+  // Interest chips
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -483,39 +681,120 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E8E6EA',
     backgroundColor: '#FFFFFF',
-    marginBottom: 8,
-    marginRight: 8,
   },
   chipActive: {
     backgroundColor: '#FFF0F3',
     borderColor: '#E94057',
   },
   chipText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#777',
     fontFamily: FONT,
     fontWeight: '500',
   },
   chipTextActive: {
     color: '#E94057',
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  seeAll: { fontSize: 14, color: '#E94057', fontWeight: '600', marginBottom: 10, fontFamily: FONT_MED },
-  galleryGrid: { flexDirection: 'row', gap: 10 },
-  galleryItem: { flex: 1, height: 120, borderRadius: 18, overflow: 'hidden' },
-  galleryImage: { width: '100%', height: '100%' },
-  helloBtn: {
-    marginTop: 16, borderRadius: 100, overflow: 'hidden',
-    shadowColor: '#8A2BE2', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3, shadowRadius: 15, elevation: 10,
-  },
-  helloGradient: {
-    height: 60, flexDirection: 'row',
-    justifyContent: 'center', alignItems: 'center', gap: 12,
-  },
-  helloText: {
-    fontSize: 18, fontWeight: '600', color: '#fff',
+
+  // Gallery
+  seeAll: {
+    fontSize: 14, color: '#E94057', fontWeight: '600',
     fontFamily: FONT_MED,
-    letterSpacing: 0.5,
+  },
+  galleryGrid: { flexDirection: 'row', gap: 10 },
+  galleryItem: {
+    flex: 1, height: 110, borderRadius: 12, overflow: 'hidden',
+    backgroundColor: '#E0E0E0',
+  },
+  galleryItemPlaceholder: {
+    flex: 1,
+    height: 110,
+  },
+  galleryImage: { width: '100%', height: '100%' },
+
+  // Superchat banner
+  superchatBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#FFF0F3',
+    borderRadius: 16,
+    marginBottom: 16,
+    gap: 10,
+  },
+  superchatBannerText: {
+    fontSize: 13.5,
+    color: '#E94057',
+    fontWeight: '500',
+    flex: 1,
+    fontFamily: FONT_MED,
+  },
+
+  // CTA Button
+  ctaButton: {
+    marginTop: 8, borderRadius: 100, overflow: 'hidden',
+    shadowColor: '#E94057', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28, shadowRadius: 16, elevation: 10,
+  },
+  ctaGradient: {
+    height: 58, flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  ctaText: {
+    fontSize: 17, fontWeight: '600', color: '#fff',
+    fontFamily: FONT_MED,
+    letterSpacing: 0.3,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+    borderWidth: 1,
+  },
+  verifiedBadge: {
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+    borderColor: 'rgba(76, 175, 80, 0.25)',
+  },
+  unverifiedBadge: {
+    backgroundColor: 'rgba(128, 128, 128, 0.08)',
+    borderColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: FONT_MED,
+  },
+  verifiedBadgeText: {
+    color: '#4CAF50',
+  },
+  unverifiedBadgeText: {
+    color: '#888',
+  },
+  matchScoreBadgeInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E94057',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 3,
+  },
+  matchScoreTextInline: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: FONT_MED,
   },
 });

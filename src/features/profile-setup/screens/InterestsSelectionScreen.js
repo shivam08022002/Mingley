@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
@@ -66,21 +66,20 @@ export const InterestsSelectionScreen = ({ navigation }) => {
       };
 
       if (registeredUser) {
-        if (tokens.accessToken) {
-          await safeStorage.setItem('accessToken', tokens.accessToken);
-        }
-        if (tokens.refreshToken) {
-          await safeStorage.setItem('refreshToken', tokens.refreshToken);
-        }
-
-        // Save registered user info to store but don't set isAuthenticated yet
-        // We'll call login() at the end of the onboarding flow
         clearProfileSetup();
-        navigation.navigate('ContactsPermission');
+        Alert.alert(
+          'Registration Successful',
+          'Your profile has been created successfully. Please login to continue.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
       } else {
         // Fallback
         clearProfileSetup();
-        navigation.navigate('ContactsPermission');
+        Alert.alert(
+          'Registration Successful',
+          'Your profile has been created. Please login to continue.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
       }
     } catch (error) {
       console.error('Registration error:', error);

@@ -1,291 +1,322 @@
-import React from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Platform, Alert,
-} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import LinearGradient from 'react-native-linear-gradient';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
+import { useProfileStore } from '../store/useProfileStore';
 
-const PLAN_CONFIG = {
-  free: {
-    label: 'Free Plan',
-    tag: 'BASIC',
-    perks: ['5 likes/day', 'Basic filters', 'Ads included'],
-    icon: 'flame-outline',
-    colors: ['#666666', '#333333'],
-    tagBg: 'rgba(255,255,255,0.2)',
-  },
-  Silver: {
-    label: 'Silver Member',
-    tag: 'SILVER',
-    perks: ['Unlimited likes', 'No ads', '5 Super Likes/day'],
-    icon: 'star-outline',
-    colors: ['#E94057', '#8A2387'],
-    tagBg: 'rgba(255,255,255,0.22)',
-  },
-  Gold: {
-    label: 'Gold Member',
-    tag: 'GOLD',
-    perks: ['Video calls', '10 Super Likes/day', 'Profile boost'],
-    icon: 'trophy-outline',
-    colors: ['#f093fb', '#f5576c'],
-    tagBg: 'rgba(255,255,255,0.22)',
-  },
-  Platinum: {
-    label: 'Platinum Member',
-    tag: 'PLATINUM',
-    perks: ['Unlimited Super Likes', 'Top picks daily', 'Priority support'],
-    icon: 'flash-outline',
-    colors: ['#4facfe', '#00f2fe'],
-    tagBg: 'rgba(255,255,255,0.2)',
-  },
+const GRADIENTS = {
+  Free: ['#374151', '#111827'],
+  Silver: ['#E94057', '#8A2387'],
+  Gold: ['#f093fb', '#f5576c'],
+  Platinum: ['#4facfe', '#00f2fe'],
 };
-
-// Premium feature highlights shown on the free plan card
-const PREMIUM_BENEFITS = [
-  { icon: 'navigate',         label: 'Nearby Users',    locked: true  },
-  { icon: 'shield-checkmark', label: 'Verified Filter',  locked: true  },
-  { icon: 'heart',            label: 'Unlimited Likes',  locked: true  },
-];
 
 const FONT = Platform.OS === 'ios' ? 'System' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'System' : 'sans-serif-medium';
 
-export const MembershipCard = React.memo(({ status, onUpgrade, onManage }) => {
-  const { cancelSubscription, fetchStatus } = useSubscriptionStore();
-  
-  const isActive = status?.isActive || false;
-  const planName = status?.plan?.name || 'free';
-  const cfg = PLAN_CONFIG[planName] || PLAN_CONFIG.free;
+export const MembershipCard = React.memo(({
+  onWithdraw,
+  onTopUp,
+  onManage,
+}) => {
+  const { currentStatus, plans, fetchPlans, fetchStatus } = useSubscriptionStore();
+  const { profile } = useProfileStore();
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleCancel = async () => {
-    Alert.alert(
-      'Cancel Subscription',
-      'Are you sure you want to cancel your subscription? You will lose your benefits at the end of the current period.',
-      [
-        { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes, Cancel', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelSubscription(status.id || status._id, 'User requested cancellation');
-              Alert.alert('Success', 'Your subscription has been cancelled.');
-              fetchStatus();
-            } catch (error) {
-              Alert.alert('Error', error.message || 'Failed to cancel subscription');
-            }
-          }
-        }
-      ]
-    );
-  };
+  useEffect(() => {
+    fetchStatus();
+    if (!plans || plans.length === 0) {
+      fetchPlans();
+    }
+  }, [fetchPlans, fetchStatus]);
+
+  const profileData = profile || {};
+  const isFemale = profileData.gender?.toLowerCase() === 'female' || profileData.gender?.toLowerCase() === 'woman';
+
+  const activePlanName = (currentStatus?.isActive && currentStatus?.planName) ? currentStatus.planName : 'Free';
+  const normalizedPlan = activePlanName.charAt(0).toUpperCase() + activePlanName.slice(1).toLowerCase();
+  const cardColors = GRADIENTS[normalizedPlan] || GRADIENTS.Free;
+
+  // Find features from active plan object
+  const activePlanObj = plans?.find(
+    (p) => p.name?.toLowerCase() === activePlanName?.toLowerCase()
+  );
+
+  const features = activePlanObj?.features || [];
 
   return (
-    <View style={s.wrap}>
+    <View style={styles.cardContainer}>
       <LinearGradient
-        colors={cfg.colors}
+        colors={cardColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={s.card}
+        style={styles.membershipCard}
       >
-        {/* Top row: icon + title + upgrade/cancel */}
-        <View style={s.top}>
-          <View style={s.iconCircle}>
-            <Icon name={cfg.icon} size={22} color="#fff" />
-          </View>
-          <View style={s.titleCol}>
-            <Text style={s.planName}>{cfg.label}</Text>
-            <View style={[s.badge, { backgroundColor: cfg.tagBg }]}>
-              <Text style={s.badgeText}>{cfg.tag}</Text>
+        {/* Top Section */}
+        <View style={styles.cardTopRow}>
+          <View style={styles.membershipInfo}>
+            <View style={styles.membershipTypeRow}>
+              <Text style={styles.membershipType}>
+                {currentStatus?.isActive ? `${activePlanName.toUpperCase()} MEMBER` : 'FREE PLAN'}
+              </Text>
+              <Icon name="diamond" size={12} color="#FFF" style={styles.diamondIconSmall} />
+            </View>
+            <View style={styles.balanceRowInline}>
+              <Icon name="wallet-outline" size={22} color="#FFD700" />
+              <Text style={styles.balanceLabelInline}>{profileData.coinBalance || 0}</Text>
+              <Text style={styles.balanceLabelSuffix}>coins</Text>
             </View>
           </View>
-          {isActive ? (
-            <View style={s.actionRow}>
-              <TouchableOpacity style={s.manageBtn} onPress={onManage} activeOpacity={0.85}>
-                <Text style={s.manageText}>Manage</Text>
+        </View>
+
+        {/* Action buttons bottom row (Always visible below coins/status initially) */}
+        <View style={styles.walletActionsRowBottom}>
+          {isFemale ? (
+            <>
+              <TouchableOpacity
+                style={[styles.walletBtnSmall, styles.withdrawBtnSmall]}
+                onPress={onWithdraw}
+                activeOpacity={0.85}
+              >
+                <Icon name="wallet-outline" size={16} color="#FFF" />
+                <Text style={styles.walletBtnTextSmall}>Withdraw</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.cancelBtn} onPress={handleCancel}>
-                <Text style={s.cancelText}>Cancel</Text>
+              <TouchableOpacity
+                style={styles.walletBtnSmall}
+                onPress={onManage}
+                activeOpacity={0.85}
+              >
+                <Icon name="settings-outline" size={16} color="#FFF" />
+                <Text style={styles.walletBtnTextSmall}>Manage</Text>
               </TouchableOpacity>
-            </View>
+            </>
           ) : (
-            <TouchableOpacity style={s.upgradeBtn} onPress={onUpgrade} activeOpacity={0.85}>
-              <Text style={s.upgradeText}>Upgrade</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.walletBtnSmall}
+                onPress={onTopUp}
+                activeOpacity={0.85}
+              >
+                <Icon name="add-circle-outline" size={16} color="#FFF" />
+                <Text style={styles.walletBtnTextSmall}>Top-up</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.walletBtnSmall, styles.withdrawBtnSmall]}
+                onPress={onManage}
+                activeOpacity={0.85}
+              >
+                <Icon name="settings-outline" size={16} color="#FFF" />
+                <Text style={styles.walletBtnTextSmall}>Manage</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
-        {/* Perks */}
-        <View style={s.perksRow}>
-          {(status?.plan?.features || cfg.perks).map((p, i) => (
-            <View key={i} style={s.perkItem}>
-              <Icon name="checkmark-circle" size={14} color="rgba(255,255,255,0.8)" />
-              <Text style={s.perkText} numberOfLines={1}>{p}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Premium benefits strip (shown when free) */}
-        {!isActive && (
-          <View style={s.benefitsStrip}>
-            {PREMIUM_BENEFITS.map((b) => (
-              <View key={b.icon} style={s.benefitItem}>
-                <Icon name="lock-closed" size={11} color="#F59E0B" style={{ marginRight: 3 }} />
-                <Text style={s.benefitText}>{b.label}</Text>
+        {/* Perks and Expiry details section (Visible only when expanded) */}
+        {isExpanded && (
+          <View style={styles.expandedContent}>
+            {/* Perks / Features bullet list */}
+            {features && features.length > 0 && (
+              <View style={styles.featuresContainer}>
+                {features.map((feature, idx) => (
+                  <View key={idx} style={styles.featureItemRow}>
+                    <Icon name="checkmark-circle" size={14} color="#FFF" style={styles.checkIcon} />
+                    <Text style={styles.featureText}>{feature}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
+            )}
+
+            {/* Validity info (No hardcoded date) */}
+            <View style={styles.validityContainer}>
+              {currentStatus?.isActive && currentStatus?.endDate ? (
+                <Text style={styles.validityText}>
+                  Valid until: {new Date(currentStatus.endDate).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })} ({currentStatus.daysRemaining} days left)
+                </Text>
+              ) : (
+                <Text style={styles.validityText}>
+                  Enjoy standard features or upgrade for premium benefits!
+                </Text>
+              )}
+            </View>
           </View>
         )}
 
-        {isActive && status.expiryDate && (
-          <Text style={s.expiryText}>
-            Valid until: {new Date(status.expiryDate).toLocaleDateString()}
+        {/* Bottom Collapse/Expand Arrow Toggle */}
+        <TouchableOpacity
+          style={styles.expandToggle}
+          onPress={() => setIsExpanded(prev => !prev)}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.expandToggleText}>
+            {isExpanded ? 'View Less' : 'View More'}
           </Text>
-        )}
+          <Icon
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={14}
+            color="rgba(255, 255, 255, 0.85)"
+          />
+        </TouchableOpacity>
       </LinearGradient>
     </View>
   );
 });
 
-const s = StyleSheet.create({
-  wrap: {
+const styles = StyleSheet.create({
+  cardContainer: {
     marginHorizontal: 0,
-    marginBottom: 10,
-    borderRadius: 20,
+    marginTop: 6,
+    marginBottom: 0,
+  },
+  membershipCard: {
+    borderRadius: 24,
+    paddingHorizontal: 0,
+    paddingTop: 14,
+    paddingBottom: 26,
+    marginHorizontal: 0,
+    minHeight: 150,
+    justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 8,
   },
-  card: {
-    borderRadius: 20,
-    minHeight: 220,
-    paddingHorizontal: 15,
-    paddingVertical: 20,
-  },
-  // ── Top row ──
-  top: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    justifyContent: 'space-between',
+    marginBottom: 0,
   },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
+
+  membershipInfo: { flex: 1, marginHorizontal: 20 },
+
+  membershipTypeRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    marginBottom: 10,
+    gap: 4,
   },
-  titleCol: {
-    flex: 1,
-  },
-  planName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
-    fontFamily: FONT_MED,
-    marginBottom: 4,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-  upgradeBtn: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  upgradeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#E94057',
+
+  membershipType: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
     fontFamily: FONT_MED,
   },
-  actionRow: {
+  diamondIconSmall: {
+    opacity: 0.8,
+  },
+  balanceRowInline: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  manageBtn: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  manageText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#E94057',
+  balanceLabelInline: {
+    color: '#FFF',
+    fontSize: 30,
+    fontWeight: '800',
     fontFamily: FONT_MED,
   },
-  cancelBtn: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  cancelText: {
-    fontSize: 12,
-    color: '#fff',
+  balanceLabelSuffix: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 15,
     fontWeight: '500',
+    alignSelf: 'flex-end',
+    marginBottom: 6,
+    fontFamily: FONT,
   },
-  // ── Perks ──
-  perksRow: {
+  walletActionsRowBottom: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginRight: 10,
+    gap: 10,
+    marginTop: 16,
     marginBottom: 16,
   },
-  perkItem: {
+  walletBtnSmall: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  perkText: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,1)',
-    fontFamily: FONT,
-  },
-  // ── Premium benefits strip ──────────────────────────────────
-  benefitsStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 10,
-  },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingVertical: 12,
+    borderRadius: 16,
     gap: 4,
+    justifyContent: 'center',
   },
-  benefitText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
+
+  withdrawBtnSmall: {
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+
+  walletBtnTextSmall: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
     fontFamily: FONT_MED,
   },
-  expiryText: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    fontFamily: FONT,
+  expandedContent: {
     marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.15)',
+    paddingTop: 16,
+    paddingBottom: 5,
+    marginHorizontal: 12,
+    marginBottom: 6,
+  },
+  featuresContainer: {
+    gap: 8,
+    marginBottom: 10,
+  },
+  featureItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkIcon: {
+    opacity: 0.9,
+
+  },
+  featureText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '500',
+    fontFamily: FONT,
+  },
+  validityContainer: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingTop: 10,
+  },
+  validityText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: FONT,
+  },
+  expandToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    marginTop: 4,
+    marginBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.12)',
+  },
+  expandToggleText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: FONT_MED,
   },
 });

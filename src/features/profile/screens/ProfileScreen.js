@@ -9,8 +9,10 @@ import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { PhotoGrid } from '../components/PhotoGrid';
 import { InterestChips } from '../components/InterestChips';
-import { userService } from '../../../services/apiServices';
+import { MembershipCard } from '../components/MembershipCard';
+import { authService, userService, walletService } from '../../../services/apiServices';
 import { useProfileStore } from '../store/useProfileStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { useChatStore } from '../../../store/useChatStore';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
@@ -24,6 +26,26 @@ export const ProfileScreen = React.memo(() => {
   const { profile, loading, fetchProfile } = useProfileStore();
   const fetchStatus = useSubscriptionStore((state) => state.fetchStatus);
   const setDepositModalVisible = useChatStore((s) => s.setDepositModalVisible);
+  const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
+  const logoutAction = useAuthStore((s) => s.logout);
+
+  const handleSignOut = useCallback(() => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out', style: 'destructive',
+        onPress: async () => {
+          try {
+            await authService.logout();
+            logoutAction();
+          } catch (error) {
+            console.error('Logout error:', error);
+            logoutAction();
+          }
+        },
+      },
+    ]);
+  }, [logoutAction]);
 
   const [refreshing, setRefreshing] = useState(false);
   const [notifModalVisible, setNotifModalVisible] = useState(false);
@@ -31,13 +53,26 @@ export const ProfileScreen = React.memo(() => {
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [coinPackages, setCoinPackages] = useState([]);
 
   useEffect(() => {
     if (isFocused) {
       fetchProfile();
       fetchStatus();
+      fetchWalletBalance();
     }
-  }, [isFocused, fetchProfile, fetchStatus]);
+  }, [isFocused, fetchProfile, fetchStatus, fetchWalletBalance]);
+
+  // Only fetch coin packages for male users (API rejects for female/woman)
+  useEffect(() => {
+    if (isFocused && profile?.gender) {
+      const gender = profile.gender.toLowerCase();
+      const isMale = gender === 'male' || gender === 'man';
+      if (isMale) {
+        fetchCoinPackages();
+      }
+    }
+  }, [isFocused, profile?.gender]);
 
   useEffect(() => {
     if (notifModalVisible) {
@@ -57,6 +92,15 @@ export const ProfileScreen = React.memo(() => {
     }
   };
 
+  const fetchCoinPackages = async () => {
+    try {
+      const res = await walletService.getPackages();
+      setCoinPackages(res.data?.packages || res.packages || []);
+    } catch (_) {
+      // Silently ignore — packages may not be available for this user
+    }
+  };
+
   const handleMarkAllRead = async () => {
     try {
       await userService.markAllNotificationsAsRead();
@@ -73,41 +117,6 @@ export const ProfileScreen = React.memo(() => {
   }, [fetchProfile]);
 
   const profileData = profile || {};
-
-  if (!profile && loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E94057" />
-      </View>
-    );
-  }
-
-  const handleSetPrimary = async (imageId) => {
-    try {
-      await userService.setPrimaryImage(imageId);
-      fetchProfile();
-    } catch (e) {
-      Alert.alert('Error', 'Failed to set primary image');
-    }
-  };
-
-  const handleDeletePhoto = async (imageId) => {
-    Alert.alert('Delete Photo', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await userService.deleteImage(imageId);
-            fetchProfile();
-          } catch (e) {
-            Alert.alert('Error', 'Failed to delete photo');
-          }
-        },
-      },
-    ]);
-  };
 
   const handleManageSubscription = useCallback(() => {
     navigation.navigate('SubscriptionPlans');
@@ -158,8 +167,45 @@ export const ProfileScreen = React.memo(() => {
     ]);
   }, [fetchProfile]);
 
+  if (!profile && loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E94057" />
+      </View>
+    );
+  }
+
+  const handleSetPrimary = async (imageId) => {
+    try {
+      await userService.setPrimaryImage(imageId);
+      fetchProfile();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to set primary image');
+    }
+  };
+
+  const handleDeletePhoto = async (imageId) => {
+    Alert.alert('Delete Photo', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await userService.deleteImage(imageId);
+            fetchProfile();
+          } catch (e) {
+            Alert.alert('Error', 'Failed to delete photo');
+          }
+        },
+      },
+    ]);
+  };
+
+  const isFemale = profileData.gender?.toLowerCase() === 'female' || profileData.gender?.toLowerCase() === 'woman';
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E94057" />}
@@ -173,65 +219,6 @@ export const ProfileScreen = React.memo(() => {
         />
 
         <View style={styles.content}>
-          <View style={styles.membershipCard}>
-            <View style={styles.cardTopRow}>
-              <View style={styles.membershipInfo}>
-                <View style={styles.membershipTypeRow}>
-                  <Text style={styles.membershipType}>{profileData.isPremium ? 'PREMIUM MEMBER' : 'FREE PLAN'}</Text>
-                  <Icon name="diamond" size={12} color="#FFF" style={styles.diamondIconSmall} />
-                </View>
-                <View style={styles.balanceRowInline}>
-                  <Icon name="logo-bitcoin" size={20} color="#FFD700" />
-                  <Text style={styles.balanceLabelInline}>{profileData.coinBalance || 0}</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.manageSubsBtnRight}
-                onPress={handleManageSubscription}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.manageSubsText}>Manage</Text>
-                <Icon name="chevron-forward" size={14} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.walletActionsRowBottom}>
-              <TouchableOpacity
-                style={styles.walletBtnSmall}
-                onPress={() => setDepositModalVisible(true)}
-                activeOpacity={0.85}
-              >
-                <Icon name="add-circle" size={16} color="#FFF" />
-                <Text style={styles.walletBtnTextSmall}>Top-up</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.walletBtnSmall, styles.withdrawBtnSmall]}
-                onPress={() => setCashoutModalVisible(true)}
-                activeOpacity={0.85}
-              >
-                <Icon name="cash" size={16} color="#FFF" />
-                <Text style={styles.walletBtnTextSmall}>Withdraw</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <TouchableOpacity 
-              style={styles.verifyBanner}
-              onPress={() => setVerifyModalVisible(true)}
-            >
-              <View style={styles.verifyIconWrap}>
-                <Icon name="shield-checkmark" size={24} color="#E94057" />
-              </View>
-              <View style={styles.verifyTextWrap}>
-                <Text style={styles.verifyTitle}>Verify Your Identity</Text>
-                <Text style={styles.verifySub}>Get 50 bonus coins after verification!</Text>
-              </View>
-              <Icon name="chevron-forward" size={20} color="#AAA" />
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.section}>
             <PhotoGrid
               photos={profileData.images || []}
@@ -248,6 +235,87 @@ export const ProfileScreen = React.memo(() => {
 
           <View style={styles.section}>
             <InterestChips interests={profileData.interests || []} onSave={fetchProfile} />
+          </View>
+
+          <MembershipCard
+            onWithdraw={() => setCashoutModalVisible(true)}
+            onTopUp={() => setDepositModalVisible(true)}
+            onManage={handleManageSubscription}
+          />
+
+          {/* Coin Packages Section */}
+          {coinPackages.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Coin Packages</Text>
+              <View style={styles.packagesGrid}>
+                {coinPackages.map((pkg) => (
+                  <TouchableOpacity
+                    key={pkg.id}
+                    style={styles.packageCard}
+                    onPress={() => setDepositModalVisible(true)}
+                    activeOpacity={0.8}
+                  >
+                    {pkg.isPopular && (
+                      <View style={styles.popularBadge}>
+                        <Text style={styles.popularBadgeText}>Popular</Text>
+                      </View>
+                    )}
+                    <Icon name="wallet-outline" size={24} color="#FFD700" />
+                    <Text style={styles.packageCoins}>{pkg.coins}</Text>
+                    <Text style={styles.packageCoinsLabel}>coins</Text>
+                    <Text style={styles.packagePrice}>₹{pkg.price}</Text>
+                    {pkg.bonus > 0 && (
+                      <Text style={styles.packageBonus}>+{pkg.bonus} bonus</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account Options</Text>
+            <View style={styles.actionCard}>
+              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('EditProfile')}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="person-outline" size={18} color="#E94057" />
+                </View>
+                <Text style={styles.actionLabel}>Edit Profile</Text>
+                <Icon name="chevron-forward" size={16} color="#CCC" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionRow} onPress={() => setVerifyModalVisible(true)}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="shield-checkmark-outline" size={18} color="#E94057" />
+                </View>
+                <Text style={styles.actionLabel}>Verify Identity</Text>
+                <Icon name="chevron-forward" size={16} color="#CCC" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Filter')}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="options-outline" size={18} color="#E94057" />
+                </View>
+                <Text style={styles.actionLabel}>Match Filters</Text>
+                <Icon name="chevron-forward" size={16} color="#CCC" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Settings')}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="settings-outline" size={18} color="#E94057" />
+                </View>
+                <Text style={styles.actionLabel}>Account Settings</Text>
+                <Icon name="chevron-forward" size={16} color="#CCC" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.actionRow, styles.lastActionRow]} onPress={handleSignOut}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="log-out-outline" size={18} color="#E94057" />
+                </View>
+                <Text style={[styles.actionLabel, { color: '#E94057', fontWeight: '700' }]}>Sign Out</Text>
+                <Icon name="chevron-forward" size={16} color="#E94057" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -272,11 +340,11 @@ export const ProfileScreen = React.memo(() => {
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => (
                   <View style={[styles.notifItem, !item.isRead && styles.notifItemUnread]}>
-                    <View style={[styles.notifIconWrap, { backgroundColor: item.type === 'MATCH' ? '#FFF0F3' : '#F0F9FF' }]}>
+                    <View style={[styles.notifIconWrap, { backgroundColor: item.type === 'MATCH' ? '#FFF0F3' : item.type === 'SUPERCHAT' ? '#F3E8FF' : '#F0F9FF' }]}>
                       <Icon
-                        name={item.type === 'MATCH' ? 'heart' : 'notifications'}
-                        size={20}
-                        color={item.type === 'MATCH' ? '#E94057' : '#0EA5E9'}
+                        name={item.type === 'MATCH' ? 'heart-circle' : item.type === 'SUPERCHAT' ? 'flash' : 'megaphone-outline'}
+                        size={22}
+                        color={item.type === 'MATCH' ? '#E94057' : item.type === 'SUPERCHAT' ? '#7C3AED' : '#0EA5E9'}
                       />
                     </View>
                     <View style={styles.notifTextWrap}>
@@ -289,7 +357,7 @@ export const ProfileScreen = React.memo(() => {
                 )}
                 ListEmptyComponent={
                   <View style={styles.emptyState}>
-                    <Icon name="notifications-off-outline" size={48} color="#EEE" />
+                    <Icon name="notifications-off-outline" size={48} color="#DDD" />
                     <Text style={styles.emptyStateText}>No notifications yet</Text>
                   </View>
                 }
@@ -307,135 +375,61 @@ export const ProfileScreen = React.memo(() => {
         visible={verifyModalVisible} 
         onClose={() => setVerifyModalVisible(false)} 
       />
-    </SafeAreaView>
+     </SafeAreaView>
   );
 });
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 20 },
-  section: { marginBottom: 25 },
-  membershipCard: {
-    backgroundColor: '#E94057',
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 16,
-    shadowColor: '#E94057',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
-    marginBottom: 20,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  membershipInfo: { flex: 1 },
-  membershipTypeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-    gap: 4,
-  },
-  membershipType: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 11,
+  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 },
+  section: { marginBottom: 12 },
+
+  sectionTitle: {
+    fontSize: 13,
     fontWeight: '700',
+    color: '#999',
     textTransform: 'uppercase',
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    paddingLeft: 4,
   },
-  diamondIconSmall: {
-    opacity: 0.8,
-  },
-  balanceRowInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  balanceLabelInline: {
-    color: '#FFF',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  walletActionsRowBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 20,
-  },
-  walletBtnSmall: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    gap: 8,
-    justifyContent: 'center',
-  },
-  withdrawBtnSmall: {
-    backgroundColor: 'rgba(0,0,0,0.15)',
-  },
-  walletBtnTextSmall: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  manageSubsBtnRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    gap: 4,
-  },
-  manageSubsText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  verifyBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: 16,
+  actionCard: {
+    backgroundColor: '#fff',
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#F0F0F0',
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 2,
   },
-  verifyIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  lastActionRow: {
+    borderBottomWidth: 0,
+  },
+  actionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: '#FFF0F3',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
-  verifyTextWrap: {
+  actionLabel: {
     flex: 1,
-    marginLeft: 15,
-  },
-  verifyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: 2,
-  },
-  verifySub: {
-    fontSize: 13,
-    color: '#666',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
   },
   membershipIcon: { marginLeft: 20 },
   modalContent: { flex: 1, width: '100%' },
@@ -466,4 +460,64 @@ const styles = StyleSheet.create({
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E94057', marginLeft: 10 },
   emptyState: { padding: 60, alignItems: 'center' },
   emptyStateText: { color: '#AAA', marginTop: 12 },
+
+  // Coin Packages
+  packagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  packageCard: {
+    width: '31%',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#E94057',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderBottomLeftRadius: 8,
+  },
+  popularBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  packageCoins: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111',
+    marginTop: 6,
+  },
+  packageCoinsLabel: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  packagePrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#E94057',
+  },
+  packageBonus: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4CAF50',
+    marginTop: 2,
+  },
 });

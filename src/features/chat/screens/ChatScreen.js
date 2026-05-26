@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput,
   TouchableOpacity, KeyboardAvoidingView, Platform,
-  Dimensions, Modal, Alert, ActionSheetIOS, ActivityIndicator
+  Dimensions, Modal, Alert, ActionSheetIOS, ActivityIndicator,
+  ScrollView
 } from 'react-native';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -47,6 +48,7 @@ export const ChatScreen = ({ navigation, route }) => {
   const [inputText, setInputText] = useState('');
   const [isMuted, setIsMuted]     = useState(false);
   const [sendingGift, setSendingGift] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   // Modal visibility
   const [giftModalVisible,    setGiftModalVisible]    = useState(false);
@@ -95,9 +97,19 @@ export const ChatScreen = ({ navigation, route }) => {
   React.useEffect(() => {
     // Update partner info and fetch messages if we have a chatId
     if (chatId) {
-      fetchChatMessages(chatId);
-      markChatAsRead(chatId);
-      getChatQuota(chatId);
+      const loadMessages = async () => {
+        setLoadingMessages(true);
+        try {
+          await fetchChatMessages(chatId);
+          await markChatAsRead(chatId);
+          await getChatQuota(chatId);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoadingMessages(false);
+        }
+      };
+      loadMessages();
       
       const currentChat = chats.find(c => c.chatId === chatId);
       if (currentChat?.user) {
@@ -144,7 +156,7 @@ export const ChatScreen = ({ navigation, route }) => {
           if (freeMessagesLeft > 0) decrementFreeMessages();
           else deductCoin();
         }
-        pushMessage({ id: makeId(), text: inputText.trim(), time: nowTime(), isMine: true, read: false });
+        pushMessage({ id: makeId(), text: inputText.trim(), time: nowTime(), isMine: true, read: false, createdAt: new Date().toISOString() });
         setInputText('');
         scrollToEnd();
       }
@@ -163,12 +175,13 @@ export const ChatScreen = ({ navigation, route }) => {
         pushMessage({
           id: makeId(),
           type: 'gift',
-          icon: gift.icon || gift.emoji,
+          icon: gift.icon,
           giftName: gift.name,
           cost: cost,
           time: nowTime(),
           isMine: true,
-          read: false
+          read: false,
+          createdAt: new Date().toISOString()
         });
         scrollToEnd();
       }
@@ -320,14 +333,6 @@ export const ChatScreen = ({ navigation, route }) => {
 
   // ── Gift Modal ────────────────────────────────────────────────────────────
   const renderGiftModal = () => {
-    // Local mapping for hardcoded emojis and costs
-    const giftConfig = [
-      { id: 'gift_rose',    name: 'Rose',         emoji: '🌹', cost: 100 },
-      { id: 'gift_teddy',   name: 'Teddy Bear',    emoji: '🧸', cost: 250 },
-      { id: 'gift_diamond', name: 'Diamond Ring',  emoji: '💎', cost: 1000 },
-      { id: 'gift_castle',  name: 'Castle',        emoji: '🏰', cost: 5000 },
-    ];
-
     return (
       <Modal visible={giftModalVisible} transparent animationType="slide" onRequestClose={() => setGiftModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => !sendingGift && setGiftModalVisible(false)}>
@@ -338,41 +343,35 @@ export const ChatScreen = ({ navigation, route }) => {
               {sendingGift && <ActivityIndicator color="#E94057" />}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-            <Text style={styles.modalSub}>Balance: </Text>
-            <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
-            <Text style={styles.modalSubBold}>{wallet.coins} coins</Text>
-          </View>
-            <View style={styles.giftGrid}>
-              {giftConfig.map((config) => {
-                // Find matching gift from API catalog to get the real UUID
-                const apiGift = gifts.find(g => 
-                  g.id === config.id ||
-                  g.name?.toLowerCase().includes(config.name.toLowerCase()) || 
-                  config.name.toLowerCase().includes(g.name?.toLowerCase())
-                );
-                
-                const giftId = apiGift?.id || config.id;
-                const cost = apiGift?.coinCost || apiGift?.price || config.cost;
+              <Text style={styles.modalSub}>Balance: </Text>
+              <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
+              <Text style={styles.modalSubBold}>{wallet.coins} coins</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.giftScrollContainer}>
+              {gifts.map((gift) => {
+                const cost = gift.coinCost || gift.price || 0;
                 const afford = wallet.coins >= cost;
 
                 return (
                   <TouchableOpacity 
-                    key={config.name} 
-                    style={[styles.giftCard, (!afford || sendingGift) && styles.giftCardDisabled]} 
-                    onPress={() => handleSendGift({ ...config, id: giftId, coinCost: cost })} 
+                    key={gift.id} 
+                    style={[styles.giftCardHorizontal, (!afford || sendingGift) && styles.giftCardDisabled]} 
+                    onPress={() => handleSendGift(gift)} 
                     disabled={!afford || sendingGift} 
                     activeOpacity={0.75}
                   >
-                    <Text style={styles.giftCardEmoji}>{config.emoji}</Text>
-                    <Text style={styles.giftCardLabel}>{config.name}</Text>
+                    <View style={styles.giftIconWrap}>
+                      <Icon name={gift.icon || 'gift-outline'} size={32} color={afford ? '#E94057' : '#999'} />
+                    </View>
+                    <Text style={styles.giftCardLabel} numberOfLines={1}>{gift.name}</Text>
                     <View style={styles.giftCardCostRow}>
-                      <Icon name="cash-outline" size={11} color={afford ? '#E94057' : '#C0C0C0'} />
+                      <Icon name="logo-bitcoin" size={11} color={afford ? '#FFD700' : '#C0C0C0'} />
                       <Text style={[styles.giftCardCost, !afford && { color: '#C0C0C0' }]}>{cost}</Text>
                     </View>
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -460,25 +459,31 @@ export const ChatScreen = ({ navigation, route }) => {
         {renderMenuModal()}
         {renderReportModal()}
 
-        <FlatList
-          ref={flatRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ChatBubble item={item} />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          inverted={true}
-          onContentSizeChange={scrollToEnd}
-          ListHeaderComponent={
-            <View style={styles.dateSeparator}>
-              <View style={styles.line} />
-              <Text style={styles.dateText}>Today</Text>
-              <View style={styles.line} />
-            </View>
-          }
-        />
+        {loadingMessages ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#E94057" />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ChatBubble item={item} />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            inverted={true}
+            onContentSizeChange={scrollToEnd}
+            ListHeaderComponent={
+              <View style={styles.dateSeparator}>
+                <View style={styles.line} />
+                <Text style={styles.dateText}>Today</Text>
+                <View style={styles.line} />
+              </View>
+            }
+          />
+        )}
 
         {/* ── Indicators ── */}
         {chatQuota ? (
@@ -518,7 +523,7 @@ export const ChatScreen = ({ navigation, route }) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionChip} onPress={() => setCoinsModalVisible(true)}>
-            <Icon name="cash-outline" size={14} color="#E94057" />
+            <Icon name="logo-bitcoin" size={14} color="#FFD700" />
             <Text style={styles.actionChipText}>Send Coins</Text>
           </TouchableOpacity>
         </View>
@@ -736,4 +741,44 @@ const styles = StyleSheet.create({
   menuRowDanger: {},
   menuRowText: { fontSize: 15, color: '#222', fontWeight: '500' },
   menuRowTextDanger: { color: '#DC2626' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  giftScrollContainer: {
+    paddingRight: 24,
+    flexDirection: 'row',
+    gap: 16,
+    paddingVertical: 12,
+  },
+  giftCardHorizontal: {
+    width: 110,
+    alignItems: 'center', 
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 20, 
+    backgroundColor: '#FFF0F3',
+    borderWidth: 1.5, 
+    borderColor: '#FFD6DE',
+    shadowColor: '#E94057',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  giftIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
 });

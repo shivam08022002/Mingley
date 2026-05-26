@@ -7,15 +7,15 @@ import { decodeEmoji } from '../../../utils/stringUtils';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 
 // ── Gift catalogue mapping for display ─────────────────────────────────────
-const GIFT_EMOJIS = {
-  'heart': '❤️',
-  'rose': '🌹',
-  'gift box': '🎁',
-  'coffee date': '☕',
-  'diamond ring': '💎',
-  'dinner': '🍴',
-  'teddy bear': '🧸',
-  'castle': '🏰',
+const GIFT_ICONS = {
+  'heart': 'heart-outline',
+  'rose': 'rose-outline',
+  'gift box': 'gift-outline',
+  'coffee date': 'cafe-outline',
+  'diamond ring': 'diamond-outline',
+  'dinner': 'restaurant-outline',
+  'teddy bear': 'ribbon-outline',
+  'castle': 'business-outline',
 };
 
 export const ChatBubble = React.memo(({ item }) => {
@@ -30,10 +30,10 @@ export const ChatBubble = React.memo(({ item }) => {
       'Are you sure you want to delete this message?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive', 
-          onPress: () => deleteMessage(item.chatId, item.id) 
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteMessage(item.chatId, item.id)
         }
       ]
     );
@@ -42,27 +42,21 @@ export const ChatBubble = React.memo(({ item }) => {
   // ── Gift bubble ──────────────────────────────────────────────────────────
   if (item.type === 'gift') {
     const key = (item.giftName || '').toLowerCase();
-    const displayEmoji = item.emoji || GIFT_EMOJIS[key] || '🎁';
-    
+    const iconName = item.icon || GIFT_ICONS[key] || 'gift-outline';
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         onLongPress={handleLongPress}
         activeOpacity={0.9}
         style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
       >
         <View style={[styles.giftBubble, isMine ? styles.giftBubbleMine : styles.giftBubbleTheirs]}>
-          <Text style={styles.giftEmojiLarge}>{displayEmoji}</Text>
-          <View style={styles.giftInfo}>
-            <Text style={[styles.giftLabel, isMine ? styles.giftLabelMine : styles.giftLabelTheirs]}>
-              {isMine ? `${item.giftName} sent` : `${item.giftName} received`}
-            </Text>
-            <View style={styles.giftCostRow}>
-              <Icon name="cash-outline" size={11} color={isMine ? '#E94057' : '#888'} />
-              <Text style={[styles.giftCost, isMine ? styles.giftCostMine : styles.giftCostTheirs]}>
-                {item.cost} coins
-              </Text>
-            </View>
+          <View style={[styles.giftIconWrap, { backgroundColor: isMine ? 'rgba(255,255,255,0.2)' : '#FFF0F3' }]}>
+            <Icon name={iconName} size={28} color={isMine ? '#FFFFFF' : '#E94057'} />
           </View>
+          <Text style={[styles.giftLabel, isMine ? styles.giftLabelMine : styles.giftLabelTheirs]}>
+            {item.giftName}
+          </Text>
         </View>
         <View style={[styles.footer, isMine ? styles.footerMine : styles.footerTheirs]}>
           <Text style={styles.time}>{item.time}</Text>
@@ -82,14 +76,14 @@ export const ChatBubble = React.memo(({ item }) => {
   // ── Coin-transfer bubble ──────────────────────────────────────────────────
   if (item.type === 'coins') {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         onLongPress={handleLongPress}
         activeOpacity={0.9}
         style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
       >
         <View style={[styles.coinsBubble, isMine ? styles.coinsBubbleMine : styles.coinsBubbleTheirs]}>
           <View style={{ marginRight: 12 }}>
-            <Icon name="cash" size={24} color={isMine ? '#FFF' : '#F59E0B'} />
+            <Icon name="logo-bitcoin" size={24} color={isMine ? '#FFF' : '#FFD700'} />
           </View>
           <View>
             <Text style={[styles.coinsAmount, isMine ? styles.coinsAmountMine : styles.coinsAmountTheirs]}>
@@ -117,7 +111,7 @@ export const ChatBubble = React.memo(({ item }) => {
 
   // ── Standard text bubble ─────────────────────────────────────────────────
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onLongPress={handleLongPress}
       activeOpacity={0.9}
       style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
@@ -159,43 +153,43 @@ export const ChatBubble = React.memo(({ item }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: SPACING.s,
-    maxWidth: '85%',
+    marginVertical: 3,
+    maxWidth: '80%',
   },
   containerMine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   containerTheirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
 
   // ── Text bubble ───────────────────────────────────────────────────────────
   bubble: {
-    paddingHorizontal: SPACING.l,
-    paddingVertical: SPACING.m,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   bubbleMine: {
     backgroundColor: '#E94057', // Brand Pink
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderBottomLeftRadius: 16,
     borderBottomRightRadius: 4,
   },
   bubbleTheirs: {
     backgroundColor: '#F3F4F6', // Light Grey
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 20,
+    borderBottomRightRadius: 16,
   },
-  text: { ...TYPOGRAPHY.body, fontSize: 15, lineHeight: 22 },
+  text: { ...TYPOGRAPHY.body, fontSize: 14, lineHeight: 19 },
   textMine: { color: '#FFF' },
   textTheirs: { color: '#1F2937' },
 
   // ── Image bubble ──────────────────────────────────────────────────────────
   imageContainer: {
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   image: {
-    width: 240,
-    height: 180,
+    width: 200,
+    height: 150,
     borderRadius: 8,
     backgroundColor: '#EEE',
   },
@@ -204,10 +198,10 @@ const styles = StyleSheet.create({
   giftBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 10,
-    borderRadius: 18,
-    borderWidth: 1.5,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   giftBubbleMine: {
     backgroundColor: '#E94057',
@@ -219,10 +213,17 @@ const styles = StyleSheet.create({
     borderColor: '#E8E8E8',
     borderBottomLeftRadius: 0,
   },
-  giftEmojiLarge: { fontSize: 32, marginRight: 12 },
+  giftIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
   giftEmoji: { marginRight: 10 },
   giftInfo: { flexShrink: 1 },
-  giftLabel: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  giftLabel: { fontSize: 12, fontWeight: '600', marginBottom: 0 },
   giftLabelMine: { color: '#FFF' },
   giftLabelTheirs: { color: '#555' },
   giftCostRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
@@ -234,10 +235,10 @@ const styles = StyleSheet.create({
   coinsBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-    borderWidth: 1.5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   coinsBubbleMine: {
     backgroundColor: '#E94057',
@@ -249,15 +250,15 @@ const styles = StyleSheet.create({
     borderColor: '#E8E8E8',
     borderBottomLeftRadius: 0,
   },
-  coinsAmount: { fontSize: 15, fontWeight: '800' },
+  coinsAmount: { fontSize: 13, fontWeight: '800' },
   coinsAmountMine: { color: '#FFF' },
   coinsAmountTheirs: { color: '#333' },
-  coinsSub: { fontSize: 11, marginTop: 1 },
+  coinsSub: { fontSize: 10, marginTop: 1 },
   coinsSubMine: { color: 'rgba(255,255,255,0.7)' },
   coinsSubTheirs: { color: '#999' },
 
   // ── Footer ────────────────────────────────────────────────────────────────
-  footer: { flexDirection: 'row', marginTop: 4, alignItems: 'center' },
+  footer: { flexDirection: 'row', marginTop: 2, alignItems: 'center' },
   footerMine: { justifyContent: 'flex-end' },
   footerTheirs: { justifyContent: 'flex-start' },
   time: { ...TYPOGRAPHY.caption, color: '#A0A0A0' },

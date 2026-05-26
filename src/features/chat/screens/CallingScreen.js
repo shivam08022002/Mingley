@@ -232,7 +232,7 @@ export const CallingScreen = ({ navigation, route }) => {
           {/* Rate indicator */}
           {isBilling ? (
             <View style={styles.rateTag}>
-              <Icon name="cash-outline" size={13} color="#FFD700" style={{ marginRight: 4 }} />
+              <Icon name="logo-bitcoin" size={13} color="#FFD700" style={{ marginRight: 4 }} />
               <Text style={styles.rateText}>{RATE} coins/sec</Text>
             </View>
           ) : (
@@ -244,7 +244,7 @@ export const CallingScreen = ({ navigation, route }) => {
 
           {/* Coin balance */}
           <View style={styles.balanceBadge}>
-            <Icon name="cash-outline" size={16} color="#FFD700" style={{ marginRight: 5 }} />
+            <Icon name="logo-bitcoin" size={16} color="#FFD700" style={{ marginRight: 5 }} />
             <Text style={styles.balanceText}>{coins}</Text>
           </View>
         </View>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Platform, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FastImage from 'react-native-fast-image';
@@ -8,6 +8,9 @@ import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { MessageItem } from '../components/MessageItem';
 import { useChatStore } from '../../../store/useChatStore';
 import { decodeEmoji } from '../../../utils/stringUtils';
+import { useFocusEffect } from '@react-navigation/native';
+import { callService } from '../../../services/apiServices';
+import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
@@ -37,6 +40,10 @@ export const MessagesListScreen = ({ navigation }) => {
   const [stories, setStories] = useState([]); // Will be empty until API integrated
   const [storyViewer, setStoryViewer] = useState(null);
 
+  const [callHistoryModalVisible, setCallHistoryModalVisible] = useState(false);
+  const [callHistory, setCallHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const {
     chats,
     fetchChats,
@@ -46,15 +53,33 @@ export const MessagesListScreen = ({ navigation }) => {
     fetchSentSuperchats,
     respondToSuperchat,
   } = useChatStore();
+  const currentUser = useChatStore((s) => s.user);
 
-  useEffect(() => {
-    if (activeTab === 'messages') {
-      fetchChats();
-    } else {
-      if (superchatTab === 'received') fetchReceivedSuperchats();
-      else fetchSentSuperchats();
+  const handleShowCallHistory = async () => {
+    setCallHistoryModalVisible(true);
+    setLoadingHistory(true);
+    try {
+      const res = await callService.getCallHistory();
+      setCallHistory(res.data?.calls || res.calls || res.data?.history || res.history || []);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Failed to fetch call history');
+    } finally {
+      setLoadingHistory(false);
     }
-  }, [activeTab, superchatTab, fetchChats, fetchReceivedSuperchats, fetchSentSuperchats]);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (activeTab === 'messages') {
+        fetchChats();
+      } else {
+        if (superchatTab === 'received') fetchReceivedSuperchats();
+        else fetchSentSuperchats();
+      }
+    }, [activeTab, superchatTab, fetchChats, fetchReceivedSuperchats, fetchSentSuperchats])
+  );
+
 
   const handleStoryPress = (story) => {
     if (story.isOwn) {
@@ -68,6 +93,9 @@ export const MessagesListScreen = ({ navigation }) => {
     <View>
       <View style={styles.headerTop}>
         <Text style={styles.title}>Messages</Text>
+        <TouchableOpacity style={styles.headerCallHistoryBtn} onPress={handleShowCallHistory}>
+          <Icon name="time-outline" size={24} color="#E94057" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.tabContainer}>
@@ -171,7 +199,11 @@ export const MessagesListScreen = ({ navigation }) => {
           if (isReceived && !isResponded) {
             handleRespondToSuperchat(item.id, decodeEmoji(user.fullName || 'User'));
           } else {
-            navigation.navigate('Chat', { user, chatId: item.chatId });
+            // Do not open chat screen. Show message in alert directly from the outside.
+            Alert.alert(
+              'Superchat Details',
+              `User: ${decodeEmoji(user.fullName || 'User')}\n\nMessage: "${item.message || 'Sent a Superchat!'}"\nValue: ${item.coinAmount || 500} coins`
+            );
           }
         }}
         activeOpacity={0.8}
@@ -181,8 +213,8 @@ export const MessagesListScreen = ({ navigation }) => {
           <View style={styles.superchatHeaderRow}>
             <Text style={styles.superchatName}>{decodeEmoji(user.fullName || 'User')}</Text>
             <View style={styles.amountBadge}>
-              <Icon name="flash" size={10} color="#8A2BE2" />
-              <Text style={styles.amountBadgeText}>{item.coinAmount || 500}</Text>
+              <Icon name="flash" size={10} color="#7C3AED" />
+              <Text style={styles.amountBadgeText}>{item.coinAmount || 500} coins</Text>
             </View>
           </View>
           <Text style={styles.superchatMessage} numberOfLines={1}>
@@ -210,6 +242,84 @@ export const MessagesListScreen = ({ navigation }) => {
     if (lastMessage.messageType === 'COINS') return `Sent ${lastMessage.coinAmount} coins 💰`;
     return lastMessage.content || '';
   };
+
+  // ── Call History Modal ──────────────────────────────────────────────────
+  const renderCallHistoryModal = () => (
+    <Modal visible={callHistoryModalVisible} transparent animationType="fade" onRequestClose={() => setCallHistoryModalVisible(false)}>
+      <BottomSheetContainer onClose={() => setCallHistoryModalVisible(false)} height={600}>
+        <View style={{ flex: 1, width: '100%' }}>
+          <View style={styles.txHeader}>
+            <Text style={styles.txHeaderTitle}>Call History</Text>
+          </View>
+          {loadingHistory ? (
+            <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+          ) : (
+            <FlatList
+              data={callHistory}
+              keyExtractor={(item, index) => item.id || String(index)}
+              contentContainerStyle={styles.txList}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={<Text style={styles.txEmpty}>No call history found.</Text>}
+              renderItem={({ item }) => {
+                const isOutgoing = item.direction === 'outgoing';
+                const otherUser = isOutgoing ? item.receiver : item.caller;
+                const otherName = otherUser?.fullName || 'User';
+                const otherAvatar = otherUser?.avatar || 'https://via.placeholder.com/150';
+                const callDate = item.createdAt ? new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recent';
+                const isVideo = item.callType === 'video';
+                return (
+                  <View style={styles.txItem}>
+                    <FastImage 
+                      source={{ uri: otherAvatar }} 
+                      style={styles.callHistoryAvatar} 
+                    />
+                    <View style={styles.txLeft}>
+                      <Text style={styles.txTitle}>{decodeEmoji(otherName)}</Text>
+                      <View style={styles.callSubRow}>
+                        <Icon 
+                          name={isOutgoing ? 'arrow-up-outline' : 'arrow-down-outline'} 
+                          size={12} 
+                          color={isOutgoing ? '#E94057' : '#059669'} 
+                          style={{ marginRight: 4 }}
+                        />
+                        <Text style={styles.txDate}>
+                          {isOutgoing ? 'Outgoing' : 'Incoming'} • {callDate}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.txRight}>
+                      <View style={styles.callTypeAndStatus}>
+                        <Icon 
+                          name={isVideo ? 'videocam-outline' : 'call-outline'} 
+                          size={16} 
+                          color="#666" 
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text style={[
+                          styles.callStatusText,
+                          item.status === 'active' && { color: '#059669' },
+                          item.status === 'declined' && { color: '#DC2626' },
+                          item.status === 'missed' && { color: '#DC2626' },
+                          item.status === 'ended' && { color: '#666' }
+                        ]}>
+                          {item.status || 'Ended'}
+                        </Text>
+                      </View>
+                      {item.coinsDeducted > 0 && (
+                        <Text style={styles.coinsDeductedText}>
+                          -{item.coinsDeducted} coins
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              }}
+            />
+          )}
+        </View>
+      </BottomSheetContainer>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -258,6 +368,7 @@ export const MessagesListScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       )}
+      {renderCallHistoryModal()}
     </SafeAreaView>
   );
 };
@@ -423,7 +534,7 @@ const styles = StyleSheet.create({
   amountBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#8A2BE2',
+    color: '#7C3AED',
   },
   superchatInfo: {
     flex: 1,
@@ -463,6 +574,58 @@ const styles = StyleSheet.create({
   emptyText: {
     ...TYPOGRAPHY.body,
     color: '#AAA',
+  },
+  headerCallHistoryBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  txHeader: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
+  },
+  txHeaderTitle: { fontSize: 18, fontWeight: '700', color: '#111', fontFamily: TITLE_MED },
+  txList: { paddingVertical: 16 },
+  txEmpty: { textAlign: 'center', color: '#999', marginTop: 40, fontFamily: TITLE_FONT },
+  txItem: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F5F5F5',
+  },
+  txLeft: { flex: 1, marginLeft: 12 },
+  txRight: { alignItems: 'flex-end', gap: 4 },
+  txTitle: { fontSize: 15, fontWeight: '600', color: '#222', fontFamily: TITLE_MED, marginBottom: 2 },
+  txDate: { fontSize: 12, color: '#888', fontFamily: TITLE_FONT },
+  callHistoryAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+  },
+  callSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  callTypeAndStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  callStatusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    textTransform: 'capitalize',
+    fontFamily: TITLE_MED,
+  },
+  coinsDeductedText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
+    fontFamily: TITLE_MED,
   },
 });
 

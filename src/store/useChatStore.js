@@ -133,7 +133,7 @@ export const useChatStore = create((set, get) => ({
     }),
 
   /** Push a new message to the chat list. */
-  pushMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+  pushMessage: (msg) => set((state) => ({ messages: [msg, ...state.messages] })),
 
   /** Send a superchat via API */
   sendSuperchat: async (toUserId, message, coinAmount = 500) => {
@@ -286,7 +286,13 @@ export const useChatStore = create((set, get) => ({
         time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         isMine: m.senderId === currentUserId,
       }));
-      set({ messages: mappedMessages });
+
+      // Sort descending by date (newest first, index 0 is newest -> bottom of inverted FlatList)
+      const sortedMessages = [...mappedMessages].sort((a, b) => {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+
+      set({ messages: sortedMessages });
     } catch (error) {
       console.error('Fetch messages error:', error);
     }
