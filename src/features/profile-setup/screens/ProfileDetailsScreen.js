@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CardInput } from '../components/CardInput';

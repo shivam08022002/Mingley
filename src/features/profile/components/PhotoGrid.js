@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet,
   Dimensions, Platform, Alert, Modal, TouchableWithoutFeedback
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { userService } from '../../../services/apiServices';
 
@@ -90,18 +90,6 @@ const AddButton = ({ onPress }) => (
 );
 
 export const PhotoGrid = React.memo(({ photos, onAdd, onPressPhoto, onDelete, onSetPrimary, onEditLabel }) => {
-  const handleAdd = useCallback(async () => {
-    // This is a mock implementation for photo picking
-    const mockUrl = 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&q=80';
-    try {
-      await userService.uploadImage({ url: mockUrl, isPrimary: photos.length === 0 });
-      onAdd?.(mockUrl);
-    } catch (error) {
-      console.error('Upload image error:', error);
-      Alert.alert('Error', 'Failed to upload image');
-    }
-  }, [onAdd, photos.length]);
-
   const data = [...photos, '__add__'];
 
   return (
@@ -117,7 +105,7 @@ export const PhotoGrid = React.memo(({ photos, onAdd, onPressPhoto, onDelete, on
       <View style={st.grid}>
         {data.map((item, idx) =>
           item === '__add__' ? (
-            <AddButton key="add" onPress={handleAdd} />
+            <AddButton key="add" onPress={onAdd} />
           ) : (
             <PhotoItem 
               key={item.id || `${item}-${idx}`} 

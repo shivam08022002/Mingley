@@ -4,9 +4,9 @@ import {
   ScrollView, Alert, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { MatchesGridItem } from '../components/MatchesGridItem';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -53,12 +53,12 @@ export const MatchesScreen = () => {
 
   // ── Decline / Chat ────────────────────────────────────────────────────────
   const handleChat = (match) => {
-    const user = match.user || match;
+    const user = match.matchedUser || match.user || match;
     navigation.navigate('Chat', { user, chatId: match.chatId });
   };
 
   const handleDecline = (match) => {
-    const user = match.user || match;
+    const user = match.matchedUser || match.user || match;
     Alert.alert(
       'Remove Match',
       `Remove ${user.fullName || user.name} from your matches?`,
@@ -74,7 +74,7 @@ export const MatchesScreen = () => {
   };
 
   const handleShowDetails = (item) => {
-    const rawUser = item.user || item;
+    const rawUser = item.matchedUser || item.user || item;
     // Merge fullProfile data if available from API response (v1/matches)
     const fullProfile = rawUser.fullProfile || item.fullProfile || {};
     const user = { ...rawUser, ...fullProfile };
@@ -291,14 +291,14 @@ const styles = StyleSheet.create({
   likesHeading: { ...TYPOGRAPHY.h2, fontSize: 18, color: '#222', paddingHorizontal: SPACING.l, marginBottom: 15, fontWeight: '500', fontFamily: TITLE_FONT },
   likesList: { paddingHorizontal: SPACING.l, paddingBottom: 10 },
   likeCard: { 
-    width: 140, height: 180, marginRight: 16, borderRadius: 20, 
+    width: 140, height: 150, marginRight: 16, borderRadius: 20, 
     overflow: 'hidden', backgroundColor: '#F5F5F5',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
   },
   likeCardImage: { width: '100%', height: '100%' },
   likeCardGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%' },
-  likeCardInfo: { position: 'absolute', bottom: 46, left: 10, right: 10 },
+  likeCardInfo: { position: 'absolute', bottom: 42, left: 10, right: 10 },
   likeCardName: { color: '#FFF', fontSize: 14, fontWeight: '800', marginBottom: 2 },
   likeCardSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' },
   likeCardActions: {
@@ -308,8 +308,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderTopWidth: 1,
-    borderColor: '#F0F0F0',
   },
   likeCardBtn: {
     flex: 1,

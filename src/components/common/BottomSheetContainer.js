@@ -5,8 +5,8 @@ import {
   Dimensions, 
   Platform, 
   Animated, 
-  PanResponder, 
-  StatusBar 
+  PanResponder,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Svg, { Path, Rect, Defs, Filter, FeFlood, FeColorMatrix, FeOffset, FeGaussianBlur, FeBlend, G } from 'react-native-svg';
 
@@ -20,7 +20,7 @@ const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
  * @param {function} onClose - Callback for closing the drawer.
  * @param {object} containerStyle - Optional style for the outer view.
  */
-export const BottomSheetContainer = ({ children, containerStyle, height = 505, onClose }) => {
+export const BottomSheetContainer = ({ children, containerStyle, contentStyle, height = 505, onClose }) => {
   const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   useEffect(() => {
@@ -45,8 +45,11 @@ export const BottomSheetContainer = ({ children, containerStyle, height = 505, o
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
+      // KEY FIX: Don't steal responder on start (breaks web click events)
+      // Only claim on actual downward drag movement
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dy) > 10 && gestureState.dy > 0,
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy > 0) {
           panY.setValue(gestureState.dy);
@@ -67,22 +70,22 @@ export const BottomSheetContainer = ({ children, containerStyle, height = 505, o
     })
   ).current;
 
-  // SVG Path with larger border radius (60px) and refined hump
-  // M0 60 -> start of curve
-  // C0 26.8 26.8 0 60 0 -> Top left corner
-  // ... middle hump logic ...
-  // C315 0 375 26.8 375 60 -> Top right corner
   const svgPath = `M0 60C0 26.8 26.8 0 60 0L156 0C158.6 0 161.1 0.7 163.3 2.1C177.8 11.5 196.3 11.6 210.9 2.5L211.7 2.1C213.8 0.7 216.4 0 218.9 0L315 0C348.1 0 375 26.8 375 60V${height}H0V60Z`;
 
   return (
-    <View style={[styles.wrapper, containerStyle]}>
+    <View style={[styles.outerWrapper, containerStyle]}>
+      {/* Backdrop — tapping the dark area dismisses the sheet */}
+      <TouchableWithoutFeedback onPress={handleDismiss}>
+        <View style={styles.backdrop} />
+      </TouchableWithoutFeedback>
+
       <Animated.View 
         style={[
           styles.containerWrapper, 
           { transform: [{ translateY: panY }] }
         ]}
       >
-        {/* Indicator SVG with a gap from the container - now acts as the pan handle */}
+        {/* Indicator / drag handle */}
         <View {...panResponder.panHandlers} style={styles.indicatorContainer}>
           <Svg width="60" height="28" viewBox="0 0 55 0" fill="none">
             <G filter="url(#filter0_d_309_5420)">
@@ -108,10 +111,10 @@ export const BottomSheetContainer = ({ children, containerStyle, height = 505, o
           </Svg>
         </View>
 
-        {/* Main Container SVG with dynamic height */}
+        {/* Main white sheet with SVG curved top */}
         <View style={[styles.container, { height }]}>
           <View style={StyleSheet.absoluteFill}>
-            <Svg width={width} height={height} viewBox={`0 0 375 ${height}`} preserveAspectRatio="none">
+            <Svg width="100%" height={height} viewBox={`0 0 375 ${height}`} preserveAspectRatio="none">
               <Path 
                 fillRule="evenodd" 
                 clipRule="evenodd" 
@@ -121,7 +124,7 @@ export const BottomSheetContainer = ({ children, containerStyle, height = 505, o
             </Svg>
           </View>
 
-          <View style={styles.content}>
+          <View style={[styles.content, contentStyle]}>
             {children}
           </View>
         </View>
@@ -131,27 +134,27 @@ export const BottomSheetContainer = ({ children, containerStyle, height = 505, o
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-    alignItems: 'center',
-    height: '100%',
+  outerWrapper: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#00000060',
   },
   containerWrapper: {
     width: '100%',
+    maxWidth: Platform.OS === 'web' ? 500 : '100%',
+    alignSelf: 'center',
     alignItems: 'center',
   },
+
   indicatorContainer: {
     width: '100%',
     top: 5,
     alignItems: 'center',
     zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 8,
+    elevation: 0,
   },
   container: {
     width: '100%',
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
   content: {
     width: '100%',
     flex: 1,
-    paddingTop: 50, // Matches the larger curve start
+    paddingTop: 50,
     paddingHorizontal: 25, 
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },

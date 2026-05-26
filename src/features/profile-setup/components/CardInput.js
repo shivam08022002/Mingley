@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Platform} from 'react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 
 export const CardInput = ({ label, value, onChangeText, placeholder }) => {

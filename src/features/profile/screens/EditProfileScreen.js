@@ -4,7 +4,7 @@ import {
   TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { userService } from '../../../services/apiServices';
@@ -64,9 +64,14 @@ export const EditProfileScreen = () => {
         avatar: formData.avatar
       });
       await fetchProfileStore();
-      Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      if (Platform.OS === 'web') {
+        alert('Profile updated successfully!');
+        navigation.goBack();
+      } else {
+        Alert.alert('Success', 'Profile updated successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
     } catch (e) {
       Alert.alert('Error', e.message || 'Failed to update profile');
     } finally {

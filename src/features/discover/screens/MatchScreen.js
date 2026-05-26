@@ -8,8 +8,8 @@ import {
   Animated,
   Platform,
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProfileStore } from '../../profile/store/useProfileStore';
 import { useMatchesStore } from '../../matches/store/useMatchesStore';
@@ -213,10 +213,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#E94057',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.25)',
     elevation: 8,
   },
   topHeartIcon: {
@@ -230,10 +227,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'absolute',
     backgroundColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
+    boxShadow: '0px 12px 20px rgba(0,0,0,0.18)',
     elevation: 10,
   },
   leftCard: {
@@ -262,10 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#E94057',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    boxShadow: '0px 3px 6px rgba(0,0,0,0.3)',
     elevation: 6,
   },
   heartIcon: {

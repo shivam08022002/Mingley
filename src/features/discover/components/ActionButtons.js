@@ -33,10 +33,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    boxShadow: '0px 6px 12px rgba(0,0,0,0.08)',
     elevation: 4,
   },
   smallButton: {
@@ -49,10 +46,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     backgroundColor: '#E94057',
-    shadowColor: '#E94057',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 15,
+    boxShadow: '0px 10px 15px rgba(0,0,0,0.35)',
     elevation: 8,
   },
 });

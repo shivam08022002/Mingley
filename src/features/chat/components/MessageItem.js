@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { decodeEmoji } from '../../../utils/stringUtils';
 

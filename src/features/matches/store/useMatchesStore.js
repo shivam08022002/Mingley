@@ -9,10 +9,21 @@ export const useMatchesStore = create((set, get) => ({
   fetchMatches: async () => {
     set({ isLoading: true, error: null });
     try {
+      console.log('useMatchesStore: Fetching matches...');
       const response = await matchesService.getMatches();
-      const matches = response.data?.matches || [];
+      console.log('useMatchesStore: Fetch matches response:', JSON.stringify(response));
+      // API returns full body: { success, data: { matches: [...] } }
+      // matchesService.getMatches() returns response.data (axios unwrap)
+      // so response here = { success, statusCode, data: { matches } }
+      const matches =
+        response?.data?.matches ||
+        response?.matches ||
+        (Array.isArray(response?.data) ? response.data : []) ||
+        [];
+      console.log('useMatchesStore: Parsed matches count:', matches.length);
       set({ matches, isLoading: false });
     } catch (error) {
+      console.error('useMatchesStore: Fetch matches failed:', error);
       set({ error: error.message || 'Failed to fetch matches', isLoading: false });
     }
   },

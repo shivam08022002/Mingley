@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from '../onboarding.styles';
 import { COLORS } from '../../../constants/theme';
 
@@ -23,7 +23,7 @@ export const SplashScreen = ({ navigation }) => {
         <FastImage
           source={require('../../../assets/app-logo.png')}
           style={styles.logo}
-          resizeMode={FastImage.resizeMode.contain}
+          contentFit="contain"
         />
       </LinearGradient>
     </View>

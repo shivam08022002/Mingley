@@ -13,9 +13,9 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../../../store/useChatStore';
 import { callService } from '../../../services/apiServices';
 
@@ -207,7 +207,7 @@ export const CallingScreen = ({ navigation, route }) => {
           <FastImage
             source={{ uri: fullImage }}
             style={StyleSheet.absoluteFillObject}
-            resizeMode={FastImage.resizeMode.cover}
+            contentFit="cover"
           />
         </Animated.View>
       </TouchableWithoutFeedback>
@@ -303,7 +303,7 @@ export const CallingScreen = ({ navigation, route }) => {
             <FastImage
               source={{ uri: pipImage }}
               style={styles.pipImage}
-              resizeMode={FastImage.resizeMode.cover}
+              contentFit="cover"
             />
             {/* Swap hint icon */}
             <View style={styles.pipSwapIcon}>
@@ -439,10 +439,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 100,
     marginBottom: 14,
-    shadowColor: '#E94057',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 10px rgba(0,0,0,0.45)',
     elevation: 8,
   },
   statusText: {
@@ -504,10 +501,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.65)',
     overflow: 'hidden',
     backgroundColor: '#111',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
+    boxShadow: '0px 10px 16px rgba(0,0,0,0.6)',
     elevation: 20,
   },
   pipImage: {
@@ -578,10 +572,7 @@ const styles = StyleSheet.create({
     borderRadius: ICON_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    boxShadow: '0px 4px 6px rgba(0,0,0,0.1)',
     elevation: 3,
   },
   hangUpBtn: {
@@ -590,10 +581,7 @@ const styles = StyleSheet.create({
     borderRadius: END_CALL_SIZE / 2,
     backgroundColor: '#FFF',
     padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
+    boxShadow: '0px 14px 18px rgba(0,0,0,0.28)',
     elevation: 14,
   },
   hangUpInner: {

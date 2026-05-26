@@ -197,16 +197,7 @@ export const DiscoverScreen = React.memo(() => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => {
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            }
-          }}
-        >
-          <Icon name="chevron-back" size={24} color="#E94057" />
-        </TouchableOpacity>
+        <View style={styles.headerPlaceholder} />
 
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Discover</Text>
@@ -258,6 +249,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerButtonActive: { borderColor: '#E94057' },
+  headerPlaceholder: {
+    width: 52,
+    height: 52,
+  },
   filterDot: {
     position: 'absolute', top: 10, right: 10,
     width: 8, height: 8, borderRadius: 4, backgroundColor: '#E94057',

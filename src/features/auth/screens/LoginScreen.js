@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
@@ -37,7 +37,6 @@ export const LoginScreen = ({ navigation }) => {
       password: data.password 
     });
   };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Back button */}
@@ -53,69 +52,75 @@ export const LoginScreen = ({ navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboard}
       >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Login</Text>
-            <Text style={styles.subtitle}>
-              Please enter your valid phone number. We will send you a 4-digit code to verify
-            </Text>
-          </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Login</Text>
+              <Text style={styles.subtitle}>
+                Please enter your valid phone number. We will send you a 4-digit code to verify
+              </Text>
+            </View>
 
-          <View style={styles.formContainer}>
-            <CustomInput
-              control={control}
-              name="identifier"
-              placeholder="Email or phone number"
-              keyboardType="default"
-              autoCapitalize="none"
-              error={errors.identifier?.message}
-            />
+            <View style={styles.formContainer}>
+              <CustomInput
+                control={control}
+                name="identifier"
+                placeholder="Email or phone number"
+                keyboardType="default"
+                autoCapitalize="none"
+                error={errors.identifier?.message}
+              />
 
-            <CustomInput
-              control={control}
-              name="password"
-              placeholder="Password"
-              secureTextEntry={true}
-              error={errors.password?.message}
-            />
+              <CustomInput
+                control={control}
+                name="password"
+                placeholder="Password"
+                secureTextEntry={true}
+                error={errors.password?.message}
+              />
 
-            <TouchableOpacity 
-              style={styles.forgotPassword}
-              onPress={() => navigation.navigate('ForgotPassword')}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
-
-            <Button
-              title="Submit"
-              onPress={handleSubmit(onSubmit)}
-              style={styles.button}
-              textStyle={styles.buttonText}
-              variant="solid"
-            />
-          </View>
-
-          <View style={styles.orContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.orText}>OR</Text>
-            <View style={styles.divider} />
-          </View>
-
-          <View style={styles.socialSection}>
-            <Text style={styles.socialTitle}>Login using</Text>
-            <View style={styles.socialContainer}>
-              <TouchableOpacity style={styles.socialButton}>
-                 <Icon name="logo-google" size={26} color="#000" />
+              <TouchableOpacity 
+                style={styles.forgotPassword}
+                onPress={() => navigation.navigate('ForgotPassword')}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                 <Icon name="logo-apple" size={26} color="#000" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                 <Icon name="logo-instagram" size={26} color="#000" />
-              </TouchableOpacity>
+
+              <Button
+                title="Submit"
+                onPress={handleSubmit(onSubmit)}
+                style={styles.button}
+                textStyle={styles.buttonText}
+                variant="solid"
+              />
+            </View>
+
+            <View style={styles.orContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <View style={styles.socialSection}>
+              <Text style={styles.socialTitle}>Login using</Text>
+              <View style={styles.socialContainer}>
+                <TouchableOpacity style={styles.socialButton}>
+                   <Icon name="logo-google" size={26} color="#000" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.socialButton}>
+                   <Icon name="logo-apple" size={26} color="#000" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.socialButton}>
+                   <Icon name="logo-instagram" size={26} color="#000" />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -128,6 +133,9 @@ const styles = StyleSheet.create({
   },
   keyboard: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   backButton: {
     paddingHorizontal: SPACING.xl,

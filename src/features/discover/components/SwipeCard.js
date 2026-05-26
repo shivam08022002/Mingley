@@ -9,10 +9,10 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 const CARD_HEIGHT = height * 0.79; // Card takes ~79% of screen height
@@ -253,10 +253,7 @@ const styles = StyleSheet.create({
     height: '98%', // dynamic height to perfectly fit between header and ActionButtons without overlapping
     borderRadius: 18,
     backgroundColor: '#000000',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.12)',
     elevation: 4,
   },
   cardInner: {
@@ -346,10 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+    boxShadow: '0px 12px 16px rgba(0,0,0,0.25)',
     elevation: 10,
     zIndex: 10,
   },

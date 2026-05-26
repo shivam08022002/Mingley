@@ -4,8 +4,8 @@ import {
   TouchableOpacity, Dimensions, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
@@ -36,7 +36,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
         <FastImage
           source={require('../../../assets/Hello-User.png')}
           style={styles.heroImg}
-          resizeMode={FastImage.resizeMode.contain}
+          contentFit="contain"
         />
       </View>
 

@@ -4,8 +4,8 @@ import {
   TouchableOpacity, Dimensions, Platform, Alert,
   Animated, FlatList,
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
@@ -138,9 +138,9 @@ export const UserProfileScreen = ({ navigation, route }) => {
             {images.map((img, i) => (
               <FastImage
                 key={i}
-                source={{ uri: img }}
+                source={{ uri: img?.url || img }}
                 style={styles.heroImage}
-                resizeMode={FastImage.resizeMode.cover}
+                contentFit="cover"
               />
             ))}
           </Animated.ScrollView>
@@ -375,7 +375,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
                             style={styles.galleryItem}
                             onPress={() => navigation.navigate('Gallery', { images: galleryImages, initialIndex: originalIndex })}
                           >
-                            <FastImage source={{ uri: img }} style={styles.galleryImage} />
+                            <FastImage source={{ uri: img?.url || img }} style={styles.galleryImage} />
                           </TouchableOpacity>
                         );
                       })}
@@ -527,10 +527,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
+    boxShadow: '0px 8px 16px rgba(0,0,0,0.12)',
     elevation: 8,
   },
   smallActionBtn: { width: 56, height: 56 },
@@ -620,10 +617,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: '#F0F0F0',
     justifyContent: 'center', alignItems: 'center',
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    boxShadow: '0px 2px 6px rgba(0,0,0,0.05)',
     elevation: 2,
   },
 
@@ -633,10 +627,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
+    boxShadow: '0px 2px 10px rgba(0,0,0,0.04)',
     elevation: 2,
   },
   infoRow: {

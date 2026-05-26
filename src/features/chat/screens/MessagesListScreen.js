@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Platform, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { MessageItem } from '../components/MessageItem';
 import { useChatStore } from '../../../store/useChatStore';
@@ -464,10 +464,7 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
   },
   tabText: {

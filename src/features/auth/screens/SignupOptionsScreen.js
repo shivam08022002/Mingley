@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 
@@ -17,7 +17,7 @@ export const SignupOptionsScreen = ({ navigation }) => {
           <FastImage
             source={require('../../../assets/signup-logo.png')}
             style={styles.logo}
-            resizeMode={FastImage.resizeMode.contain}
+            contentFit="contain"
           />
         </View>
 

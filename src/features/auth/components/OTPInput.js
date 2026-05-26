@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, TextInput, StyleSheet, Keyboard } from 'react-native';
+import { View, TextInput, StyleSheet, Keyboard, Platform} from 'react-native';
 import { Controller } from 'react-hook-form';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 

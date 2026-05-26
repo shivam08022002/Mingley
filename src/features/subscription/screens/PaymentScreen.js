@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 

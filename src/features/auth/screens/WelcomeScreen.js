@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import { View, Text, StyleSheet, Platform} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 

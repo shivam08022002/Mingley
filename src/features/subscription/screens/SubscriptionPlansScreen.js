@@ -6,7 +6,7 @@ import {
 
 const { width } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 

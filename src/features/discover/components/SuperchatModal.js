@@ -5,7 +5,7 @@ import {
   Dimensions, ScrollView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../../../store/useChatStore';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
 
@@ -26,9 +26,9 @@ export const GalleryScreen = ({ navigation, route }) => {
 
       <View style={styles.mainImageContainer}>
         <FastImage 
-          source={{ uri: images[activeIndex] }} 
+          source={{ uri: images[activeIndex]?.url || images[activeIndex] }} 
           style={styles.mainImage} 
-          resizeMode={FastImage.resizeMode.cover}
+          contentFit="cover"
         />
       </View>
 
@@ -44,9 +44,9 @@ export const GalleryScreen = ({ navigation, route }) => {
               ]}
             >
               <FastImage 
-                source={{ uri: img }} 
+                source={{ uri: img?.url || img }} 
                 style={styles.thumbnailImage} 
-                resizeMode={FastImage.resizeMode.cover}
+                contentFit="cover"
               />
             </TouchableOpacity>
           ))}

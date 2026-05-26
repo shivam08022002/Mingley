@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 import { useProfileStore } from '../store/useProfileStore';
 
@@ -170,21 +170,18 @@ export const MembershipCard = React.memo(({
 const styles = StyleSheet.create({
   cardContainer: {
     marginHorizontal: 0,
-    marginTop: 6,
-    marginBottom: 0,
+    marginTop: 16,
+    marginBottom: 20,
   },
   membershipCard: {
     borderRadius: 24,
     paddingHorizontal: 0,
     paddingTop: 14,
-    paddingBottom: 26,
+    paddingBottom: 0,
     marginHorizontal: 0,
     minHeight: 150,
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    boxShadow: '0px 6px 10px rgba(0,0,0,0.2)',
     elevation: 8,
   },
   cardTopRow: {
@@ -309,12 +306,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 8,
     marginTop: 4,
-    marginBottom: 16,
+    marginBottom: 4,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.12)',
   },
   expandToggleText: {
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255, 255, 255, 0.85)',
     fontSize: 12,
     fontWeight: '600',
     fontFamily: FONT_MED,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions, Image } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { decodeEmoji } from '../../../utils/stringUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,11 +13,12 @@ const FONT_REG = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium';
 
-export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSettings, onPressNotifications, hasNotifications }) => {
+export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCover, onSettings, onPressNotifications, hasNotifications }) => {
   const insets = useSafeAreaInsets();
   const {
     fullName,
     avatar,
+    coverPhoto,
     verified,
     isVerified,
     online,
@@ -34,20 +35,41 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSetting
 
   const topOffset = insets.top > 0 ? insets.top + 8 : 12;
 
+  // Premium cover fallback
+  const defaultCover = 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80';
+  const coverUri = coverPhoto || avatar || defaultCover;
+
   return (
     <View style={s.container}>
       {/* ── Cover with overlay & white text ON it ── */}
       <View style={s.coverWrap}>
-        <Image
-          source={{ uri: avatar || 'https://via.placeholder.com/800x400' }}
-          style={s.cover}
-          resizeMode="cover"
-        />
+        <TouchableOpacity 
+          style={StyleSheet.absoluteFill} 
+          onPress={onEditCover} 
+          activeOpacity={0.9}
+        >
+          <Image
+            source={{ uri: coverUri }}
+            style={s.cover}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+        
         {/* Dark gradient so text is readable */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.65)']}
+          colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.7)']}
           style={StyleSheet.absoluteFill}
+          pointerEvents="none"
         />
+
+        {/* Cover camera edit button – top-left */}
+        <TouchableOpacity 
+          style={[s.coverCameraBtn, { top: topOffset }]} 
+          onPress={onEditCover}
+          activeOpacity={0.8}
+        >
+          <Icon name="camera-outline" size={18} color="#fff" />
+        </TouchableOpacity>
 
         {/* Verified Top Badge – adjacent to Gear icon */}
         {showVerified && (
@@ -63,7 +85,7 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSetting
         </TouchableOpacity>
 
         {/* Name overlaid ON the cover (white) */}
-        <View style={s.coverTextBlock}>
+        <View style={s.coverTextBlock} pointerEvents="none">
           <View style={s.nameRow}>
             <Text style={s.coverName}>{`${decodeEmoji(fullName) || 'New User'}${age ? `, ${age}` : ''}`}</Text>
             {(gender?.toLowerCase() === 'female' || gender?.toLowerCase() === 'woman') && (
@@ -78,8 +100,12 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onSetting
 
       {/* ── Avatar row (overlapping cover bottom) ── */}
       <View style={s.avatarRow}>
-        <View style={s.avatarWrap}>
-          <Image source={{ uri: avatar || 'https://via.placeholder.com/300x300' }} style={s.avatar} />
+        {/* Shadow wrapper - no overflow:hidden */}
+        <View style={s.avatarShadowWrap}>
+          {/* Clip wrapper - overflow:hidden makes it round */}
+          <View style={s.avatarClip}>
+            <Image source={{ uri: avatar || 'https://via.placeholder.com/300x300' }} style={s.avatar} />
+          </View>
           {showOnline && <View style={s.onlineDot} />}
           <TouchableOpacity style={s.cameraBtn} onPress={onEditAvatar}>
             <Icon name="camera" size={14} color="#fff" />
@@ -133,9 +159,7 @@ const s = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     marginBottom: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    boxShadow: '0px 4px 10px rgba(0,0,0,0.06)',
     elevation: 4,
   },
   coverWrap: {
@@ -156,6 +180,13 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center', alignItems: 'center',
   },
+  coverCameraBtn: {
+    position: 'absolute', top: Platform.OS === 'ios' ? 44 : 26, left: 16,
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center', alignItems: 'center',
+    zIndex: 10,
+  },
   verifiedBadgeTop: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 50 : 32,
@@ -169,10 +200,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
     gap: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    boxShadow: '0px 2px 3px rgba(0,0,0,0.05)',
     elevation: 2,
   },
   verifiedBadgeText: {
@@ -206,16 +234,27 @@ const s = StyleSheet.create({
     marginBottom: 8,
     zIndex: 3,
   },
-  avatarWrap: {
-    width: AVATAR_SIZE, height: AVATAR_SIZE,
-    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, elevation: 8,
+  // Shadow wrapper — no overflow:hidden so shadow is visible
+  avatarShadowWrap: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    boxShadow: '0px 4px 12px rgba(0,0,0,0.25)',
+    elevation: 8,
+    borderRadius: AVATAR_SIZE / 2,
+    position: 'relative',
+  },
+  // Clip wrapper — overflow:hidden makes it perfectly round
+  avatarClip: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#fff',
   },
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    borderWidth: 4,
-    borderColor: '#fff',
   },
   onlineDot: {
     position: 'absolute', bottom: 6, right: 6,
@@ -237,10 +276,7 @@ const s = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 18,
     paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
+    boxShadow: '0px 4px 16px rgba(0,0,0,0.08)',
     elevation: 5,
   },
   headerRow: {

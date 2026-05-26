@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Carousel from 'react-native-reanimated-carousel';
 import { useSharedValue } from 'react-native-reanimated';
 import { Button } from '../../../components/common/Button';
@@ -41,7 +41,7 @@ export const CarouselScreen = ({ navigation }) => {
         source={item.image}
         style={styles.slideImage}
         width={width * 0.95}
-        resizeMode={FastImage.resizeMode.cover}
+        contentFit="cover"
       />
     </View>
   );

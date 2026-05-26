@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
 import { Controller } from 'react-hook-form';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 
@@ -159,6 +159,8 @@ const styles = StyleSheet.create({
     color: '#333333',
     fontFamily: FONT,
     height: '100%',
+    // Remove blue browser outline on web
+    ...(Platform.OS === 'web' ? { outlineWidth: 0, outlineStyle: 'none', outline: 'none' } : {}),
   },
   errorText: {
     ...TYPOGRAPHY.caption,

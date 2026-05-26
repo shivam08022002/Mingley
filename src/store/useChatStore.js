@@ -35,6 +35,8 @@ export const useChatStore = create((set, get) => ({
 
   // ── Gifts ────────────────────────────────────────────────────────────────
   gifts: [],
+  giftCategories: [],
+
 
   // ── Superchats ──────────────────────────────────────────────────────────
   receivedSuperchats: [],
@@ -98,6 +100,17 @@ export const useChatStore = create((set, get) => ({
       console.error('Fetch gift catalog error:', error);
     }
   },
+
+  fetchGiftCategories: async () => {
+    try {
+      const response = await giftService.getCategories();
+      const giftCategories = response.data?.categories ?? response.data ?? response.categories ?? [];
+      set({ giftCategories });
+    } catch (error) {
+      console.error('Fetch gift categories error:', error);
+    }
+  },
+
 
   fetchReceivedSuperchats: async () => {
     try {

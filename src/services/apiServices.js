@@ -142,6 +142,15 @@ export const giftService = {
     }
   },
 
+  getCategories: async () => {
+    try {
+      const response = await api.get('/v1/gifts/gategories');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   sendGift: async (giftData) => {
     try {
       const response = await api.post('/v1/gifts/send', giftData);
@@ -214,6 +223,33 @@ export const userService = {
   getMe: async () => {
     try {
       const response = await api.get('/v1/users/me');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  getCoverPhoto: async () => {
+    try {
+      const response = await api.get('/v1/users/me/cover-photo');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  updateCoverPhoto: async (url) => {
+    try {
+      const response = await api.post('/v1/users/me/cover-photo', { url });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  deleteCoverPhoto: async () => {
+    try {
+      const response = await api.delete('/v1/users/me/cover-photo');
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -588,4 +624,25 @@ export const callService = {
     }
   },
 };
+
+export const notificationService = {
+  updateFcmToken: async (token) => {
+    try {
+      const response = await api.post('/v1/notifications/fcm-token', { token });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  testPush: async (title, body) => {
+    try {
+      const response = await api.post('/v1/notifications/test-push', { title, body });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+};
+
 

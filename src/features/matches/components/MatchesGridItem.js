@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
+import { Image as FastImage } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 
 export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
-  const user = match.user || match;
+  const user = match.matchedUser || match.user || match;
   const isOnline = user.isOnline;
   const lastActive = user.lastActiveAt;
 
@@ -79,17 +79,13 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    height: 260,
+    height: 200,
     margin: 8,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#F5F5F5',
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    boxShadow: '0px 4px 12px rgba(0,0,0,0.1)',
     elevation: 4,
   },
   image: { width: '100%', height: '100%' },
@@ -138,8 +134,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderTopWidth: 1,
-    borderColor: '#F0F0F0',
   },
   actionButton: {
     flex: 1,

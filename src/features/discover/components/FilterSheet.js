@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
   PanResponder,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useFilterStore } from '../store/useFilterStore';
 import { useChatStore } from '../../../store/useChatStore';
@@ -23,30 +23,34 @@ import { userService } from '../../../services/apiServices';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const { height, width } = Dimensions.get('window');
-const SLIDER_TRACK = width - 48 - 8; // sheet padding * 2
 
 // ─── Simple single-thumb slider ────────────────────────────────────────────
 const SingleSlider = React.memo(({ value, min, max, onChange }) => {
-  const pct = (value - min) / (max - min);
-  const thumbPos = pct * SLIDER_TRACK;
-  const [drag, setDrag] = useState(thumbPos);
+  const [trackWidth, setTrackWidth] = useState(300);
+  const dragStartValue = useRef(value);
 
-  const pan = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => setDrag(thumbPos),
-    onPanResponderMove: (_, gs) => {
-      const nx = Math.max(0, Math.min(SLIDER_TRACK, thumbPos + gs.dx));
-      setDrag(nx);
-      const nv = Math.round(min + (nx / SLIDER_TRACK) * (max - min));
-      onChange(nv);
-    },
-  });
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragStartValue.current = value;
+      },
+      onPanResponderMove: (_, gs) => {
+        const deltaVal = (gs.dx / trackWidth) * (max - min);
+        const newVal = Math.max(min, Math.min(max, Math.round(dragStartValue.current + deltaVal)));
+        onChange(newVal);
+      },
+    })
+  ).current;
 
-  const pos = (value - min) / (max - min) * SLIDER_TRACK;
+  const pos = ((value - min) / (max - min)) * trackWidth;
 
   return (
-    <View style={sl.container}>
+    <View
+      style={sl.container}
+      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width || 300)}
+    >
       <View style={sl.track} />
       <View style={[sl.fill, { width: pos }]} />
       <View {...pan.panHandlers} style={[sl.thumb, { left: pos - 12 }]} />
@@ -56,30 +60,48 @@ const SingleSlider = React.memo(({ value, min, max, onChange }) => {
 
 // ─── Dual-thumb range slider ────────────────────────────────────────────────
 const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh }) => {
-  const toPos = (v) => ((v - min) / (max - min)) * SLIDER_TRACK;
-  const lowPos = toPos(low);
-  const highPos = toPos(high);
+  const [trackWidth, setTrackWidth] = useState(300);
+  const dragStartLow = useRef(low);
+  const dragStartHigh = useRef(high);
 
-  const panLow = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderMove: (_, gs) => {
-      const nx = Math.max(0, Math.min(highPos - 20, lowPos + gs.dx));
-      onChangeLow(Math.round(min + (nx / SLIDER_TRACK) * (max - min)));
-    },
-  });
+  const panLow = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragStartLow.current = low;
+      },
+      onPanResponderMove: (_, gs) => {
+        const deltaVal = (gs.dx / trackWidth) * (max - min);
+        const newVal = Math.max(min, Math.min(high - 2, Math.round(dragStartLow.current + deltaVal)));
+        onChangeLow(newVal);
+      },
+    })
+  ).current;
 
-  const panHigh = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderMove: (_, gs) => {
-      const nx = Math.max(lowPos + 20, Math.min(SLIDER_TRACK, highPos + gs.dx));
-      onChangeHigh(Math.round(min + (nx / SLIDER_TRACK) * (max - min)));
-    },
-  });
+  const panHigh = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragStartHigh.current = high;
+      },
+      onPanResponderMove: (_, gs) => {
+        const deltaVal = (gs.dx / trackWidth) * (max - min);
+        const newVal = Math.max(low + 2, Math.min(max, Math.round(dragStartHigh.current + deltaVal)));
+        onChangeHigh(newVal);
+      },
+    })
+  ).current;
+
+  const lowPos = ((low - min) / (max - min)) * trackWidth;
+  const highPos = ((high - min) / (max - min)) * trackWidth;
 
   return (
-    <View style={sl.container}>
+    <View
+      style={sl.container}
+      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width || 300)}
+    >
       <View style={sl.track} />
       <View style={[sl.fill, { left: lowPos, width: highPos - lowPos }]} />
       <View {...panLow.panHandlers} style={[sl.thumb, { left: lowPos - 12 }]} />
@@ -87,6 +109,7 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
     </View>
   );
 });
+
 
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 
@@ -116,9 +139,9 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           userService.getInterests(),
           userService.getMe()
         ]);
-        
+
         setAllInterests(intRes.data?.interests || []);
-        
+
         // Sync filter store with backend preferences
         const pref = meRes.data?.preference;
         if (pref) {
@@ -221,195 +244,196 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
         height={height * 0.65} 
         onClose={onClose}
         containerStyle={s.containerStyle}
+        contentStyle={s.contentStyle}
       >
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Header */}
-            <View style={s.headerRow}>
-              <Text style={s.title}>Filters</Text>
-              <TouchableOpacity onPress={handleClear}>
-                <Text style={s.clearBtn}>Clear all</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* ─ Interested In ─ */}
-            <Section label="Interested in">
-              <View style={s.segRow}>
-                {['girls', 'boys', 'both'].map((opt) => (
-                  <TouchableOpacity
-                    key={opt}
-                    style={[s.seg, interestedIn === opt && s.segActive]}
-                    onPress={() => setInterestedIn(opt)}
-                  >
-                    <Text style={[s.segText, interestedIn === opt && s.segTextActive]}>
-                      {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Section>
-
-            {/* ─ Location ─ */}
-            <Section label="Location">
-              <TouchableOpacity style={s.locationRow} onPress={pickLocation}>
-                <Icon name="location-outline" size={18} color="#E94057" />
-                <Text style={s.locationText}>{location}</Text>
-                <Icon name="chevron-forward" size={18} color="#CCC" />
-              </TouchableOpacity>
-            </Section>
-
-            {/* ─ Distance ─ */}
-            <Section label={`Distance  •  ${distance} km`}>
-              <SingleSlider value={distance} min={1} max={150} onChange={setDistance} />
-              <View style={s.sliderLabels}>
-                <Text style={s.sliderHint}>1 km</Text>
-                <Text style={s.sliderHint}>150 km</Text>
-              </View>
-            </Section>
-
-            {/* ─ Age Range ─ */}
-            <Section label={`Age Range  •  ${ageRange[0]}–${ageRange[1]}`}>
-              <RangeSlider
-                min={18} max={60}
-                low={ageRange[0]} high={ageRange[1]}
-                onChangeLow={(v) => setAgeRange([v, ageRange[1]])}
-                onChangeHigh={(v) => setAgeRange([ageRange[0], v])}
-              />
-              <View style={s.sliderLabels}>
-                <Text style={s.sliderHint}>18</Text>
-                <Text style={s.sliderHint}>60</Text>
-              </View>
-            </Section>
-
-            {/* ─ Relationship Type ─ */}
-            <Section label="Relationship Type">
-              <View style={s.segRow}>
-                {['casual', 'serious', 'both'].map((opt) => (
-                  <TouchableOpacity
-                    key={opt}
-                    style={[s.seg, relationshipType === opt && s.segActive]}
-                    onPress={() => setRelationshipType(opt)}
-                  >
-                    <Text style={[s.segText, relationshipType === opt && s.segTextActive]}>
-                      {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Section>
-
-            {/* ─ Interests ─ */}
-            <Section label="Interests">
-              {loadingInterests ? (
-                <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator color="#E94057" size="large" />
-                </View>
-              ) : (
-                <View style={s.chipsWrap}>
-                  {allInterests.map((item) => {
-                    const active = interests.includes(item.name);
-                    return (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={[s.chip, active && s.chipActive]}
-                        onPress={() => toggleInterest(item.name)}
-                      >
-                        {item.icon && (
-                          <Icon 
-                            name={item.icon} 
-                            size={14} 
-                            color={active ? '#E94057' : '#666'} 
-                            style={{ marginRight: 6 }} 
-                          />
-                        )}
-                        <Text style={[s.chipText, active && s.chipTextActive]}>{item.name}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              )}
-            </Section>
-
-            {/* ─ Nearby Users ─ */}
-            <Section label="Nearby Users">
-              <View style={s.toggleRow}>
-                <View style={s.toggleLabelRow}>
-                  <Icon name="navigate-outline" size={16} color="#E94057" style={{ marginRight: 6 }} />
-                  <Text style={s.toggleLabel}>Show only nearby users</Text>
-                </View>
-                <Switch
-                  value={nearbyOnly}
-                  onValueChange={setNearbyOnly}
-                  trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                  thumbColor={nearbyOnly ? '#E94057' : '#fff'}
-                />
-              </View>
-            </Section>
-
-            {/* ─ Online Now ─ */}
-            <Section label="Online Now">
-              <View style={s.toggleRow}>
-                <View style={s.toggleLabelRow}>
-                  <Icon name="radio-button-on" size={14} color="#22C55E" style={{ marginRight: 6 }} />
-                  <Text style={s.toggleLabel}>Show only online users</Text>
-                </View>
-                <Switch
-                  value={onlineStatus}
-                  onValueChange={setOnlineStatus}
-                  trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                  thumbColor={onlineStatus ? '#E94057' : '#fff'}
-                />
-              </View>
-            </Section>
-
-            {/* ─ Verified Only (Premium-locked) ─ */}
-            <Section label="Verified Profiles">
-              {isPremium ? (
-                <View style={s.toggleRow}>
-                  <View style={s.toggleLabelRow}>
-                    <Icon name="shield-checkmark" size={15} color="#3B82F6" style={{ marginRight: 6 }} />
-                    <Text style={s.toggleLabel}>Show verified profiles only</Text>
-                  </View>
-                  <Switch
-                    value={verifiedOnly}
-                    onValueChange={setVerifiedOnly}
-                    trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                    thumbColor={verifiedOnly ? '#E94057' : '#fff'}
-                  />
-                </View>
-              ) : (
-                <TouchableOpacity 
-                  style={s.lockedRow} 
-                  onPress={() => handleUpgradePrompt('Verified Profiles')} 
-                  activeOpacity={0.8}
-                >
-                  <View style={s.lockedLeft}>
-                    <Icon name="lock-closed" size={17} color="#F59E0B" style={{ marginRight: 8 }} />
-                    <View>
-                      <Text style={s.lockedLabel}>Show verified profiles only</Text>
-                      <Text style={s.lockedHint}>Upgrade to unlock</Text>
-                    </View>
-                  </View>
-                  <View style={s.upgradePill}>
-                    <Icon name="star" size={11} color="#fff" style={{ marginRight: 3 }} />
-                    <Text style={s.upgradePillText}>Premium</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            </Section>
-
-            {/* Apply */}
-            <TouchableOpacity style={s.applyBtn} onPress={handleApply}>
-              <LinearGradient
-                colors={['#E94057', '#8A2387']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={s.applyGradient}
-              >
-                <Text style={s.applyText}>Apply Filters</Text>
-              </LinearGradient>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={s.headerRow}>
+            <Text style={s.title}>Filters</Text>
+            <TouchableOpacity onPress={handleClear}>
+              <Text style={s.clearBtn}>Clear all</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </BottomSheetContainer>
+          </View>
+
+          {/* ─ Interested In ─ */}
+          <Section label="Interested in">
+            <View style={s.segRow}>
+              {['girls', 'boys', 'both'].map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[s.seg, interestedIn === opt && s.segActive]}
+                  onPress={() => setInterestedIn(opt)}
+                >
+                  <Text style={[s.segText, interestedIn === opt && s.segTextActive]}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Section>
+
+          {/* ─ Location ─ */}
+          <Section label="Location">
+            <TouchableOpacity style={s.locationRow} onPress={pickLocation}>
+              <Icon name="location-outline" size={18} color="#E94057" />
+              <Text style={s.locationText}>{location}</Text>
+              <Icon name="chevron-forward" size={18} color="#CCC" />
+            </TouchableOpacity>
+          </Section>
+
+          {/* ─ Distance ─ */}
+          <Section label={`Distance  •  ${distance} km`}>
+            <SingleSlider value={distance} min={1} max={150} onChange={setDistance} />
+            <View style={s.sliderLabels}>
+              <Text style={s.sliderHint}>1 km</Text>
+              <Text style={s.sliderHint}>150 km</Text>
+            </View>
+          </Section>
+
+          {/* ─ Age Range ─ */}
+          <Section label={`Age Range  •  ${ageRange[0]}–${ageRange[1]}`}>
+            <RangeSlider
+              min={18} max={60}
+              low={ageRange[0]} high={ageRange[1]}
+              onChangeLow={(v) => setAgeRange([v, ageRange[1]])}
+              onChangeHigh={(v) => setAgeRange([ageRange[0], v])}
+            />
+            <View style={s.sliderLabels}>
+              <Text style={s.sliderHint}>18</Text>
+              <Text style={s.sliderHint}>60</Text>
+            </View>
+          </Section>
+
+          {/* ─ Relationship Type ─ */}
+          <Section label="Relationship Type">
+            <View style={s.segRow}>
+              {['casual', 'serious', 'both'].map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[s.seg, relationshipType === opt && s.segActive]}
+                  onPress={() => setRelationshipType(opt)}
+                >
+                  <Text style={[s.segText, relationshipType === opt && s.segTextActive]}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Section>
+
+          {/* ─ Interests ─ */}
+          <Section label="Interests">
+            {loadingInterests ? (
+              <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator color="#E94057" size="large" />
+              </View>
+            ) : (
+              <View style={s.chipsWrap}>
+                {allInterests.map((item) => {
+                  const active = interests.includes(item.name);
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[s.chip, active && s.chipActive]}
+                      onPress={() => toggleInterest(item.name)}
+                    >
+                      {item.icon && (
+                        <Icon
+                          name={item.icon}
+                          size={14}
+                          color={active ? '#E94057' : '#666'}
+                          style={{ marginRight: 6 }}
+                        />
+                      )}
+                      <Text style={[s.chipText, active && s.chipTextActive]}>{item.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </Section>
+
+          {/* ─ Nearby Users ─ */}
+          <Section label="Nearby Users">
+            <View style={s.toggleRow}>
+              <View style={s.toggleLabelRow}>
+                <Icon name="navigate-outline" size={16} color="#E94057" style={{ marginRight: 6 }} />
+                <Text style={s.toggleLabel}>Show only nearby users</Text>
+              </View>
+              <Switch
+                value={nearbyOnly}
+                onValueChange={setNearbyOnly}
+                trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
+                thumbColor={nearbyOnly ? '#E94057' : '#fff'}
+              />
+            </View>
+          </Section>
+
+          {/* ─ Online Now ─ */}
+          <Section label="Online Now">
+            <View style={s.toggleRow}>
+              <View style={s.toggleLabelRow}>
+                <Icon name="radio-button-on" size={14} color="#22C55E" style={{ marginRight: 6 }} />
+                <Text style={s.toggleLabel}>Show only online users</Text>
+              </View>
+              <Switch
+                value={onlineStatus}
+                onValueChange={setOnlineStatus}
+                trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
+                thumbColor={onlineStatus ? '#E94057' : '#fff'}
+              />
+            </View>
+          </Section>
+
+          {/* ─ Verified Only (Premium-locked) ─ */}
+          <Section label="Verified Profiles">
+            {isPremium ? (
+              <View style={s.toggleRow}>
+                <View style={s.toggleLabelRow}>
+                  <Icon name="shield-checkmark" size={15} color="#3B82F6" style={{ marginRight: 6 }} />
+                  <Text style={s.toggleLabel}>Show verified profiles only</Text>
+                </View>
+                <Switch
+                  value={verifiedOnly}
+                  onValueChange={setVerifiedOnly}
+                  trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
+                  thumbColor={verifiedOnly ? '#E94057' : '#fff'}
+                />
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={s.lockedRow}
+                onPress={() => handleUpgradePrompt('Verified Profiles')}
+                activeOpacity={0.8}
+              >
+                <View style={s.lockedLeft}>
+                  <Icon name="lock-closed" size={17} color="#F59E0B" style={{ marginRight: 8 }} />
+                  <View>
+                    <Text style={s.lockedLabel}>Show verified profiles only</Text>
+                    <Text style={s.lockedHint}>Upgrade to unlock</Text>
+                  </View>
+                </View>
+                <View style={s.upgradePill}>
+                  <Icon name="star" size={11} color="#fff" style={{ marginRight: 3 }} />
+                  <Text style={s.upgradePillText}>Premium</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </Section>
+
+          {/* Apply */}
+          <TouchableOpacity style={s.applyBtn} onPress={handleApply}>
+            <LinearGradient
+              colors={['#E94057', '#8A2387']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={s.applyGradient}
+            >
+              <Text style={s.applyText}>Apply Filters</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </ScrollView>
+      </BottomSheetContainer>
     </Modal>
   );
 });
@@ -430,6 +454,10 @@ const FONT_MED = Platform.OS === 'ios' ? 'System' : 'sans-serif-medium';
 const s = StyleSheet.create({
   containerStyle: {
     paddingTop: 16,
+    paddingHorizontal: 0,
+  },
+  contentStyle: {
+    paddingHorizontal: 16,
   },
   headerRow: {
     flexDirection: 'row',

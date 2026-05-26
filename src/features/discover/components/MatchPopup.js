@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform} from 'react-native';
+import { Image as FastImage } from 'expo-image';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 
@@ -76,10 +76,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     position: 'absolute',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
+    boxShadow: '0px 15px 15px rgba(0,0,0,0.2)',
     elevation: 10,
     backgroundColor: '#fff',
   },
@@ -109,10 +106,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    boxShadow: '0px 5px 10px rgba(0,0,0,0.15)',
     elevation: 5,
   },
   heartBadgeRight: {

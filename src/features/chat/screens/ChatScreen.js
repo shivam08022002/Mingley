@@ -8,7 +8,7 @@ import {
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { ChatBubble } from '../components/ChatBubble';
@@ -64,12 +64,18 @@ export const ChatScreen = ({ navigation, route }) => {
   const [coinInputText, setCoinInputText] = useState('');
   const [utrIdText, setUtrIdText]         = useState('');
 
+  // Selected gift category
+  const [selectedGiftCategory, setSelectedGiftCategory] = useState('all');
+
+
   // ── Zustand ──────────────────────────────────────────────────────────────
   const currentUser           = useChatStore((s) => s.user);
   const wallet                = useChatStore((s) => s.wallet);
   const messages              = useChatStore((s) => s.messages);
   const gifts                 = useChatStore((s) => s.gifts);
   const fetchGiftCatalog      = useChatStore((s) => s.fetchGiftCatalog);
+  const giftCategories        = useChatStore((s) => s.giftCategories);
+  const fetchGiftCategories   = useChatStore((s) => s.fetchGiftCategories);
   const freeMessagesLeft      = useChatStore((s) => s.freeMessagesLeft);
   const deductCoin            = useChatStore((s) => s.deductCoin);
   const decrementFreeMessages = useChatStore((s) => s.decrementFreeMessages);
@@ -85,14 +91,24 @@ export const ChatScreen = ({ navigation, route }) => {
   const chatQuota             = useChatStore((s) => s.chatQuota);
   const setDepositModalVisible = useChatStore((s) => s.setDepositModalVisible);
 
+
   React.useEffect(() => {
     fetchGiftCatalog();
+    fetchGiftCategories();
     useChatStore.getState().fetchWalletBalance();
     
     if (!initialChatId) {
       fetchChats();
     }
-  }, [fetchGiftCatalog, initialChatId, fetchChats]);
+  }, [fetchGiftCatalog, fetchGiftCategories, initialChatId, fetchChats]);
+
+  // Robust effect to ensure screen is scrolled to bottom on load/messages update
+  React.useEffect(() => {
+    if (messages.length > 0) {
+      scrollToEnd();
+    }
+  }, [messages.length]);
+
 
   React.useEffect(() => {
     // Update partner info and fetch messages if we have a chatId
@@ -140,7 +156,7 @@ export const ChatScreen = ({ navigation, route }) => {
 
   const showTopUp = !canSend || (chatQuota && !hasFreeMessages && !canAffordMessage);
 
-  const scrollToEnd = () => setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+  const scrollToEnd = () => setTimeout(() => flatRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleSend = async () => {
@@ -347,10 +363,44 @@ export const ChatScreen = ({ navigation, route }) => {
               <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
               <Text style={styles.modalSubBold}>{wallet.coins} coins</Text>
             </View>
+
+            {/* Category tabs selection */}
+            {giftCategories && giftCategories.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll} contentContainerStyle={styles.categoryScrollContent}>
+                <TouchableOpacity 
+                  style={[styles.categoryTab, selectedGiftCategory === 'all' && styles.categoryTabActive]}
+                  onPress={() => setSelectedGiftCategory('all')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.categoryTabText, selectedGiftCategory === 'all' && styles.categoryTabTextActive]}>All</Text>
+                </TouchableOpacity>
+                {giftCategories.map((cat, idx) => {
+                  const name = typeof cat === 'string' ? cat : cat.name || cat.label || `Category ${idx+1}`;
+                  const id = typeof cat === 'string' ? cat : cat.id || cat.key || name;
+                  return (
+                    <TouchableOpacity 
+                      key={id} 
+                      style={[styles.categoryTab, selectedGiftCategory === id && styles.categoryTabActive]}
+                      onPress={() => setSelectedGiftCategory(id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.categoryTabText, selectedGiftCategory === id && styles.categoryTabTextActive]}>{name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.giftScrollContainer}>
-              {gifts.map((gift) => {
-                const cost = gift.coinCost || gift.price || 0;
-                const afford = wallet.coins >= cost;
+              {gifts
+                .filter((gift) => {
+                  if (selectedGiftCategory === 'all') return true;
+                  return gift.category === selectedGiftCategory || gift.categoryId === selectedGiftCategory;
+                })
+                .map((gift) => {
+                  const cost = gift.coinCost || gift.price || 0;
+                  const afford = wallet.coins >= cost;
+
 
                 return (
                   <TouchableOpacity 
@@ -381,8 +431,15 @@ export const ChatScreen = ({ navigation, route }) => {
   // ── Send Coins Modal ──────────────────────────────────────────────────────
   const renderCoinsModal = () => (
     <Modal visible={coinsModalVisible} transparent animationType="slide" onRequestClose={() => setCoinsModalVisible(false)}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCoinsModalVisible(false)}>
-        <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
+      <View style={styles.modalOverlay}>
+        {/* Backdrop tap-to-close */}
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setCoinsModalVisible(false)}
+        />
+        {/* Sheet - stops event propagation so backdrop doesn't fire */}
+        <View style={styles.modalSheet}>
           <View style={styles.modalHandle} />
           <Text style={styles.modalTitle}>Send Coins</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
@@ -396,7 +453,7 @@ export const ChatScreen = ({ navigation, route }) => {
             <Text style={styles.modalActionBtnText}>Send to {partnerInfo.name}</Text>
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 
@@ -451,7 +508,7 @@ export const ChatScreen = ({ navigation, route }) => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <BottomSheetContainer height={SCREEN_HEIGHT * 0.90} onClose={() => navigation.goBack()} containerStyle={styles.containerStyle}>
+    <BottomSheetContainer height={SCREEN_HEIGHT * 0.90} onClose={() => navigation.goBack()} containerStyle={styles.containerStyle} contentStyle={styles.contentStyle}>
       <KeyboardAvoidingView style={styles.containerInside} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 20}>
         {renderHeader()}
         {renderGiftModal()}
@@ -561,6 +618,7 @@ export const ChatScreen = ({ navigation, route }) => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   containerStyle: { backgroundColor: 'rgba(0,0,0,0.5)' },
+  contentStyle: { paddingHorizontal: 0 },
   containerInside: { flex: 1 },
 
   // ── Header ───────────────────────────────────────────────────────────────
@@ -761,10 +819,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF0F3',
     borderWidth: 1.5, 
     borderColor: '#FFD6DE',
-    shadowColor: '#E94057',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    boxShadow: '0px 4px 6px rgba(0,0,0,0.05)',
     elevation: 2,
   },
   giftIconWrap: {
@@ -775,10 +830,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.05)',
     elevation: 1,
   },
+  categoryScroll: {
+    marginBottom: 14,
+    maxHeight: 40,
+    width: '100%',
+  },
+  categoryScrollContent: {
+    paddingHorizontal: 2,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  categoryTab: {
+    paddingHorizontal: 16,
+    height: 32,
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#FFF0F3',
+    borderWidth: 1,
+    borderColor: '#FFD6DE',
+    marginRight: 6,
+  },
+  categoryTabActive: {
+    backgroundColor: '#E94057',
+    borderColor: '#E94057',
+  },
+  categoryTabText: {
+    fontSize: 12,
+    color: '#E94057',
+    fontWeight: '600',
+  },
+  categoryTabTextActive: {
+    color: '#FFF',
+  },
 });
+

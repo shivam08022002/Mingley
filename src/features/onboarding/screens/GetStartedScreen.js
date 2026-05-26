@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +27,7 @@ export const GetStartedScreen = ({ navigation }) => {
           <FastImage
             source={require('../../../assets/Started.png')}
             style={styles.startedImage}
-            resizeMode={FastImage.resizeMode.contain}
+            contentFit="contain"
           />
 
           {/* Logo + subtitle — overlaid in the centre of the circle */}
@@ -35,7 +35,7 @@ export const GetStartedScreen = ({ navigation }) => {
             <FastImage
               source={require('../../../assets/app-logo2.png')}
               style={styles.logo}
-              resizeMode={FastImage.resizeMode.contain}
+              contentFit="contain"
             />
             <Text style={styles.subtitle}>Online Dating App</Text>
           </View>

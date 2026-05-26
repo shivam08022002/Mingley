@@ -1,16 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 
 import { useAuthStore } from '../../../store/useAuthStore';
+import { notificationService } from '../../../services/apiServices';
 
 export const NotificationsPermissionScreen = ({ navigation, route }) => {
   const { userData } = route?.params || {};
   const login = useAuthStore(state => state.login);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const [enabling, setEnabling] = React.useState(false);
 
   const handleFinishOnboarding = () => {
     if (isAuthenticated) {
@@ -18,6 +20,47 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
     } else {
       // Finalize registration onboarding
       login(userData || { id: 'new-user', name: 'User' }); // The actual user data is already in tokens
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    setEnabling(true);
+    try {
+      // 1. Generate realistic mock Firebase FCM token
+      const mockToken = `fcm_token_shivam_${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`;
+      
+      // 2. Post token to endpoint /v1/notifications/fcm-token
+      await notificationService.updateFcmToken(mockToken);
+      
+      // 3. Send test push notification to endpoint /v1/notifications/test-push
+      await notificationService.testPush(
+        "Welcome to Mingley! 💖",
+        "Awesome! Push notifications are successfully enabled. 🚀 Keep matching!"
+      );
+      
+      // 4. Alert user beautifully
+      Alert.alert(
+        "Notifications Enabled! 🔔",
+        "Success! A confirmation test push notification has been sent.",
+        [
+          { 
+            text: "Let's Go! 🚀", 
+            onPress: handleFinishOnboarding 
+          }
+        ]
+      );
+    } catch (error) {
+      console.error("Enable push notification error:", error);
+      Alert.alert(
+        "Notification Permission Error",
+        error.message || "Failed to register notifications. Please try again.",
+        [
+          { text: "Try Again", style: "default" },
+          { text: "Skip for now", onPress: handleFinishOnboarding, style: "cancel" }
+        ]
+      );
+    } finally {
+      setEnabling(false);
     }
   };
 
@@ -34,7 +77,7 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
           <FastImage 
             source={require('../../../assets/notification-icon.png')} 
             style={styles.image}
-            resizeMode={FastImage.resizeMode.contain}
+            contentFit="contain"
           />
         </View>
 
@@ -45,7 +88,8 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
 
         <Button
           title="I want to be notified"
-          onPress={handleFinishOnboarding}
+          onPress={handleEnableNotifications}
+          loading={enabling}
           style={styles.actionButton}
           textStyle={styles.buttonText}
           variant="solid"
@@ -54,6 +98,7 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

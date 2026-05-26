@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import FastImage from 'react-native-fast-image';
+import { Image as FastImage } from 'expo-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -49,7 +49,7 @@ export const ContactsPermissionScreen = ({ navigation, route }) => {
           <FastImage 
             source={require('../../../assets/contact.png')} 
             style={styles.image}
-            resizeMode={FastImage.resizeMode.contain}
+            contentFit="contain"
           />
         </View>
 
