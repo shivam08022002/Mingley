@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   headerTitle: { ...TYPOGRAPHY.h2, color: '#1F1F1F', marginBottom: 2, fontSize: 28, fontWeight: '600', fontFamily: TITLE_MED },
   headerSubtitle: { ...TYPOGRAPHY.caption, color: '#7A7A7A', fontFamily: TITLE_FONT },
   cardsContainer: {
-    flex: 1, marginTop: 8, marginBottom: 8,
+    flex: 1, marginTop: 8, marginBottom: 14,
     justifyContent: 'center', alignItems: 'center',
   },
   noMoreText: {

@@ -126,7 +126,8 @@ export const CallingScreen = ({ navigation, route }) => {
   /* ── Mount effect: start Call API sessions ── */
   useEffect(() => {
     let activeCallId = null;
-    const targetId = remoteUser?.id || remoteUser?._id || 'd0000001-0000-0000-0000-000000000009';
+    const initialUser = route?.params?.user || {};
+    const targetId = initialUser.id || initialUser._id || 'd0000001-0000-0000-0000-000000000009';
 
     const startCallOnServer = async () => {
       if (isIncoming) {
@@ -191,7 +192,7 @@ export const CallingScreen = ({ navigation, route }) => {
         });
       }
     };
-  }, [remoteUser, route?.params?.callType, isIncoming]);
+  }, [route?.params?.callType, isIncoming]);
 
   /* ── Mount effect: start animations + timer ── */
   useEffect(() => {
@@ -227,10 +228,17 @@ export const CallingScreen = ({ navigation, route }) => {
         const rate = response?.data?.costPerMin ?? response?.costPerMin ?? (route?.params?.callType === 'video' ? 100 : 10);
         setCostPerMin(rate);
 
-        const tokenRes = await callService.getAgoraToken(callId);
-        const token = tokenRes.data?.token || tokenRes.token || tokenRes.data?.agoraToken || tokenRes.agoraToken;
+        // Check if response contains agora directly
+        const agoraObj = response?.data?.agora || response?.agora;
+        const token = agoraObj?.token || agoraObj?.agoraToken || response?.data?.token || response?.token;
         if (token) {
           setAgoraToken(token);
+        } else {
+          const tokenRes = await callService.getAgoraToken(callId);
+          const fallbackToken = tokenRes.data?.token || tokenRes.token || tokenRes.data?.agoraToken || tokenRes.agoraToken;
+          if (fallbackToken) {
+            setAgoraToken(fallbackToken);
+          }
         }
       }
     } catch (error) {
@@ -268,7 +276,10 @@ export const CallingScreen = ({ navigation, route }) => {
   }, [time, agoraToken, costPerMin, coins]);
 
   const formatTime = () => {
-    if (time === 0) return 'Connecting...';
+    if (time === 0) {
+      if (isIncoming && !incomingAnswered) return 'Ringing...';
+      return 'Connecting...';
+    }
     const m = String(Math.floor(time / 60)).padStart(2, '0');
     const s = String(time % 60).padStart(2, '0');
     return `${m}:${s}`;
@@ -337,7 +348,7 @@ export const CallingScreen = ({ navigation, route }) => {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.statusBadge}
           >
-            <Text style={styles.statusText}>{isIncoming && !incomingAnswered ? 'Incoming Call' : time === 0 ? 'Connecting' : 'Ongoing Call'}</Text>
+            <Text style={styles.statusText}>{isIncoming && !incomingAnswered ? 'Ringing' : time === 0 ? 'Connecting' : 'Ongoing Call'}</Text>
             <Icon name="pulse" size={13} color="#FFF" style={{ marginLeft: 6 }} />
           </LinearGradient>
 

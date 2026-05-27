@@ -13,7 +13,7 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 const DEFAULT_ICONS = ['star-outline', 'trophy-outline', 'rocket-outline', 'flash-outline'];
 
 export const SubscriptionPlansScreen = ({ navigation }) => {
-  const { plans, fetchPlans, isLoading, setSelectedPlan, subscribe } = useSubscriptionStore();
+  const { plans, fetchPlans, isLoading, setSelectedPlan, subscribe, fetchStatus } = useSubscriptionStore();
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
@@ -39,6 +39,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
             orderId: `free-order-${Date.now()}`,
             signature: 'free-signature',
           });
+          await fetchStatus();
           Alert.alert(
             'Subscription Activated! 🎉',
             'You are now on the Free plan.',
@@ -60,16 +61,16 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
     let textColor = '#FFF';
 
     if (name.includes('gold')) {
-      colors = ['#F5A623', '#F5A623'];
-      textColor = '#FFF';
+      colors = ['#ECC844', '#8E6E1D'];
+      textColor = '#111111';
     } else if (name.includes('silver')) {
-      colors = ['#8892B0', '#8892B0'];
-      textColor = '#FFF';
+      colors = ['#E2E8F0', '#94A3B8'];
+      textColor = '#111111';
     } else if (name.includes('platinum')) {
-      colors = ['#4A90E2', '#4A90E2'];
+      colors = ['#4FACFE', '#00F2FE'];
       textColor = '#FFF';
     } else if (name.includes('free')) {
-      colors = ['#bcb0b0ff', '#aca5a5ff'];
+      colors = ['#F1F5F9', '#CBD5E1'];
       textColor = '#666';
     }
 
@@ -144,29 +145,37 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
                 style={[
                   s.planCard, 
                   active && s.planCardActive,
-                  active && { backgroundColor: plan.colors[0], borderColor: plan.colors[1] }
+                  active && { borderColor: plan.colors[0] }
                 ]}
               >
+                {active && (
+                  <LinearGradient
+                    colors={plan.colors}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={[StyleSheet.absoluteFillObject, { borderRadius: 22 }]}
+                  />
+                )}
+
                 {plan.badge && (
-                  <View style={[s.badgeWrapNew, active && { backgroundColor: '#FFF' }]}>
-                    <Text style={[s.badgeTextNew, active && { color: plan.colors[0] }]}>{plan.badge}</Text>
+                  <View style={[s.badgeWrapNew, active && { backgroundColor: plan.textColor === '#111111' ? '#111111' : '#FFF' }]}>
+                    <Text style={[s.badgeTextNew, active && { color: plan.textColor === '#111111' ? '#FFF' : plan.colors[1] }]}>{plan.badge}</Text>
                   </View>
                 )}
                 
                 <View style={s.planHeader}>
-                  <Text style={[s.planNameNew, active && s.activeTextWhite]}>{plan.name}</Text>
-                  <View style={[s.planIconWrap, active && s.planIconWrapActive]}>
-                    <Icon name={plan.icon} size={24} color={active ? plan.colors[0] : '#E94057'} />
+                  <Text style={[s.planNameNew, active && (plan.textColor === '#111111' ? s.activeTextDark : s.activeTextWhite)]}>{plan.name}</Text>
+                  <View style={[s.planIconWrap, active && (plan.textColor === '#111111' ? { backgroundColor: 'rgba(0, 0, 0, 0.08)' } : s.planIconWrapActive)]}>
+                    <Icon name={plan.icon} size={24} color={active ? (plan.textColor === '#111111' ? '#111111' : plan.colors[1]) : '#E94057'} />
                   </View>
                 </View>
 
                 <View style={s.planPriceSection}>
-                  <Text style={[s.planPriceNew, active && s.activeTextWhite]}>{plan.price}</Text>
-                  <Text style={[s.planDurationNew, active && s.activeTextWhiteSub]}>{plan.duration}</Text>
+                  <Text style={[s.planPriceNew, active && (plan.textColor === '#111111' ? s.activeTextDark : s.activeTextWhite)]}>{plan.price}</Text>
+                  <Text style={[s.planDurationNew, active && (plan.textColor === '#111111' ? s.activeTextDarkSub : s.activeTextWhiteSub)]}>{plan.duration}</Text>
                 </View>
 
                 {plan.perMonth ? (
-                  <Text style={[s.planPerMonthNew, active && s.activeTextWhiteSub]}>{plan.perMonth}</Text>
+                  <Text style={[s.planPerMonthNew, active && (plan.textColor === '#111111' ? s.activeTextDarkSub : s.activeTextWhiteSub)]}>{plan.perMonth}</Text>
                 ) : null}
               </TouchableOpacity>
             );
@@ -339,6 +348,8 @@ const s = StyleSheet.create({
   },
   activeTextWhite: { color: '#FFF' },
   activeTextWhiteSub: { color: 'rgba(255, 255, 255, 0.8)' },
+  activeTextDark: { color: '#111111' },
+  activeTextDarkSub: { color: 'rgba(0, 0, 0, 0.65)' },
 
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

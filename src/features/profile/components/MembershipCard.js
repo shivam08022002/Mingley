@@ -7,9 +7,9 @@ import { useProfileStore } from '../store/useProfileStore';
 
 const GRADIENTS = {
   Free: ['#374151', '#111827'],
-  Silver: ['#E94057', '#8A2387'],
-  Gold: ['#f093fb', '#f5576c'],
-  Platinum: ['#4facfe', '#00f2fe'],
+  Silver: ['#E2E8F0', '#94A3B8'],
+  Gold: ['#ECC844', '#8E6E1D'],
+  Platinum: ['#4FACFE', '#00F2FE'],
 };
 
 const FONT = Platform.OS === 'ios' ? 'System' : 'sans-serif';
@@ -38,6 +38,13 @@ export const MembershipCard = React.memo(({
   const normalizedPlan = activePlanName.charAt(0).toUpperCase() + activePlanName.slice(1).toLowerCase();
   const cardColors = GRADIENTS[normalizedPlan] || GRADIENTS.Free;
 
+  const isDarkTheme = normalizedPlan === 'Gold' || normalizedPlan === 'Silver';
+  const cardTextColor = isDarkTheme ? '#111111' : '#FFFFFF';
+  const cardSubTextColor = isDarkTheme ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.8)';
+  const cardIconColor = isDarkTheme ? '#111111' : '#FFFFFF';
+  const btnBgColor = isDarkTheme ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.22)';
+  const dividerColor = isDarkTheme ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)';
+
   // Find features from active plan object
   const activePlanObj = plans?.find(
     (p) => p.name?.toLowerCase() === activePlanName?.toLowerCase()
@@ -56,16 +63,16 @@ export const MembershipCard = React.memo(({
         {/* Top Section */}
         <View style={styles.cardTopRow}>
           <View style={styles.membershipInfo}>
-            <View style={styles.membershipTypeRow}>
-              <Text style={styles.membershipType}>
+             <View style={styles.membershipTypeRow}>
+              <Text style={[styles.membershipType, { color: cardSubTextColor }]}>
                 {currentStatus?.isActive ? `${activePlanName.toUpperCase()} MEMBER` : 'FREE PLAN'}
               </Text>
-              <Icon name="diamond" size={12} color="#FFF" style={styles.diamondIconSmall} />
+              <Icon name="diamond" size={12} color={cardIconColor} style={styles.diamondIconSmall} />
             </View>
             <View style={styles.balanceRowInline}>
-              <Icon name="wallet-outline" size={22} color="#FFD700" />
-              <Text style={styles.balanceLabelInline}>{profileData.coinBalance || 0}</Text>
-              <Text style={styles.balanceLabelSuffix}>coins</Text>
+              <Icon name="wallet-outline" size={22} color={isDarkTheme ? '#111111' : '#FFD700'} />
+              <Text style={[styles.balanceLabelInline, { color: cardTextColor }]}>{profileData.coinBalance || 0}</Text>
+              <Text style={[styles.balanceLabelSuffix, { color: cardSubTextColor }]}>coins</Text>
             </View>
           </View>
         </View>
@@ -75,39 +82,39 @@ export const MembershipCard = React.memo(({
           {isFemale ? (
             <>
               <TouchableOpacity
-                style={[styles.walletBtnSmall, styles.withdrawBtnSmall]}
+                style={[styles.walletBtnSmall, { backgroundColor: btnBgColor }]}
                 onPress={onWithdraw}
                 activeOpacity={0.85}
               >
-                <Icon name="wallet-outline" size={16} color="#FFF" />
-                <Text style={styles.walletBtnTextSmall}>Withdraw</Text>
+                <Icon name="wallet-outline" size={16} color={cardIconColor} />
+                <Text style={[styles.walletBtnTextSmall, { color: cardTextColor }]}>Withdraw</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.walletBtnSmall}
+                style={[styles.walletBtnSmall, { backgroundColor: btnBgColor }]}
                 onPress={onManage}
                 activeOpacity={0.85}
               >
-                <Icon name="settings-outline" size={16} color="#FFF" />
-                <Text style={styles.walletBtnTextSmall}>Manage</Text>
+                <Icon name="settings-outline" size={16} color={cardIconColor} />
+                <Text style={[styles.walletBtnTextSmall, { color: cardTextColor }]}>Manage</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <TouchableOpacity
-                style={styles.walletBtnSmall}
+                style={[styles.walletBtnSmall, { backgroundColor: btnBgColor }]}
                 onPress={onTopUp}
                 activeOpacity={0.85}
               >
-                <Icon name="add-circle-outline" size={16} color="#FFF" />
-                <Text style={styles.walletBtnTextSmall}>Top-up</Text>
+                <Icon name="add-circle-outline" size={16} color={cardIconColor} />
+                <Text style={[styles.walletBtnTextSmall, { color: cardTextColor }]}>Top-up</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.walletBtnSmall, styles.withdrawBtnSmall]}
+                style={[styles.walletBtnSmall, { backgroundColor: btnBgColor }]}
                 onPress={onManage}
                 activeOpacity={0.85}
               >
-                <Icon name="settings-outline" size={16} color="#FFF" />
-                <Text style={styles.walletBtnTextSmall}>Manage</Text>
+                <Icon name="settings-outline" size={16} color={cardIconColor} />
+                <Text style={[styles.walletBtnTextSmall, { color: cardTextColor }]}>Manage</Text>
               </TouchableOpacity>
             </>
           )}
@@ -115,23 +122,23 @@ export const MembershipCard = React.memo(({
 
         {/* Perks and Expiry details section (Visible only when expanded) */}
         {isExpanded && (
-          <View style={styles.expandedContent}>
+          <View style={[styles.expandedContent, { borderTopColor: dividerColor }]}>
             {/* Perks / Features bullet list */}
             {features && features.length > 0 && (
               <View style={styles.featuresContainer}>
                 {features.map((feature, idx) => (
                   <View key={idx} style={styles.featureItemRow}>
-                    <Icon name="checkmark-circle" size={14} color="#FFF" style={styles.checkIcon} />
-                    <Text style={styles.featureText}>{feature}</Text>
+                    <Icon name="checkmark-circle" size={14} color={cardIconColor} style={styles.checkIcon} />
+                    <Text style={[styles.featureText, { color: cardTextColor }]}>{feature}</Text>
                   </View>
                 ))}
               </View>
             )}
 
             {/* Validity info (No hardcoded date) */}
-            <View style={styles.validityContainer}>
+            <View style={[styles.validityContainer, { borderTopColor: dividerColor }]}>
               {currentStatus?.isActive && currentStatus?.endDate ? (
-                <Text style={styles.validityText}>
+                <Text style={[styles.validityText, { color: cardSubTextColor }]}>
                   Valid until: {new Date(currentStatus.endDate).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'long',
@@ -139,7 +146,7 @@ export const MembershipCard = React.memo(({
                   })} ({currentStatus.daysRemaining} days left)
                 </Text>
               ) : (
-                <Text style={styles.validityText}>
+                <Text style={[styles.validityText, { color: cardSubTextColor }]}>
                   Enjoy standard features or upgrade for premium benefits!
                 </Text>
               )}
@@ -149,17 +156,17 @@ export const MembershipCard = React.memo(({
 
         {/* Bottom Collapse/Expand Arrow Toggle */}
         <TouchableOpacity
-          style={styles.expandToggle}
+          style={[styles.expandToggle, { borderTopColor: dividerColor }]}
           onPress={() => setIsExpanded(prev => !prev)}
           activeOpacity={0.85}
         >
-          <Text style={styles.expandToggleText}>
+          <Text style={[styles.expandToggleText, { color: cardSubTextColor }]}>
             {isExpanded ? 'View Less' : 'View More'}
           </Text>
           <Icon
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
             size={14}
-            color="rgba(255, 255, 255, 0.85)"
+            color={cardSubTextColor}
           />
         </TouchableOpacity>
       </LinearGradient>

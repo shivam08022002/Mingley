@@ -27,7 +27,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 20,
-    marginVertical: 12,
+    marginTop: 14,
+    marginBottom: 20,
   },
   button: {
     justifyContent: 'center',

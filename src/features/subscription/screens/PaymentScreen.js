@@ -31,7 +31,7 @@ const PAYMENT_METHODS = [
 ];
 
 export const PaymentScreen = ({ navigation }) => {
-  const { selectedPlan, subscribe, isLoading } = useSubscriptionStore();
+  const { selectedPlan, subscribe, isLoading, fetchStatus } = useSubscriptionStore();
   const [selectedMethod, setSelectedMethod] = useState('1');
 
   if (!selectedPlan) {
@@ -64,6 +64,7 @@ export const PaymentScreen = ({ navigation }) => {
         orderId: `mock-order-${Date.now()}`,
         signature: 'mock-signature',
       });
+      await fetchStatus();
       Alert.alert(
         'Payment Successful! 🎉',
         'Welcome to Mingley Premium. Enjoy unlimited matches!',

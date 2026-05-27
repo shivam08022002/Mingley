@@ -108,6 +108,19 @@ class SignalRService {
       this.connection.on('NewNotification', (data) => {
         console.log('SignalR Event: NewNotification', data);
         const { title, body, type } = data;
+
+        // Skip call-related notifications to let the CallingScreen handle it natively
+        if (
+          type === 'call' || 
+          type === 'incoming_call' || 
+          title?.toLowerCase().includes('call') || 
+          body?.toLowerCase().includes('calling') || 
+          body?.toLowerCase().includes('call')
+        ) {
+          console.log('Skipping call notification toast to avoid overlap with CallingScreen.');
+          return;
+        }
+
         useToastStore.getState().showToast({
           title,
           text: body,

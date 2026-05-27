@@ -40,6 +40,7 @@ export const ChatScreen = ({ navigation, route }) => {
 
   // Use local state for the chat partner's display info
   const [partnerInfo, setPartnerInfo] = useState({
+    id: routeUser.id || routeUser._id,
     name: routeUser.fullName || routeUser.name || 'User',
     image: routeUser.avatar || routeUser.image || 'https://via.placeholder.com/150',
     isOnline: routeUser.isOnline || false
@@ -93,6 +94,7 @@ export const ChatScreen = ({ navigation, route }) => {
   const getChatQuota          = useChatStore((s) => s.getChatQuota);
   const chatQuota             = useChatStore((s) => s.chatQuota);
   const setDepositModalVisible = useChatStore((s) => s.setDepositModalVisible);
+  const setActiveChatId       = useChatStore((s) => s.setActiveChatId);
 
 
   React.useEffect(() => {
@@ -105,6 +107,16 @@ export const ChatScreen = ({ navigation, route }) => {
       fetchChats();
     }
   }, [fetchGiftCatalog, fetchGiftCategories, initialChatId, fetchChats]);
+
+  // Track active chat channel for WebSocket push filtering
+  React.useEffect(() => {
+    if (chatId) {
+      setActiveChatId(chatId);
+    }
+    return () => {
+      setActiveChatId(null);
+    };
+  }, [chatId, setActiveChatId]);
 
   // Robust effect to ensure screen is scrolled to bottom on load/messages update
   React.useEffect(() => {
@@ -134,6 +146,7 @@ export const ChatScreen = ({ navigation, route }) => {
       const currentChat = chats.find(c => c.chatId === chatId);
       if (currentChat?.user) {
         setPartnerInfo({
+          id: currentChat.user.id || currentChat.user._id,
           name: currentChat.user.fullName || currentChat.user.name,
           image: currentChat.user.avatar || currentChat.user.image,
           isOnline: currentChat.user.isOnline

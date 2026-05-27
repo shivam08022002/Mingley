@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    height: '98%', // dynamic height to perfectly fit between header and ActionButtons without overlapping
+    height: '91%', // dynamic height to perfectly fit between header and ActionButtons without overlapping
     borderRadius: 18,
     backgroundColor: '#000000',
     boxShadow: '0px 4px 8px rgba(0,0,0,0.12)',

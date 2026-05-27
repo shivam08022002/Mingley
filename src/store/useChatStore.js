@@ -61,6 +61,10 @@ export const useChatStore = create((set, get) => ({
   // ── Chat Quota ────────────────────────────────────────────────────────────
   chatQuota: null,
 
+  // ── Active chat channel ───────────────────────────────────────────────────
+  activeChatId: null,
+  setActiveChatId: (activeChatId) => set({ activeChatId }),
+
   // ════════════════════════════════════════════════════════════════════════════
   // ACTIONS
   // ════════════════════════════════════════════════════════════════════════════
@@ -392,9 +396,12 @@ export const useChatStore = create((set, get) => ({
       isMine: rawMessage.senderId === currentUserId,
     };
 
-    const currentMessages = get().messages || [];
-    if (!currentMessages.some(m => m.id === mapped.id)) {
-      set({ messages: [mapped, ...currentMessages] });
+    // Only append to the messages list if the message belongs to the currently active chat screen
+    if (get().activeChatId === chatId) {
+      const currentMessages = get().messages || [];
+      if (!currentMessages.some(m => m.id === mapped.id)) {
+        set({ messages: [mapped, ...currentMessages] });
+      }
     }
     get().fetchChats();
   },
