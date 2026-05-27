@@ -14,6 +14,7 @@ import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { ChatBubble } from '../components/ChatBubble';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useChatStore } from '../../../store/useChatStore';
+import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const nowTime = () => {
@@ -28,6 +29,8 @@ import { userService } from '../../../services/apiServices';
 export const ChatScreen = ({ navigation, route }) => {
   const routeUser = route?.params?.user || {};
   const initialChatId = route?.params?.chatId;
+
+  const currentStatus = useSubscriptionStore((s) => s.currentStatus);
 
   const chats = useChatStore((s) => s.chats);
   const fetchChats = useChatStore((s) => s.fetchChats);
@@ -96,6 +99,7 @@ export const ChatScreen = ({ navigation, route }) => {
     fetchGiftCatalog();
     fetchGiftCategories();
     useChatStore.getState().fetchWalletBalance();
+    useSubscriptionStore.getState().fetchStatus();
     
     if (!initialChatId) {
       fetchChats();
@@ -242,24 +246,6 @@ export const ChatScreen = ({ navigation, route }) => {
     ]);
   };
 
-  // ── Call picker ───────────────────────────────────────────────────────────
-  const handleCallPress = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Voice Call', 'Video Call'], cancelButtonIndex: 0 },
-        (idx) => {
-          if (idx === 1) navigation.navigate('Calling', { user: partnerInfo, callType: 'audio' });
-          if (idx === 2) navigation.navigate('Calling', { user: partnerInfo, callType: 'video' });
-        }
-      );
-    } else {
-      Alert.alert('Start Call', '', [
-        { text: 'Voice Call', onPress: () => navigation.navigate('Calling', { user: partnerInfo, callType: 'audio' }) },
-        { text: 'Video Call', onPress: () => navigation.navigate('Calling', { user: partnerInfo, callType: 'video' }) },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  };
 
   // ── Three-dot menu ────────────────────────────────────────────────────────
   const handleBlockUser = () => {
@@ -334,9 +320,34 @@ export const ChatScreen = ({ navigation, route }) => {
           <Text style={styles.coinBadgeText}>{wallet.coins}</Text>
         </View>
 
-        {/* Single call button — tap to choose voice or video */}
-        <TouchableOpacity style={styles.iconBtn} onPress={handleCallPress}>
+        {/* Voice Call Button */}
+        <TouchableOpacity 
+          style={styles.iconBtn} 
+          onPress={() => navigation.navigate('Calling', { user: partnerInfo, callType: 'audio' })}
+        >
           <Icon name="call-outline" size={20} color="#E94057" />
+        </TouchableOpacity>
+
+        {/* Video Call Button */}
+        <TouchableOpacity 
+          style={styles.iconBtn} 
+          onPress={() => {
+            const videoCallEnabled = currentStatus?.plan?.videoCallEnabled || false;
+            if (!videoCallEnabled) {
+              Alert.alert(
+                '🔒 Premium Feature',
+                'Video calls are only available for Gold and Platinum members. Upgrade now to connect!',
+                [
+                  { text: 'Later', style: 'cancel' },
+                  { text: 'Upgrade', onPress: () => navigation.navigate('SubscriptionPlans') }
+                ]
+              );
+              return;
+            }
+            navigation.navigate('Calling', { user: partnerInfo, callType: 'video' });
+          }}
+        >
+          <Icon name="videocam-outline" size={20} color="#E94057" />
         </TouchableOpacity>
 
         {/* Three-dot menu */}

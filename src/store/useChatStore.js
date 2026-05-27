@@ -376,6 +376,28 @@ export const useChatStore = create((set, get) => ({
       console.error('Get quota error:', error);
     }
   },
+
+  pushReceivedMessage: (chatId, rawMessage) => {
+    const currentUserId = get().user?.id || get().user?._id;
+    const mapped = {
+      ...rawMessage,
+      id: rawMessage.id || rawMessage._id,
+      text: rawMessage.content || rawMessage.text,
+      type: rawMessage.messageType?.toLowerCase() || 'text',
+      giftName: rawMessage.giftName,
+      cost: rawMessage.giftCost,
+      amount: rawMessage.coinAmount,
+      imageUrl: rawMessage.imageUrl,
+      time: rawMessage.createdAt ? new Date(rawMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      isMine: rawMessage.senderId === currentUserId,
+    };
+
+    const currentMessages = get().messages || [];
+    if (!currentMessages.some(m => m.id === mapped.id)) {
+      set({ messages: [mapped, ...currentMessages] });
+    }
+    get().fetchChats();
+  },
 }));
 
 // Sync useChatStore's user state with useAuthStore's user state

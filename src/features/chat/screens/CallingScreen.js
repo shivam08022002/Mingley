@@ -34,6 +34,8 @@ const CALLER_IMAGE_FALLBACK =
 const MY_CAMERA_IMAGE =
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=800&q=80';
 
+import { useToastStore } from '../../../store/useToastStore';
+
 /* ─── Small reusable icon button ─────────────────────────────────────────── */
 const IconButton = memo(({ name, onPress, size = 24, backgroundColor = '#F5F5F5', iconColor = '#555' }) => (
   <TouchableOpacity
@@ -58,8 +60,13 @@ export const CallingScreen = ({ navigation, route }) => {
     },
   };
 
-  const safeRemoteImage = user.image          || CALLER_IMAGE_FALLBACK;
-  const safeSelfImage   = MY_CAMERA_IMAGE;               // always dummy
+  const [remoteUser, setRemoteUser] = useState(user);
+
+  /* ── Get dynamic self info from store to remove hardcoded values ── */
+  const myUser = useChatStore((s) => s.user);
+
+  const safeRemoteImage = remoteUser?.avatar || remoteUser?.image || remoteUser?.callerImage || CALLER_IMAGE_FALLBACK;
+  const safeSelfImage   = myUser?.avatar      || myUser?.image       || MY_CAMERA_IMAGE;
 
   /* ── Swap state ──
      swapped = false → remote person fills screen, "You" PiP shows self
@@ -69,7 +76,7 @@ export const CallingScreen = ({ navigation, route }) => {
   // Which image goes full-screen / pip
   const fullImage = swapped ? safeSelfImage   : safeRemoteImage;
   const pipImage  = swapped ? safeRemoteImage : safeSelfImage;
-  const pipLabel  = swapped ? user.name?.split(' ')[0] ?? 'Them' : 'You';
+  const pipLabel  = swapped ? remoteUser?.name?.split(' ')[0] ?? 'Them' : 'You';
 
   /* ── Swap animation ── */
   const swapOpacity = useRef(new Animated.Value(1)).current;
@@ -98,38 +105,70 @@ export const CallingScreen = ({ navigation, route }) => {
   const [callId, setCallId] = useState(null);
   const [agoraToken, setAgoraToken] = useState(null);
   const [apiError, setApiError] = useState(null);
+  const [incomingAnswered, setIncomingAnswered] = useState(false);
+  const isIncoming = route.params?.isIncoming || false;
+
+  /* ── Interactive call controls state ── */
+  const [micMuted, setMicMuted] = useState(false);
+  const [speakerEnabled, setSpeakerEnabled] = useState(true);
+  const [videoEnabled, setVideoEnabled] = useState(route?.params?.callType === 'video');
 
   /* ── Zustand wallet ── */
   const coins       = useChatStore((s) => s.wallet.coins);
   const deductCoins = useChatStore((s) => s.deductCoins);
 
-  const RATE                  = 2;
-  const BILLING_DELAY         = 10;
-  const LOW_BALANCE_THRESHOLD = RATE * 5;
-
+  const [costPerMin, setCostPerMin] = useState(route?.params?.callType === 'video' ? 100 : 10);
   const [time, setTime] = useState(0);
 
-  const isBilling    = time >= BILLING_DELAY;
-  const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0 && isBilling;
+  const LOW_BALANCE_THRESHOLD = costPerMin * 2;
+  const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0;
 
   /* ── Mount effect: start Call API sessions ── */
   useEffect(() => {
     let activeCallId = null;
-    const targetId = user.id || user._id || 'd0000001-0000-0000-0000-000000000009';
+    const targetId = remoteUser?.id || remoteUser?._id || 'd0000001-0000-0000-0000-000000000009';
 
     const startCallOnServer = async () => {
+      if (isIncoming) {
+        const incomingCallId = route.params?.callId;
+        if (incomingCallId) {
+          activeCallId = incomingCallId;
+          setCallId(incomingCallId);
+        }
+        return;
+      }
       try {
         const response = await callService.initiateCall(targetId, route?.params?.callType || 'audio');
-        const newCallId = response.callId || response.id || response.data?.id || response.data?.callId;
+        const newCallId = response.data?.callId || response.callId || response.data?.id || response.id;
+        const rate = response.data?.costPerMin ?? response.costPerMin ?? (route?.params?.callType === 'video' ? 100 : 10);
+        setCostPerMin(rate);
+
+        const serverTarget = response.data?.target || response.target;
+        if (serverTarget) {
+          setRemoteUser(prev => ({
+            ...prev,
+            name: serverTarget.fullName || serverTarget.name || prev.name,
+            avatar: serverTarget.avatar || serverTarget.image || prev.avatar,
+            id: serverTarget.id || serverTarget._id || prev.id,
+          }));
+        }
+
         if (newCallId) {
           activeCallId = newCallId;
           setCallId(newCallId);
 
-          // Get Agora token
-          const tokenRes = await callService.getAgoraToken(newCallId);
-          const token = tokenRes.token || tokenRes.agoraToken || tokenRes.data?.token || tokenRes.data?.agoraToken;
+          // Check if response contains agora directly
+          const agoraObj = response.data?.agora || response.agora;
+          const token = agoraObj?.token || agoraObj?.agoraToken;
           if (token) {
             setAgoraToken(token);
+          } else {
+            // Get Agora token
+            const tokenRes = await callService.getAgoraToken(newCallId);
+            const fallbackToken = tokenRes.data?.token || tokenRes.token || tokenRes.data?.agoraToken || tokenRes.agoraToken;
+            if (fallbackToken) {
+              setAgoraToken(fallbackToken);
+            }
           }
         }
       } catch (error) {
@@ -152,7 +191,7 @@ export const CallingScreen = ({ navigation, route }) => {
         });
       }
     };
-  }, [user, route?.params?.callType]);
+  }, [remoteUser, route?.params?.callType, isIncoming]);
 
   /* ── Mount effect: start animations + timer ── */
   useEffect(() => {
@@ -171,21 +210,62 @@ export const CallingScreen = ({ navigation, route }) => {
         Animated.timing(scaleAnim, { toValue: 1,    duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     ).start();
+  }, []);
 
+  // Timer: only run if not incoming OR if incoming call is answered
+  useEffect(() => {
+    if (isIncoming && !incomingAnswered) return;
     const t = setInterval(() => setTime((prev) => prev + 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [isIncoming, incomingAnswered]);
+
+  const handleAnswer = async () => {
+    try {
+      if (callId) {
+        const response = await callService.answerCall(callId);
+        setIncomingAnswered(true);
+        const rate = response?.data?.costPerMin ?? response?.costPerMin ?? (route?.params?.callType === 'video' ? 100 : 10);
+        setCostPerMin(rate);
+
+        const tokenRes = await callService.getAgoraToken(callId);
+        const token = tokenRes.data?.token || tokenRes.token || tokenRes.data?.agoraToken || tokenRes.agoraToken;
+        if (token) {
+          setAgoraToken(token);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to answer call:', error);
+      Alert.alert('Error', 'Failed to answer call.');
+    }
+  };
+
+  const handleDecline = async () => {
+    try {
+      if (callId) {
+        await callService.declineCall(callId);
+      }
+    } catch (error) {
+      console.warn('Failed to decline call:', error);
+    } finally {
+      navigation.goBack();
+    }
+  };
 
   /* ── Deduction effect ── */
   useEffect(() => {
-    if (time > BILLING_DELAY) {
-      if (coins <= 0) {
+    if (agoraToken && time > 0 && time % 60 === 0) {
+      if (coins < costPerMin) {
+        useToastStore.getState().showToast({
+          title: 'Call Disconnected 📞',
+          text: 'Insufficient coins balance.',
+          type: 'error',
+        });
         navigation.goBack();
         return;
       }
-      deductCoins(RATE);
+      deductCoins(costPerMin);
     }
-  }, [time]);
+  }, [time, agoraToken, costPerMin, coins]);
 
   const formatTime = () => {
     if (time === 0) return 'Connecting...';
@@ -230,17 +310,10 @@ export const CallingScreen = ({ navigation, route }) => {
           </TouchableOpacity>
 
           {/* Rate indicator */}
-          {isBilling ? (
-            <View style={styles.rateTag}>
-              <Icon name="logo-bitcoin" size={13} color="#FFD700" style={{ marginRight: 4 }} />
-              <Text style={styles.rateText}>{RATE} coins/sec</Text>
-            </View>
-          ) : (
-            <View style={styles.rateTag}>
-              <Icon name="time-outline" size={13} color="rgba(255,255,255,0.75)" style={{ marginRight: 4 }} />
-              <Text style={[styles.rateText, { color: 'rgba(255,255,255,0.75)' }]}>Free for {BILLING_DELAY - time}s</Text>
-            </View>
-          )}
+          <View style={styles.rateTag}>
+            <Icon name="logo-bitcoin" size={13} color="#FFD700" style={{ marginRight: 4 }} />
+            <Text style={styles.rateText}>{costPerMin} coins/min</Text>
+          </View>
 
           {/* Coin balance */}
           <View style={styles.balanceBadge}>
@@ -264,12 +337,12 @@ export const CallingScreen = ({ navigation, route }) => {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.statusBadge}
           >
-            <Text style={styles.statusText}>{time === 0 ? 'Connecting' : 'Ongoing Call'}</Text>
+            <Text style={styles.statusText}>{isIncoming && !incomingAnswered ? 'Incoming Call' : time === 0 ? 'Connecting' : 'Ongoing Call'}</Text>
             <Icon name="pulse" size={13} color="#FFF" style={{ marginLeft: 6 }} />
           </LinearGradient>
 
           <Text style={styles.mainUserName}>
-            {swapped ? 'You' : user.name}
+            {swapped ? 'You' : remoteUser?.name}
           </Text>
 
           <View style={styles.timeTag}>
@@ -322,21 +395,70 @@ export const CallingScreen = ({ navigation, route }) => {
       <View style={[styles.controlPanel, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <View style={styles.panelBg} />
         <View style={styles.controlsLayout}>
-          <View style={styles.sideGroup}>
-            <IconButton name="videocam-outline" onPress={() => {}} />
-            <IconButton name="chatbubble-outline" onPress={() => {}} size={22} />
-          </View>
+          {isIncoming && !incomingAnswered ? (
+            <>
+              {/* Decline Call */}
+              <TouchableOpacity 
+                style={[styles.hangUpBtn, { backgroundColor: '#FFF' }]} 
+                onPress={handleDecline} 
+                activeOpacity={0.8}
+              >
+                <View style={styles.hangUpInner}>
+                  <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+                </View>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.hangUpBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-            <View style={styles.hangUpInner}>
-              <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
-            </View>
-          </TouchableOpacity>
+              {/* Answer Call */}
+              <TouchableOpacity 
+                style={[styles.hangUpBtn, { backgroundColor: '#FFF' }]} 
+                onPress={handleAnswer} 
+                activeOpacity={0.8}
+              >
+                <View style={[styles.hangUpInner, { backgroundColor: '#4CAF50' }]}>
+                  <Icon name="call" size={34} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={styles.sideGroup}>
+                <IconButton
+                  name={videoEnabled ? "videocam" : "videocam-off"}
+                  backgroundColor={videoEnabled ? "#F5F5F5" : "#FF4D67"}
+                  iconColor={videoEnabled ? "#555" : "#FFFFFF"}
+                  onPress={() => setVideoEnabled(!videoEnabled)}
+                />
+                <IconButton
+                  name="chatbubble-outline"
+                  onPress={() => navigation.goBack()}
+                  size={22}
+                />
+              </View>
 
-          <View style={styles.sideGroup}>
-            <IconButton name="volume-medium-outline" onPress={() => {}} size={26} />
-            <IconButton name="mic-off-outline"       onPress={() => {}} size={26} />
-          </View>
+              <TouchableOpacity style={styles.hangUpBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
+                <View style={styles.hangUpInner}>
+                  <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.sideGroup}>
+                <IconButton
+                  name={speakerEnabled ? "volume-high" : "volume-mute"}
+                  backgroundColor={speakerEnabled ? "#F5F5F5" : "#E5E7EB"}
+                  iconColor={speakerEnabled ? "#555" : "#9CA3AF"}
+                  onPress={() => setSpeakerEnabled(!speakerEnabled)}
+                  size={26}
+                />
+                <IconButton
+                  name={micMuted ? "mic-off" : "mic"}
+                  backgroundColor={micMuted ? "#FF4D67" : "#F5F5F5"}
+                  iconColor={micMuted ? "#FFFFFF" : "#555"}
+                  onPress={() => setMicMuted(!micMuted)}
+                  size={26}
+                />
+              </View>
+            </>
+          )}
         </View>
       </View>
     </View>

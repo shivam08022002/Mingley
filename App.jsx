@@ -63,7 +63,29 @@ if (Platform.OS === 'web') {
   document.head.appendChild(style);
 }
 
+import { useAuthStore } from './src/store/useAuthStore';
+import { signalRService } from './src/services/signalRService';
+
 function App() {
+  useEffect(() => {
+    // Listen to changes in auth state to build / terminate live websockets
+    const unsubscribe = useAuthStore.subscribe((state) => {
+      if (state.isAuthenticated) {
+        signalRService.start();
+      } else {
+        signalRService.stop();
+      }
+    });
+
+    // Check in case user is already authenticated
+    const initialAuth = useAuthStore.getState().isAuthenticated;
+    if (initialAuth) {
+      signalRService.start();
+    }
+
+    return () => unsubscribe();
+  }, []);
+
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

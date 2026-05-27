@@ -94,7 +94,11 @@ export const UserProfileScreen = ({ navigation, route }) => {
     navigation.navigate('Chat', { user });
   }, [navigation, user]);
 
-  const handleCall = useCallback(() => {
+  const handleVoiceCall = useCallback(() => {
+    navigation.navigate('Calling', { user, callType: 'audio' });
+  }, [navigation, user]);
+
+  const handleVideoCall = useCallback(() => {
     const videoCallEnabled = currentStatus?.plan?.videoCallEnabled || false;
     if (!videoCallEnabled) {
       Alert.alert(
@@ -107,7 +111,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
       );
       return;
     }
-    navigation.navigate('Calling', { user });
+    navigation.navigate('Calling', { user, callType: 'video' });
   }, [navigation, user, currentStatus]);
 
   if (!user) return null;
@@ -281,8 +285,11 @@ export const UserProfileScreen = ({ navigation, route }) => {
             </View>
             {isFromMatches && (
               <View style={styles.headerButtons}>
-                <TouchableOpacity style={styles.headerActionBtn} onPress={handleCall}>
+                <TouchableOpacity style={styles.headerActionBtn} onPress={handleVoiceCall}>
                   <Icon name="call-outline" size={20} color="#E94057" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.headerActionBtn} onPress={handleVideoCall}>
+                  <Icon name="videocam-outline" size={20} color="#E94057" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.headerActionBtn} onPress={handleMessage}>
                   <Icon name="paper-plane-outline" size={20} color="#E94057" />

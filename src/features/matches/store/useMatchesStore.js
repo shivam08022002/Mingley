@@ -38,4 +38,12 @@ export const useMatchesStore = create((set, get) => ({
       console.error('Remove match error:', error);
     }
   },
+
+  pushNewMatch: (match) => {
+    const currentMatches = get().matches || [];
+    const matchId = match.matchId || match.id || match._id;
+    if (!currentMatches.some((m) => (m.matchId || m.id || m._id) === matchId)) {
+      set({ matches: [match, ...currentMatches] });
+    }
+  },
 }));
