@@ -10,7 +10,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 import { SuperchatModal } from '../components/SuperchatModal';
-import { userService } from '../../../services/apiServices';
+import { userService, discoverService } from '../../../services/apiServices';
 import { decodeEmoji } from '../../../utils/stringUtils';
 
 const { width, height } = Dimensions.get('window');
@@ -45,6 +45,8 @@ export const UserProfileScreen = ({ navigation, route }) => {
     return arr.length > 0 ? arr : ['https://via.placeholder.com/500'];
   })();
 
+  const { currentStatus, fetchStatus } = useSubscriptionStore();
+
   useEffect(() => {
     const fetchInterests = async () => {
       try {
@@ -55,25 +57,33 @@ export const UserProfileScreen = ({ navigation, route }) => {
       }
     };
     fetchInterests();
-  }, []);
+    fetchStatus();
+  }, [fetchStatus]);
 
-  const { currentStatus } = useSubscriptionStore();
-
-  const handleReject = useCallback(() => {
+  const handleReject = useCallback(async () => {
     setRejected(true);
-    setTimeout(() => navigation.goBack(), 300);
-  }, [navigation]);
+    try {
+      await discoverService.swipe({ targetId: user.id || user._id, action: 'pass' });
+    } catch (e) {
+      console.error('Pass swipe error:', e);
+    }
+    navigation.goBack();
+  }, [navigation, user]);
 
-  const handleLike = useCallback(() => {
+  const handleLike = useCallback(async () => {
     setLiked(true);
-    // Simulate 50% match chance
-    setTimeout(() => {
-      if (Math.random() > 0.5) {
+    try {
+      const res = await discoverService.swipe({ targetId: user.id || user._id, action: 'like' });
+      const swipeRes = res?.data || res || {};
+      if (swipeRes.isMatch) {
         navigation.replace('Match', { matchedUser: user });
       } else {
         navigation.goBack();
       }
-    }, 400);
+    } catch (e) {
+      console.error('Like swipe error:', e);
+      navigation.goBack();
+    }
   }, [navigation, user]);
 
   const handleSuperchat = useCallback(() => {
@@ -271,6 +281,9 @@ export const UserProfileScreen = ({ navigation, route }) => {
             </View>
             {isFromMatches && (
               <View style={styles.headerButtons}>
+                <TouchableOpacity style={styles.headerActionBtn} onPress={handleCall}>
+                  <Icon name="call-outline" size={20} color="#E94057" />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.headerActionBtn} onPress={handleMessage}>
                   <Icon name="paper-plane-outline" size={20} color="#E94057" />
                 </TouchableOpacity>

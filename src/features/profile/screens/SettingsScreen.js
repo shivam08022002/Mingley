@@ -322,23 +322,15 @@ We reserve the right to terminate or suspend your account at our sole discretion
     }
   };
 
-  const handleSignOut = useCallback(() => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out', style: 'destructive',
-        onPress: async () => {
-          try {
-            await authService.logout();
-            logoutAction();
-          } catch (error) {
-            console.error('Logout error:', error);
-            // Even if API fails, we should logout locally
-            logoutAction();
-          }
-        },
-      },
-    ]);
+  const handleSignOut = useCallback(async () => {
+    try {
+      await authService.logout();
+      logoutAction();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if API fails, we should logout locally
+      logoutAction();
+    }
   }, [logoutAction]);
 
   return (

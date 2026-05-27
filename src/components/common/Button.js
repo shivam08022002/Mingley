@@ -13,11 +13,12 @@ export const Button = ({
   textStyle,
 }) => {
   const isPrimary = variant === 'primary';
+  const isFilled = variant === 'primary' || variant === 'solid';
 
   const Content = () => (
     <>
       {loading ? (
-        <ActivityIndicator color={isPrimary ? COLORS.white : COLORS.primary} />
+        <ActivityIndicator color={isFilled ? COLORS.white : COLORS.primary} />
       ) : (
         <Text
           style={[

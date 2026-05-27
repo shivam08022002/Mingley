@@ -29,31 +29,13 @@ export const ProfileScreen = React.memo(() => {
   const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
   const logoutAction = useAuthStore((s) => s.logout);
 
-  const handleSignOut = useCallback(() => {
-    const performSignOut = async () => {
-      try {
-        await authService.logout();
-        logoutAction();
-      } catch (error) {
-        console.error('Logout error:', error);
-        logoutAction();
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Are you sure you want to sign out?');
-      if (confirmed) {
-        performSignOut();
-      }
-    } else {
-      Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: performSignOut,
-        },
-      ]);
+  const handleSignOut = useCallback(async () => {
+    try {
+      await authService.logout();
+      logoutAction();
+    } catch (error) {
+      console.error('Logout error:', error);
+      logoutAction();
     }
   }, [logoutAction]);
 

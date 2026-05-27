@@ -99,25 +99,10 @@ export const LoginScreen = ({ navigation }) => {
               />
             </View>
 
-            <View style={styles.orContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.orText}>OR</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <View style={styles.socialSection}>
-              <Text style={styles.socialTitle}>Login using</Text>
-              <View style={styles.socialContainer}>
-                <TouchableOpacity style={styles.socialButton}>
-                   <Icon name="logo-google" size={26} color="#000" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                   <Icon name="logo-apple" size={26} color="#000" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                   <Icon name="logo-instagram" size={26} color="#000" />
-                </TouchableOpacity>
-              </View>
+            <View style={styles.footerContainer}>
+              <Text style={styles.footerText}>
+                By signing in, you agree to our Terms of Service & Privacy Policy
+              </Text>
             </View>
           </View>
         </ScrollView>
@@ -195,48 +180,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
-  orContainer: {
-    flexDirection: 'row',
+  footerContainer: {
+    marginTop: 40,
+    marginBottom: 20,
     alignItems: 'center',
-    marginBottom: 40,
+    paddingHorizontal: 20,
     width: '100%',
   },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E8E8E8',
-  },
-  orText: {
-    marginHorizontal: 15,
-    color: '#000000',
-    fontSize: 14,
-    fontWeight: '500',
+  footerText: {
+    color: '#8A8A8F',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
-  },
-  socialSection: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  socialTitle: {
-    fontSize: 16,
-    color: '#5b5b5b',
-    marginBottom: 25,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-  },
-  socialButton: {
-    width: 65,
-    height: 55,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
 });

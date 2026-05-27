@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
 import { authService } from '../../../services/apiServices';
+import { useToastStore } from '../../../store/useToastStore';
 
 const schema = yup.object().shape({
   identifier: yup.string().required('Email or phone number is required'),
@@ -20,13 +21,20 @@ export const ForgotPasswordScreen = ({ navigation }) => {
     defaultValues: { identifier: '' },
   });
 
+  const [loading, setLoading] = useState(false);
+  const showToast = useToastStore((s) => s.showToast);
+
   const onSubmit = async (data) => {
+    setLoading(true);
     try {
-      await authService.forgotPassword(data.identifier);
-      navigation.navigate('ResetPassword', { identifier: data.identifier });
+      const res = await authService.forgotPassword(data.identifier);
+      const devOtp = res?.devOtp || res?.data?.devOtp || res?.otp || res?.data?.otp || '';
+      navigation.navigate('ResetPassword', { identifier: data.identifier, devOtp });
     } catch (error) {
       console.error('Forgot password error:', error);
-      alert(error.message || 'Something went wrong');
+      showToast(error.message || 'Something went wrong', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,6 +70,7 @@ export const ForgotPasswordScreen = ({ navigation }) => {
               style={styles.continueButton}
               textStyle={styles.buttonText}
               variant="solid"
+              loading={loading}
             />
           </View>
         </View>

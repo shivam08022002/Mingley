@@ -79,7 +79,7 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 200,
+    height: 150,
     margin: 8,
     borderRadius: 24,
     overflow: 'hidden',

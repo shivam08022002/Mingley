@@ -144,7 +144,7 @@ export const giftService = {
 
   getCategories: async () => {
     try {
-      const response = await api.get('/v1/gifts/gategories');
+      const response = await api.get('/v1/gifts/categories');
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
