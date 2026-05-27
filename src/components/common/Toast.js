@@ -6,7 +6,7 @@ import { useToastStore } from '../../store/useToastStore';
 const { width } = Dimensions.get('window');
 
 export const Toast = () => {
-  const { visible, message, type, hideToast } = useToastStore();
+  const { visible, message, title: storeTitle, type, hideToast } = useToastStore();
 
   if (!visible) return null;
 
@@ -35,6 +35,8 @@ export const Toast = () => {
   })();
 
   const title = (() => {
+    if (storeTitle) return storeTitle;
+
     switch (type) {
       case 'success':
         return 'Success';
