@@ -198,44 +198,24 @@ export const MatchesScreen = () => {
           )}
         </View>
 
-        {/* ── Today ── */}
+        {/* ── Matches ── */}
         {isLoading && matches.length === 0 ? (
           <ActivityIndicator size="large" color="#E94057" style={{ marginTop: 40 }} />
-        ) : today.length > 0 && (
-          <>
-            <SectionSeparator title="Today" count={today.length} />
+        ) : matches.length > 0 && (
+          <View style={styles.matchesSection}>
+            <Text style={styles.likesHeading}>Your Matches</Text>
             <View style={styles.grid}>
-              {today.map((item) => (
-                <View key={item.matchId || item.id || item._id} style={styles.gridCell}>
-                  <MatchesGridItem
-                    match={item}
-                    onPress={() => handleShowDetails(item)}
-                    onChat={handleChat}
-                    onDecline={handleDecline}
-                  />
-                </View>
+              {matches.map((item) => (
+                <MatchesGridItem
+                  key={item.matchId || item.id || item._id}
+                  match={item}
+                  onPress={() => handleShowDetails(item)}
+                  onChat={handleChat}
+                  onDecline={handleDecline}
+                />
               ))}
             </View>
-          </>
-        )}
-
-        {/* ── Yesterday ── */}
-        {yesterday.length > 0 && (
-          <>
-            <SectionSeparator title="Yesterday" count={yesterday.length} />
-            <View style={styles.grid}>
-              {yesterday.map((item) => (
-                <View key={item.matchId || item.id || item._id} style={styles.gridCell}>
-                  <MatchesGridItem
-                    match={item}
-                    onPress={() => handleShowDetails(item)}
-                    onChat={handleChat}
-                    onDecline={handleDecline}
-                  />
-                </View>
-              ))}
-            </View>
-          </>
+          </View>
         )}
 
         {matches.length === 0 && (
@@ -274,20 +254,22 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 1, backgroundColor: '#F0F0F0' },
   sectionTitle: { fontSize: 12, color: '#AAA', marginHorizontal: 12, fontWeight: '600' },
 
-  // Grid (2 columns, manual)
+  // Grid (flow, naturally spaced with item margin, aligned to left)
   grid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: SPACING.s,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    paddingHorizontal: SPACING.m,
   },
-  gridCell: { width: '50%' },
 
   // Empty
   emptyState: { alignItems: 'center', paddingTop: 60, paddingBottom: 40 },
   emptyText: { fontSize: 18, fontWeight: '700', color: '#CCC', marginTop: 16 },
   emptySubText: { fontSize: 13, color: '#CCC', marginTop: 6 },
   
-  // Likes Section
+  // Likes & Matches Section
   likesSection: { marginVertical: SPACING.m },
+  matchesSection: { marginVertical: SPACING.m },
   likesHeading: { ...TYPOGRAPHY.h2, fontSize: 18, color: '#222', paddingHorizontal: SPACING.l, marginBottom: 15, fontWeight: '500', fontFamily: TITLE_FONT },
   likesList: { paddingHorizontal: SPACING.l, paddingBottom: 10 },
   likeCard: { 

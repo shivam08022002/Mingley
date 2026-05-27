@@ -59,7 +59,7 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
           onPress={(e) => { e.stopPropagation?.(); onDecline && onDecline(match); }}
           activeOpacity={0.8}
         >
-          <Icon name="close" size={20} color="#FF4D67" />
+          <Icon name="close" size={16} color="#FF4D67" />
         </TouchableOpacity>
 
         <View style={styles.divider} />
@@ -70,7 +70,7 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
           onPress={(e) => { e.stopPropagation?.(); onChat && onChat(match); }}
           activeOpacity={0.8}
         >
-          <Icon name="chatbubble-ellipses" size={20} color="#8A2BE2" />
+          <Icon name="chatbubble-ellipses" size={16} color="#E94057" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -79,14 +79,16 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
 
 const styles = StyleSheet.create({
   container: {
+    width: 140,
     height: 150,
     margin: 8,
-    borderRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#F5F5F5',
     position: 'relative',
     boxShadow: '0px 4px 12px rgba(0,0,0,0.1)',
     elevation: 4,
+    alignSelf: 'center',
   },
   image: { width: '100%', height: '100%' },
   statusBadge: {
@@ -117,20 +119,19 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     position: 'absolute',
-    bottom: 58,
-    left: 12,
-    right: 12,
+    bottom: 42,
+    left: 10,
+    right: 10,
   },
   name: {
-    ...TYPOGRAPHY.h3,
     color: '#FFFFFF',
     fontWeight: '800',
-    fontSize: 16,
+    fontSize: 14,
   },
   actionsRow: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    height: 52,
+    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.95)',
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    height: '60%',
+    height: 18,
     backgroundColor: '#F0F0F0',
   },
   declineButton: {},
