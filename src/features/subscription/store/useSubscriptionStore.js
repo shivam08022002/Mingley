@@ -29,6 +29,16 @@ export const useSubscriptionStore = create((set) => ({
         return plan;
       });
 
+      // ENRICHMENT: If currentStatus exists and lacks status.plan, enrich it now!
+      const currentStatus = useSubscriptionStore.getState().currentStatus;
+      if (currentStatus && !currentStatus.plan && currentStatus.planName) {
+        const matchingPlan = plans.find(p => p.name?.toLowerCase() === currentStatus.planName.toLowerCase());
+        if (matchingPlan) {
+          currentStatus.plan = matchingPlan;
+          set({ currentStatus: { ...currentStatus } });
+        }
+      }
+
       set({ plans, isLoading: false });
     } catch (error) {
       set({ error: error.message || 'Failed to fetch plans', isLoading: false });
@@ -46,6 +56,17 @@ export const useSubscriptionStore = create((set) => ({
           status.plan.features = JSON.parse(status.plan.features);
         } catch (e) {
           console.error('Error parsing features in status:', e);
+        }
+      }
+      
+      // ENRICHMENT: If status has planName but no plan object, populate it from the loaded plans array
+      if (status && !status.plan && status.planName) {
+        const plansList = useSubscriptionStore.getState().plans;
+        if (plansList && plansList.length > 0) {
+          const matchingPlan = plansList.find(p => p.name?.toLowerCase() === status.planName.toLowerCase());
+          if (matchingPlan) {
+            status.plan = matchingPlan;
+          }
         }
       }
       

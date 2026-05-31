@@ -374,10 +374,9 @@ export const ChatScreen = ({ navigation, route }) => {
   // ── Gift Modal ────────────────────────────────────────────────────────────
   const renderGiftModal = () => {
     return (
-      <Modal visible={giftModalVisible} transparent animationType="slide" onRequestClose={() => setGiftModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => !sendingGift && setGiftModalVisible(false)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHandle} />
+      <Modal visible={giftModalVisible} transparent animationType="fade" onRequestClose={() => setGiftModalVisible(false)}>
+        <BottomSheetContainer onClose={() => setGiftModalVisible(false)} height={340}>
+          <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={styles.modalTitle}>Send a Gift</Text>
               {sendingGift && <ActivityIndicator color="#E94057" />}
@@ -425,7 +424,6 @@ export const ChatScreen = ({ navigation, route }) => {
                   const cost = gift.coinCost || gift.price || 0;
                   const afford = wallet.coins >= cost;
 
-
                 return (
                   <TouchableOpacity 
                     key={gift.id} 
@@ -447,24 +445,16 @@ export const ChatScreen = ({ navigation, route }) => {
               })}
             </ScrollView>
           </View>
-        </TouchableOpacity>
+        </BottomSheetContainer>
       </Modal>
     );
   };
 
   // ── Send Coins Modal ──────────────────────────────────────────────────────
   const renderCoinsModal = () => (
-    <Modal visible={coinsModalVisible} transparent animationType="slide" onRequestClose={() => setCoinsModalVisible(false)}>
-      <View style={styles.modalOverlay}>
-        {/* Backdrop tap-to-close */}
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={() => setCoinsModalVisible(false)}
-        />
-        {/* Sheet - stops event propagation so backdrop doesn't fire */}
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
+    <Modal visible={coinsModalVisible} transparent animationType="fade" onRequestClose={() => setCoinsModalVisible(false)}>
+      <BottomSheetContainer onClose={() => setCoinsModalVisible(false)} height={320}>
+        <View style={{ flex: 1, width: '100%' }}>
           <Text style={styles.modalTitle}>Send Coins</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
             <Text style={styles.modalSub}>Your balance: </Text>
@@ -477,16 +467,15 @@ export const ChatScreen = ({ navigation, route }) => {
             <Text style={styles.modalActionBtnText}>Send to {partnerInfo.name}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </BottomSheetContainer>
     </Modal>
   );
 
   // ── Three-dot menu modal ──────────────────────────────────────────────────
   const renderMenuModal = () => (
-    <Modal visible={menuModalVisible} transparent animationType="slide" onRequestClose={() => setMenuModalVisible(false)}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setMenuModalVisible(false)}>
-        <View style={styles.menuSheet} onStartShouldSetResponder={() => true}>
-          <View style={styles.modalHandle} />
+    <Modal visible={menuModalVisible} transparent animationType="fade" onRequestClose={() => setMenuModalVisible(false)}>
+      <BottomSheetContainer onClose={() => setMenuModalVisible(false)} height={320}>
+        <View style={{ flex: 1, width: '100%' }}>
           <Text style={styles.menuTitle}>{partnerInfo.name}</Text>
           {MENU_OPTIONS.map((opt, i) => (
             <TouchableOpacity key={i} style={[styles.menuRow, opt.label === 'Block User' && styles.menuRowDanger, opt.label === 'Report' && styles.menuRowDanger]} onPress={opt.action} activeOpacity={0.7}>
@@ -496,16 +485,15 @@ export const ChatScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           ))}
         </View>
-      </TouchableOpacity>
+      </BottomSheetContainer>
     </Modal>
   );
 
   // ── Report Modal ──────────────────────────────────────────────────────────
   const renderReportModal = () => (
-    <Modal visible={reportModalVisible} transparent animationType="slide" onRequestClose={() => setReportModalVisible(false)}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setReportModalVisible(false)}>
-        <TouchableOpacity style={styles.modalSheet} activeOpacity={1}>
-          <View style={styles.modalHandle} />
+    <Modal visible={reportModalVisible} transparent animationType="fade" onRequestClose={() => setReportModalVisible(false)}>
+      <BottomSheetContainer onClose={() => setReportModalVisible(false)} height={380}>
+        <View style={{ flex: 1, width: '100%' }}>
           <Text style={styles.modalTitle}>Report User</Text>
           <TextInput 
             style={styles.amountInput} 
@@ -525,8 +513,8 @@ export const ChatScreen = ({ navigation, route }) => {
           <TouchableOpacity style={[styles.modalActionBtn, !reportReason && styles.modalActionBtnDisabled]} onPress={submitReport} disabled={!reportReason}>
             <Text style={styles.modalActionBtnText}>Submit Report</Text>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </BottomSheetContainer>
     </Modal>
   );
 

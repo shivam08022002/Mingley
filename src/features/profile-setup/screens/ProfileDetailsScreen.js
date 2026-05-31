@@ -1,19 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CardInput } from '../components/CardInput';
 import { BottomSheetDatePicker } from '../components/BottomSheetDatePicker';
+import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+
+const DismissKeyboard = ({ children }) => {
+  if (Platform.OS === 'web') {
+    return children;
+  }
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      {children}
+    </TouchableWithoutFeedback>
+  );
+};
+
+const avatarChoices = [
+  { gender: 'boy', label: 'Classic Boy', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Casual Boy', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Modern Boy', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Classic Girl', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Casual Girl', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Modern Girl', url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80' },
+];
 
 export const ProfileDetailsScreen = ({ navigation }) => {
   const { profileDetails, setProfileDetails } = useProfileSetupStore();
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
 
   const handleSkip = () => {
     if (isAuthenticated) {
@@ -30,45 +52,12 @@ export const ProfileDetailsScreen = ({ navigation }) => {
   };
 
   const handleSelectAvatar = () => {
-    const avatarChoices = [
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=600&q=80',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-      'https://i.ibb.co/bpR70mc/image.png',
-    ];
-
-    Alert.alert('Choose Profile Photo', 'Select a sample photo to use for your profile.', [
-      {
-        text: 'Style 1',
-        onPress: () => {
-          setProfileDetails({ avatar: avatarChoices[0] });
-        },
-      },
-      {
-        text: 'Style 2',
-        onPress: () => {
-          setProfileDetails({ avatar: avatarChoices[1] });
-        },
-      },
-      {
-        text: 'Style 3',
-        onPress: () => {
-          setProfileDetails({ avatar: avatarChoices[2] });
-        },
-      },
-      {
-        text: 'Style 4 (Male)',
-        onPress: () => {
-          setProfileDetails({ avatar: avatarChoices[3] });
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    setAvatarModalVisible(true);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <DismissKeyboard>
         <View style={{ flex: 1 }}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handleSkip}>
@@ -85,10 +74,16 @@ export const ProfileDetailsScreen = ({ navigation }) => {
             <View style={styles.avatarContainer}>
               <TouchableOpacity onPress={handleSelectAvatar} activeOpacity={0.85}>
                 <View style={styles.avatarWrapper}>
-                   <FastImage
-                      source={profileDetails.avatar ? { uri: profileDetails.avatar } : require('../../../assets/hey.png')}
-                      style={styles.avatar}
-                   />
+                   {profileDetails.avatar ? (
+                     <FastImage
+                        source={{ uri: profileDetails.avatar }}
+                        style={styles.avatar}
+                     />
+                   ) : (
+                     <View style={styles.placeholderAvatar}>
+                       <Icon name="person" size={54} color="#D0D0D0" />
+                     </View>
+                   )}
                    <View style={styles.cameraIcon}>
                      <Icon name="camera" size={16} color="#FFFFFF" />
                    </View>
@@ -101,13 +96,13 @@ export const ProfileDetailsScreen = ({ navigation }) => {
                 label="First name"
                 value={profileDetails.firstName}
                 onChangeText={(text) => setProfileDetails({ firstName: text })}
-                placeholder="Peter"
+                placeholder=""
               />
               <CardInput
                 label="Last name"
                 value={profileDetails.lastName}
                 onChangeText={(text) => setProfileDetails({ lastName: text })}
-                placeholder="Parker"
+                placeholder=""
               />
 
               <TouchableOpacity 
@@ -131,7 +126,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
             />
           </KeyboardAvoidingView>
         </View>
-      </TouchableWithoutFeedback>
+      </DismissKeyboard>
 
       <BottomSheetDatePicker
         visible={isDatePickerVisible}
@@ -139,6 +134,56 @@ export const ProfileDetailsScreen = ({ navigation }) => {
         selectedDate={profileDetails.birthday}
         onSelectDate={(date) => setProfileDetails({ birthday: date })}
       />
+
+      {/* ── Visual Avatar Selection Modal ── */}
+      <Modal visible={avatarModalVisible} transparent animationType="fade" onRequestClose={() => setAvatarModalVisible(false)}>
+        <BottomSheetContainer onClose={() => setAvatarModalVisible(false)} height={540}>
+          <View style={{ flex: 1, width: '100%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text style={styles.modalTitle}>Choose Profile Picture</Text>
+            </View>
+            <Text style={styles.modalSubtitleText}>Select a premium portrait style to set your primary avatar</Text>
+
+            {/* Boy Avatars */}
+            <Text style={styles.genderSectionHeader}>Boy Avatars 🙋‍♂️</Text>
+            <View style={styles.avatarSelectionRow}>
+              {avatarChoices.filter(c => c.gender === 'boy').map((choice) => (
+                <TouchableOpacity
+                  key={choice.url}
+                  style={styles.avatarSelectionCard}
+                  onPress={() => {
+                    setProfileDetails({ avatar: choice.url });
+                    setAvatarModalVisible(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
+                  <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Girl Avatars */}
+            <Text style={styles.genderSectionHeader}>Girl Avatars 🙋‍♀️</Text>
+            <View style={styles.avatarSelectionRow}>
+              {avatarChoices.filter(c => c.gender === 'girl').map((choice) => (
+                <TouchableOpacity
+                  key={choice.url}
+                  style={styles.avatarSelectionCard}
+                  onPress={() => {
+                    setProfileDetails({ avatar: choice.url });
+                    setAvatarModalVisible(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
+                  <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </BottomSheetContainer>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -186,6 +231,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 40,
+  },
+  placeholderAvatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraIcon: {
     position: 'absolute',
@@ -238,4 +291,75 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
+  },
+  modalSubtitleText: {
+    fontSize: 13,
+    color: '#777',
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  genderSectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#E94057',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  avatarSelectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 16,
+    marginBottom: 24,
+    width: '100%',
+  },
+  avatarSelectionCard: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarSelectionImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  avatarSelectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#444',
+    marginTop: 8,
+    textAlign: 'center',
+  },
 });
+
+

@@ -8,6 +8,7 @@ import { navigationRef } from '../navigation';
 class SignalRService {
   connection = null;
   started = false;
+  onCallAnswered = null; // callback slot for active CallingScreen
 
   async start() {
     if (this.started) return;
@@ -47,11 +48,9 @@ class SignalRService {
       this.connection.on('CallAnswered', (data) => {
         console.log('SignalR Event: CallAnswered', data);
         // Call screen will handle Agora token dynamically or let the timer run.
-        useToastStore.getState().showToast({
-          title: 'Call Connected',
-          text: 'Receiver accepted the call.',
-          type: 'success',
-        });
+        if (this.onCallAnswered) {
+          this.onCallAnswered(data);
+        }
       });
 
       // Listen for call ended / declined / missed
@@ -97,11 +96,7 @@ class SignalRService {
         console.log('SignalR Event: NewMatch', data);
         const { matchId, user } = data;
         useMatchesStore.getState().pushNewMatch({ matchId, matchedUser: user });
-        useToastStore.getState().showToast({
-          title: 'New Match! 🎉',
-          text: `You and ${user.fullName || user.name} have matched!`,
-          type: 'success',
-        });
+        // Duplicate match toast removed since full screen Match screen is displayed
       });
 
       // Listen for general notifications
@@ -148,11 +143,7 @@ class SignalRService {
       const currentRoute = navigationRef.getCurrentRoute();
       if (currentRoute?.name === 'Calling' && (currentRoute.params?.callId === callId || !callId)) {
         navigationRef.goBack();
-        useToastStore.getState().showToast({
-          title: 'Call Terminated',
-          text: message,
-          type: 'info',
-        });
+        // Duplicate termination toast removed since we are leaving the screen
       }
     }
   }
@@ -172,3 +163,4 @@ class SignalRService {
 }
 
 export const signalRService = new SignalRService();
+

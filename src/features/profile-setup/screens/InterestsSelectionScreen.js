@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Chip } from '../components/Chip';
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
+import { useToastStore } from '../../../store/useToastStore';
 
 // Mock datastore for interests
 const INTERESTS = [
@@ -23,6 +24,14 @@ const INTERESTS = [
   { id: '12', label: 'Music', icon: 'musical-notes-outline' },
   { id: '13', label: 'Drink', icon: 'wine-outline' },
   { id: '14', label: 'Video games', icon: 'game-controller-outline' },
+  { id: '15', label: 'Movies', icon: 'film-outline' },
+  { id: '16', label: 'Reading', icon: 'book-outline' },
+  { id: '17', label: 'Gym', icon: 'barbell-outline' },
+  { id: '18', label: 'Coffee', icon: 'cafe-outline' },
+  { id: '19', label: 'Hiking', icon: 'compass-outline' },
+  { id: '20', label: 'Coding', icon: 'code-slash-outline' },
+  { id: '21', label: 'Pets', icon: 'paw-outline' },
+  { id: '22', label: 'Foodie', icon: 'pizza-outline' },
 ];
 
 import { authService } from '../../../services/apiServices';
@@ -33,6 +42,7 @@ export const InterestsSelectionScreen = ({ navigation }) => {
   const { interests, toggleInterest, authDetails, profileDetails, gender, clearProfileSetup } = useProfileSetupStore();
   const login = useAuthStore(state => state.login);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSkip = () => {
     if (isAuthenticated) {
@@ -43,6 +53,7 @@ export const InterestsSelectionScreen = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
+    setIsLoading(true);
     try {
       const userData = {
         email: authDetails.email,
@@ -67,23 +78,31 @@ export const InterestsSelectionScreen = ({ navigation }) => {
 
       if (registeredUser) {
         clearProfileSetup();
-        Alert.alert(
-          'Registration Successful',
-          'Your profile has been created successfully. Please login to continue.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
+        useToastStore.getState().showToast({
+          title: 'Profile Created 🎉',
+          text: 'Registration successful! Please login.',
+          type: 'success',
+        });
+        navigation.navigate('Login');
       } else {
         // Fallback
         clearProfileSetup();
-        Alert.alert(
-          'Registration Successful',
-          'Your profile has been created. Please login to continue.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
+        useToastStore.getState().showToast({
+          title: 'Profile Created 🎉',
+          text: 'Registration successful! Please login.',
+          type: 'success',
+        });
+        navigation.navigate('Login');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert(error.message || 'Registration failed');
+      useToastStore.getState().showToast({
+        title: 'Registration Failed ❌',
+        text: error.message || 'Registration failed',
+        type: 'error',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -125,8 +144,15 @@ export const InterestsSelectionScreen = ({ navigation }) => {
           style={styles.continueButton}
           textStyle={styles.buttonText}
           variant="solid"
+          loading={isLoading}
         />
       </View>
+
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#E94057" />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -164,18 +190,18 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   title: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#000000',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#5b5b5b',
-    lineHeight: 24,
+    lineHeight: 20,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -195,4 +221,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
 });
+

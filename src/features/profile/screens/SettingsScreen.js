@@ -76,6 +76,8 @@ export const SettingsScreen = React.memo(() => {
   const [tosModalVisible, setTosModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [changePwdModalVisible, setChangePwdModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [privacyData, setPrivacyData] = useState({ title: '', content: '', lastUpdated: '' });
@@ -228,6 +230,30 @@ We reserve the right to terminate or suspend your account at our sole discretion
     }
   };
 
+  const performDeleteAccount = async () => {
+    try {
+      await userService.deleteAccount({ password: deletePassword, reason: 'User requested' });
+      setDeletePassword('');
+      if (Platform.OS === 'web') {
+        alert('Account deleted successfully.');
+      } else {
+        Alert.alert('Success', 'Account deleted successfully.');
+      }
+      logoutAction();
+    } catch (e) {
+      if (Platform.OS === 'web') {
+        alert(e.message || 'Failed to delete account');
+      } else {
+        Alert.alert('Error', e.message || 'Failed to delete account');
+      }
+    }
+  };
+
+  const handleDeleteAccount = useCallback(() => {
+    setDeletePassword('');
+    setDeleteModalVisible(true);
+  }, []);
+
   const handleItem = useCallback((key) => {
     if (key === 'editProfile') {
       navigation.navigate('EditProfile');
@@ -253,30 +279,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
     } else {
       Alert.alert(key, 'Coming soon!');
     }
-  }, [navigation, fetchTransactions]);
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await userService.deleteAccount({ reason: 'User requested' });
-              Alert.alert('Success', 'Account deleted successfully.');
-              logoutAction();
-            } catch (e) {
-              Alert.alert('Error', e.message || 'Failed to delete account');
-            }
-          }
-        }
-      ]
-    );
-  };
+  }, [navigation, fetchTransactions, handleDeleteAccount]);
 
   const handleUpdateLocation = async (loc) => {
     setLoadingLocation(true);
@@ -682,6 +685,53 @@ We reserve the right to terminate or suspend your account at our sole discretion
           </View>
         </BottomSheetContainer>
       </Modal>
+      
+      {/* Delete Account Warning Modal */}
+      <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
+        <View style={s.alertOverlay}>
+          <View style={s.alertBox}>
+            <View style={s.alertIconWrap}>
+              <Icon name="warning-outline" size={32} color="#E94057" />
+            </View>
+            <Text style={s.alertTitle}>Delete Account</Text>
+            <Text style={s.alertDescription}>
+              Are you sure you want to permanently delete your account? This action cannot be undone and you will lose all your data. Please enter your password to confirm.
+            </Text>
+            <TextInput
+              style={s.alertPasswordInput}
+              placeholder="Enter your password"
+              placeholderTextColor="#A0A0A0"
+              secureTextEntry
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+            />
+            <View style={s.alertActionRow}>
+              <TouchableOpacity 
+                style={[s.alertBtn, s.alertBtnCancel]} 
+                onPress={() => setDeleteModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={s.alertBtnCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[s.alertBtn, s.alertBtnDelete, !deletePassword.trim() && s.alertBtnDeleteDisabled]} 
+                onPress={() => {
+                  if (!deletePassword.trim()) {
+                    Alert.alert('Error', 'Please enter your password to proceed.');
+                    return;
+                  }
+                  setDeleteModalVisible(false);
+                  performDeleteAccount();
+                }}
+                disabled={!deletePassword.trim()}
+                activeOpacity={0.8}
+              >
+                <Text style={s.alertBtnDeleteText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 });
@@ -809,6 +859,97 @@ const s = StyleSheet.create({
     padding: 20,
     boxShadow: '0px -4px 10px rgba(0,0,0,0.1)',
     elevation: 20,
+  },
+  alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  alertBox: {
+    width: '90%',
+    maxWidth: 340,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  alertIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFF0F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alertTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111',
+    fontFamily: FONT_MED,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  alertDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+    fontFamily: FONT,
+    marginBottom: 24,
+  },
+  alertActionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  alertBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertBtnCancel: {
+    backgroundColor: '#F5F5F5',
+  },
+  alertBtnCancelText: {
+    color: '#666',
+    fontWeight: '700',
+    fontSize: 15,
+    fontFamily: FONT_MED,
+  },
+  alertBtnDelete: {
+    backgroundColor: '#E94057',
+  },
+  alertBtnDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
+    fontFamily: FONT_MED,
+  },
+  alertPasswordInput: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#F0F0F0',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111',
+    backgroundColor: '#FAFAFA',
+    marginBottom: 20,
+    fontFamily: FONT,
+  },
+  alertBtnDeleteDisabled: {
+    backgroundColor: '#F2A0AC',
+    opacity: 0.7,
   },
 });
 

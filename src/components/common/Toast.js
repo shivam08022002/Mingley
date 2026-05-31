@@ -34,6 +34,8 @@ export const Toast = () => {
     }
   })();
 
+  const showFullBox = !!storeTitle || type === 'success' || type === 'error';
+
   const title = (() => {
     if (storeTitle) return storeTitle;
 
@@ -56,13 +58,19 @@ export const Toast = () => {
       onRequestClose={hideToast}
     >
       <View style={styles.overlay}>
-        <View style={styles.toastBox}>
-          <View style={[styles.iconWrap, { backgroundColor: iconColor + '15' }]}>
-            <Icon name={iconName} size={36} color={iconColor} />
+        {showFullBox ? (
+          <View style={styles.toastBox}>
+            <View style={[styles.iconWrap, { backgroundColor: iconColor + '15' }]}>
+              <Icon name={iconName} size={36} color={iconColor} />
+            </View>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.message}>{message}</Text>
           </View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
-        </View>
+        ) : (
+          <View style={styles.toastBoxCompact}>
+            <Text style={styles.messageCompact}>{message}</Text>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -109,5 +117,29 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+  },
+  toastBoxCompact: {
+    backgroundColor: 'rgba(17, 17, 17, 0.95)',
+    borderRadius: 20,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    marginHorizontal: 40,
+    maxWidth: Math.min(width - 80, 360),
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  messageCompact: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
 });

@@ -31,7 +31,7 @@ export const DepositModal = ({ visible, onClose }) => {
     setLoadingPkgs(true);
     try {
       const res = await walletService.getPackages();
-      const pkgs = res?.data?.packages || [];
+      const pkgs = res?.data?.packages || res?.packages || [];
       setPackages(pkgs);
       // Auto-select the popular package
       const popular = pkgs.find((p) => p.isPopular) || pkgs[0];
@@ -44,8 +44,22 @@ export const DepositModal = ({ visible, onClose }) => {
   };
 
   const handleDepositSubmit = async () => {
-    if (!selectedPkg) { Alert.alert('Error', 'Please select a coin package.'); return; }
-    if (!utrIdText.trim()) { Alert.alert('Error', 'Please enter your UTR ID.'); return; }
+    if (!selectedPkg) {
+      if (Platform.OS === 'web') {
+        alert('Please select a coin package.');
+      } else {
+        Alert.alert('Error', 'Please select a coin package.');
+      }
+      return;
+    }
+    if (!utrIdText.trim()) {
+      if (Platform.OS === 'web') {
+        alert('Please enter your UTR ID.');
+      } else {
+        Alert.alert('Error', 'Please enter your UTR ID.');
+      }
+      return;
+    }
     setSubmitting(true);
     try {
       await walletService.deposit({
@@ -53,12 +67,21 @@ export const DepositModal = ({ visible, onClose }) => {
         screenshotUrl: 'mock-screenshot-url',
         requestedCoins: selectedPkg.coins,
       });
-      Alert.alert('Success', `Deposit request submitted for ${selectedPkg.coins} coins. They will reflect soon!`);
+      if (Platform.OS === 'web') {
+        alert(`Deposit request submitted for ${selectedPkg.coins} coins. They will reflect soon!`);
+      } else {
+        Alert.alert('Success', `Deposit request submitted for ${selectedPkg.coins} coins. They will reflect soon!`);
+      }
       onClose();
       setUtrIdText('');
       setSelectedPkg(null);
+      fetchWalletBalance();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Deposit failed');
+      if (Platform.OS === 'web') {
+        alert(error.message || 'Deposit failed');
+      } else {
+        Alert.alert('Error', error.message || 'Deposit failed');
+      }
     } finally {
       setSubmitting(false);
     }

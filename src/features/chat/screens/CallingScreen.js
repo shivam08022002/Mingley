@@ -18,6 +18,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../../../store/useChatStore';
 import { callService } from '../../../services/apiServices';
+import { signalRService } from '../../../services/signalRService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -106,6 +107,7 @@ export const CallingScreen = ({ navigation, route }) => {
   const [agoraToken, setAgoraToken] = useState(null);
   const [apiError, setApiError] = useState(null);
   const [incomingAnswered, setIncomingAnswered] = useState(false);
+  const [outgoingAnswered, setOutgoingAnswered] = useState(false);
   const isIncoming = route.params?.isIncoming || false;
 
   /* ── Interactive call controls state ── */
@@ -122,6 +124,18 @@ export const CallingScreen = ({ navigation, route }) => {
 
   const LOW_BALANCE_THRESHOLD = costPerMin * 2;
   const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0;
+
+  /* ── Listen for SignalR CallAnswered event (outgoing) ── */
+  useEffect(() => {
+    signalRService.onCallAnswered = (data) => {
+      if (data.callId === callId || !callId) {
+        setOutgoingAnswered(true);
+      }
+    };
+    return () => {
+      signalRService.onCallAnswered = null;
+    };
+  }, [callId]);
 
   /* ── Mount effect: start Call API sessions ── */
   useEffect(() => {
@@ -213,12 +227,14 @@ export const CallingScreen = ({ navigation, route }) => {
     ).start();
   }, []);
 
-  // Timer: only run if not incoming OR if incoming call is answered
+  const isCallConnected = isIncoming ? incomingAnswered : outgoingAnswered;
+
+  // Timer: only run if call is connected/answered
   useEffect(() => {
-    if (isIncoming && !incomingAnswered) return;
+    if (!isCallConnected) return;
     const t = setInterval(() => setTime((prev) => prev + 1), 1000);
     return () => clearInterval(t);
-  }, [isIncoming, incomingAnswered]);
+  }, [isCallConnected]);
 
   const handleAnswer = async () => {
     try {
@@ -277,8 +293,8 @@ export const CallingScreen = ({ navigation, route }) => {
 
   const formatTime = () => {
     if (time === 0) {
-      if (isIncoming && !incomingAnswered) return 'Ringing...';
-      return 'Connecting...';
+      if (isIncoming && !incomingAnswered) return 'Incoming Call...';
+      return 'Ringing...';
     }
     const m = String(Math.floor(time / 60)).padStart(2, '0');
     const s = String(time % 60).padStart(2, '0');
@@ -348,7 +364,9 @@ export const CallingScreen = ({ navigation, route }) => {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.statusBadge}
           >
-            <Text style={styles.statusText}>{isIncoming && !incomingAnswered ? 'Ringing' : time === 0 ? 'Connecting' : 'Ongoing Call'}</Text>
+            <Text style={styles.statusText}>
+              {isCallConnected ? 'Ongoing Call' : isIncoming ? 'Incoming Call' : 'Ringing'}
+            </Text>
             <Icon name="pulse" size={13} color="#FFF" style={{ marginLeft: 6 }} />
           </LinearGradient>
 
@@ -372,6 +390,7 @@ export const CallingScreen = ({ navigation, route }) => {
             </View>
           )}
         </View>
+
 
         {/* ── PiP: self-view in bottom-right, above control panel ──
              Tapping it swaps views, exactly like WhatsApp.           */}

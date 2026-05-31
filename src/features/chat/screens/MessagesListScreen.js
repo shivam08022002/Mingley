@@ -11,6 +11,7 @@ import { decodeEmoji } from '../../../utils/stringUtils';
 import { useFocusEffect } from '@react-navigation/native';
 import { callService } from '../../../services/apiServices';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
+import { useToastStore } from '../../../store/useToastStore';
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
@@ -37,7 +38,13 @@ const StoryBubble = React.memo(({ story, onPress }) => {
 export const MessagesListScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('messages'); // 'messages' or 'superchat'
   const [superchatTab, setSuperchatTab] = useState('received'); // 'received' or 'sent'
-  const [stories, setStories] = useState([]); // Will be empty until API integrated
+  const [stories, setStories] = useState([
+    { id: '1', name: 'Arjun', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80', seen: false },
+    { id: '2', name: 'Riya', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80', seen: false },
+    { id: '3', name: 'Kabir', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80', seen: false },
+    { id: '4', name: 'Neha', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80', seen: false },
+  ]);
+  const [loadingChats, setLoadingChats] = useState(false);
   const [storyViewer, setStoryViewer] = useState(null);
 
   const [callHistoryModalVisible, setCallHistoryModalVisible] = useState(false);
@@ -69,25 +76,33 @@ export const MessagesListScreen = ({ navigation }) => {
     }
   };
 
+  const loadChatsData = useCallback(async () => {
+    setLoadingChats(true);
+    try {
+      await fetchChats();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingChats(false);
+    }
+  }, [fetchChats]);
+
   useFocusEffect(
     useCallback(() => {
       if (activeTab === 'messages') {
-        fetchChats();
+        loadChatsData();
       } else {
         if (superchatTab === 'received') fetchReceivedSuperchats();
         else fetchSentSuperchats();
       }
-    }, [activeTab, superchatTab, fetchChats, fetchReceivedSuperchats, fetchSentSuperchats])
+    }, [activeTab, superchatTab, loadChatsData, fetchReceivedSuperchats, fetchSentSuperchats])
   );
 
+  const showToast = useToastStore((s) => s.showToast);
 
   const handleStoryPress = (story) => {
-    if (story.isOwn) {
-      Alert.alert('Add Story', 'Camera roll / record video (mock)', [{ text: 'OK' }]);
-      return;
-    }
     setStories((prev) => prev.map((s) => s.id === story.id ? { ...s, seen: true } : s));
-    setStoryViewer(story);
+    showToast('Coming Soon', 'info', 2000);
   };
   const ListHeader = () => (
     <View>
@@ -324,7 +339,7 @@ export const MessagesListScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={activeTab === 'messages' ? chats : (superchatTab === 'received' ? receivedSuperchats : sentSuperchats)}
+        data={activeTab === 'messages' ? (loadingChats ? [] : chats) : (superchatTab === 'received' ? receivedSuperchats : sentSuperchats)}
         keyExtractor={item => item.id}
         ListHeaderComponent={ListHeader}
         renderItem={activeTab === 'messages' ? ({ item }) => (
@@ -342,11 +357,23 @@ export const MessagesListScreen = ({ navigation }) => {
           />
         ) : renderSuperchatItem}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={activeTab === 'superchat' && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No superchats found</Text>
-          </View>
-        )}
+        ListEmptyComponent={
+          activeTab === 'messages' ? (
+            loadingChats ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#E94057" />
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No recent chats found</Text>
+              </View>
+            )
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No superchats found</Text>
+            </View>
+          )
+        }
       />
 
       {/* ── Story viewer overlay ── */}

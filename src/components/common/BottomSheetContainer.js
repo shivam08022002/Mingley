@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  Dimensions, 
-  Platform, 
-  Animated, 
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Platform,
+  Animated,
   PanResponder,
   TouchableWithoutFeedback,
 } from 'react-native';
@@ -79,33 +79,33 @@ export const BottomSheetContainer = ({ children, containerStyle, contentStyle, h
         <View style={styles.backdrop} />
       </TouchableWithoutFeedback>
 
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.containerWrapper, 
+          styles.containerWrapper,
           { transform: [{ translateY: panY }] }
         ]}
       >
         {/* Indicator / drag handle */}
         <View {...panResponder.panHandlers} style={styles.indicatorContainer}>
-          <Svg width="60" height="28" viewBox="0 0 55 0" fill="none">
+          <Svg width="60" height="28" viewBox="0 0 55 1" fill="none">
             <G filter="url(#filter0_d_309_5420)">
-              <Path 
-                fillRule="evenodd" 
-                clipRule="evenodd" 
-                d="M14 9.0219C14 5.14381 17.1435 2 21.0215 2C23.2659 2 25.6126 2 27.3371 2C29.1179 2 31.6124 2 33.9835 2C37.8589 2 41 5.14166 41 9.01709C41 9.13673 40.9242 9.24322 40.8111 9.28234L39.1697 9.85037C31.3028 12.5728 22.7335 12.4718 14.933 9.56467L14.1828 9.28509C14.0729 9.24413 14 9.13919 14 9.0219Z" 
+              <Path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M14 9.0219C14 5.14381 17.1435 2 21.0215 2C23.2659 2 25.6126 2 27.3371 2C29.1179 2 31.6124 2 33.9835 2C37.8589 2 41 5.14166 41 9.01709C41 9.13673 40.9242 9.24322 40.8111 9.28234L39.1697 9.85037C31.3028 12.5728 22.7335 12.4718 14.933 9.56467L14.1828 9.28509C14.0729 9.24413 14 9.13919 14 9.0219Z"
                 fill="white"
               />
             </G>
-            <Rect x="21" y="5" width="13" height="3" rx="1.5" fill="#E8E6EA"/>
+            <Rect x="21" y="5" width="13" height="3" rx="1.5" fill="#E8E6EA" />
             <Defs>
               <Filter id="filter0_d_309_5420" x="0" y="0" width="55" height="37.821" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                <FeFlood floodOpacity="0" result="BackgroundImageFix"/>
-                <FeColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                <FeOffset dy="12"/>
-                <FeGaussianBlur stdDeviation="7"/>
-                <FeColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0"/>
-                <FeBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_309_5420"/>
-                <FeBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_309_5420" result="shape"/>
+                <FeFlood floodOpacity="0" result="BackgroundImageFix" />
+                <FeColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                <FeOffset dy="12" />
+                <FeGaussianBlur stdDeviation="7" />
+                <FeColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0" />
+                <FeBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_309_5420" />
+                <FeBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_309_5420" result="shape" />
               </Filter>
             </Defs>
           </Svg>
@@ -115,9 +115,9 @@ export const BottomSheetContainer = ({ children, containerStyle, contentStyle, h
         <View style={[styles.container, { height }]}>
           <View style={StyleSheet.absoluteFill}>
             <Svg width="100%" height={height} viewBox={`0 0 375 ${height}`} preserveAspectRatio="none">
-              <Path 
-                fillRule="evenodd" 
-                clipRule="evenodd" 
+              <Path
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d={svgPath}
                 fill="white"
               />
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flex: 1,
     paddingTop: 50,
-    paddingHorizontal: 25, 
+    paddingHorizontal: 25,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },
 });

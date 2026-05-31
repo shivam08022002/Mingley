@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { navigationRef } from '../navigation';
 
 let toastTimeout = null;
 
@@ -9,6 +10,14 @@ export const useToastStore = create((set) => ({
   type: 'info', // 'success' | 'error' | 'info'
 
   showToast: (msgOrObj, type = 'info', duration = 3000) => {
+    // Prevent toasts from showing on immersive screens
+    if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
+      const currentRoute = navigationRef.getCurrentRoute();
+      if (currentRoute?.name === 'Calling' || currentRoute?.name === 'Match') {
+        return;
+      }
+    }
+
     // Clear any existing timeout
     if (toastTimeout) {
       clearTimeout(toastTimeout);
@@ -37,3 +46,4 @@ export const useToastStore = create((set) => ({
     set({ visible: false, message: '', title: '', type: 'info' });
   },
 }));
+

@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     marginTop: 8,
+    marginBottom: 12,
     gap: 6,
   },
   verifiedText: {

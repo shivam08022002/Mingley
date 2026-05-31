@@ -51,7 +51,7 @@ export const ChatBubble = React.memo(({ item }) => {
         style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
       >
         <View style={[styles.giftBubble, isMine ? styles.giftBubbleMine : styles.giftBubbleTheirs]}>
-          <View style={[styles.giftIconWrap, { backgroundColor: isMine ? 'rgba(255,255,255,0.2)' : '#FFF0F3' }]}>
+          <View style={styles.giftIconWrap}>
             <Icon name={iconName} size={28} color={isMine ? '#FFFFFF' : '#E94057'} />
           </View>
           <Text style={[styles.giftLabel, isMine ? styles.giftLabelMine : styles.giftLabelTheirs]}>

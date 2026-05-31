@@ -9,22 +9,58 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
+import { useToastStore } from '../../../store/useToastStore';
 
 const DEFAULT_ICONS = ['star-outline', 'trophy-outline', 'rocket-outline', 'flash-outline'];
 
 export const SubscriptionPlansScreen = ({ navigation }) => {
-  const { plans, fetchPlans, isLoading, setSelectedPlan, subscribe, fetchStatus } = useSubscriptionStore();
+  const { 
+    plans, fetchPlans, isLoading, setSelectedPlan, subscribe, 
+    fetchStatus, currentStatus, cancelSubscription 
+  } = useSubscriptionStore();
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     fetchPlans();
-  }, [fetchPlans]);
+    fetchStatus();
+  }, [fetchPlans, fetchStatus]);
+
+  const isSubscriptionActive = currentStatus?.isActive || currentStatus?.status === 'active';
+  const currentActivePlanId = (() => {
+    if (!currentStatus) return null;
+    const directId = currentStatus?.plan?.id || currentStatus?.plan?._id || currentStatus?.planId;
+    if (directId) return directId;
+
+    if (currentStatus?.planName && plans.length > 0) {
+      const match = plans.find(
+        (p) => p.name?.toLowerCase() === currentStatus.planName.toLowerCase()
+      );
+      if (match) return match.id || match._id;
+    }
+    return null;
+  })();
 
   useEffect(() => {
-    if (plans.length > 0 && !selected) {
+    if (isSubscriptionActive && currentActivePlanId) {
+      setSelected(currentActivePlanId);
+    } else if (plans.length > 0 && !selected) {
       setSelected(plans[0].id || plans[0]._id);
     }
-  }, [plans, selected]);
+  }, [plans, selected, currentStatus, isSubscriptionActive, currentActivePlanId]);
+
+  const handleSelectPlan = (planId) => {
+    if (isSubscriptionActive && planId !== currentActivePlanId) {
+      const expiry = currentStatus?.expiresAt || currentStatus?.endDate;
+      const formattedDate = expiry ? new Date(expiry).toLocaleDateString([], { dateStyle: 'medium' }) : 'expiry';
+      useToastStore.getState().showToast(
+        `Active plan exists. You can switch after it expires on ${formattedDate}.`,
+        'info',
+        3000
+      );
+      return;
+    }
+    setSelected(planId);
+  };
 
   const handleContinue = async () => {
     const selectedMappedPlan = mappedPlans.find((plan) => plan.id === selected);
@@ -55,6 +91,38 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
     }
   };
 
+  const handleCancelSubscription = () => {
+    Alert.alert(
+      'Cancel Subscription? 😢',
+      'Are you sure you want to cancel your subscription? You will still keep your premium benefits until the end of your billing cycle.',
+      [
+        { text: 'Keep Plan', style: 'cancel' },
+        { 
+          text: 'Cancel Subscription', 
+          style: 'destructive', 
+          onPress: async () => {
+            const subId = currentStatus?.id || currentStatus?._id;
+            if (subId) {
+              try {
+                await cancelSubscription(subId, 'Cancelled by user');
+                await fetchStatus();
+                useToastStore.getState().showToast(
+                  'Subscription successfully cancelled.',
+                  'success',
+                  3000
+                );
+              } catch (error) {
+                Alert.alert('Cancellation Failed', error.message || 'Something went wrong.');
+              }
+            } else {
+              Alert.alert('Error', 'Unable to find active subscription ID.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const mappedPlans = plans.map((p, idx) => {
     const name = p.name?.toLowerCase() || '';
     let colors = ['#E94057', '#8A2387']; // Default
@@ -70,8 +138,8 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
       colors = ['#4FACFE', '#00F2FE'];
       textColor = '#FFF';
     } else if (name.includes('free')) {
-      colors = ['#F1F5F9', '#CBD5E1'];
-      textColor = '#666';
+      colors = ['#E94057', '#8A2387'];
+      textColor = '#FFF';
     }
 
     return {
@@ -140,7 +208,7 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
             return (
               <TouchableOpacity
                 key={plan.id}
-                onPress={() => setSelected(plan.id)}
+                onPress={() => handleSelectPlan(plan.id)}
                 activeOpacity={0.9}
                 style={[
                   s.planCard, 
@@ -157,15 +225,34 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
                 )}
 
                 {plan.badge && (
-                  <View style={[s.badgeWrapNew, active && { backgroundColor: plan.textColor === '#111111' ? '#111111' : '#FFF' }]}>
-                    <Text style={[s.badgeTextNew, active && { color: plan.textColor === '#111111' ? '#FFF' : plan.colors[1] }]}>{plan.badge}</Text>
+                  <View style={[
+                    s.badgeWrapNew, 
+                    active ? (plan.textColor === '#111111' ? { backgroundColor: '#111111' } : { backgroundColor: '#FFF' }) : { backgroundColor: '#111111' }
+                  ]}>
+                    <Text style={[
+                      s.badgeTextNew, 
+                      active ? { color: plan.textColor === '#111111' ? '#FFF' : plan.colors[1] } : { color: '#FFF' }
+                    ]}>{plan.badge}</Text>
                   </View>
                 )}
                 
                 <View style={s.planHeader}>
-                  <Text style={[s.planNameNew, active && (plan.textColor === '#111111' ? s.activeTextDark : s.activeTextWhite)]}>{plan.name}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
+                    <Text style={[s.planNameNew, active && (plan.textColor === '#111111' ? s.activeTextDark : s.activeTextWhite)]}>{plan.name}</Text>
+                    {isSubscriptionActive && plan.id === currentActivePlanId && (
+                      <View style={[
+                        s.currentPlanBadge, 
+                        active ? (plan.textColor === '#111111' ? { backgroundColor: 'rgba(17, 17, 17, 0.08)' } : { backgroundColor: 'rgba(255, 255, 255, 0.25)' }) : { backgroundColor: 'rgba(76, 175, 80, 0.12)' }
+                      ]}>
+                        <Text style={[
+                          s.currentPlanBadgeText, 
+                          active ? { color: plan.textColor === '#111111' ? '#111111' : '#FFF' } : { color: '#4CAF50' }
+                        ]}>Current Plan</Text>
+                      </View>
+                    )}
+                  </View>
                   <View style={[s.planIconWrap, active && (plan.textColor === '#111111' ? { backgroundColor: 'rgba(0, 0, 0, 0.08)' } : s.planIconWrapActive)]}>
-                    <Icon name={plan.icon} size={24} color={active ? (plan.textColor === '#111111' ? '#111111' : plan.colors[1]) : '#E94057'} />
+                    <Icon name={plan.icon} size={24} color={active ? (plan.textColor === '#111111' ? '#111111' : plan.colors[1]) : '#111111'} />
                   </View>
                 </View>
 
@@ -184,23 +271,46 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Sticky footer */}
-      <View style={s.footer}>
-        <TouchableOpacity
-          style={s.ctaWrap}
-          onPress={handleContinue}
-          activeOpacity={0.88}
-        >
-          <LinearGradient
-            colors={['#E94057', '#8A2387']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={s.ctaBtn}
-          >
-            <Text style={s.ctaText}>Continue</Text>
-            <Icon name="arrow-forward" size={18} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
-        <Text style={s.footerNote}>Cancel anytime • Secure payment</Text>
-      </View>
+      {(() => {
+        const isCurrentActiveSelected = isSubscriptionActive && selected === currentActivePlanId;
+        return (
+          <View style={s.footer}>
+            {!isCurrentActiveSelected ? (
+              <TouchableOpacity
+                style={s.ctaWrap}
+                onPress={handleContinue}
+                activeOpacity={0.88}
+              >
+                <LinearGradient
+                  colors={['#E94057', '#8A2387']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={s.ctaBtn}
+                >
+                  <Text style={s.ctaText}>Continue</Text>
+                  <Icon name="arrow-forward" size={18} color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={s.ctaWrap}
+                onPress={handleCancelSubscription}
+                activeOpacity={0.88}
+              >
+                <LinearGradient
+                  colors={['#E94057', '#8A2387']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={s.ctaBtn}
+                >
+                  <Text style={s.ctaText}>Cancel Subscription</Text>
+                  <Icon name="close-circle-outline" size={18} color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+
+            <Text style={s.footerNote}>Cancel anytime • Secure payment</Text>
+          </View>
+        );
+      })()}
     </SafeAreaView>
   );
 };
@@ -236,7 +346,7 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: '#2b1c50', fontFamily: FONT_MED },
-  scroll: { paddingBottom: 120 },
+  scroll: { paddingBottom: 160 },
   topSection: { paddingHorizontal: 24, marginTop: 12 },
   title: {
     fontSize: 28, fontWeight: '800', color: '#111',
@@ -313,7 +423,7 @@ const s = StyleSheet.create({
   planNameNew: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111',
+    color: '#111111',
   },
   planIconWrap: {
     width: 44,
@@ -334,22 +444,37 @@ const s = StyleSheet.create({
   planPriceNew: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#111',
+    color: '#111111',
   },
   planDurationNew: {
     fontSize: 16,
-    color: '#666',
+    color: '#111111',
     fontWeight: '600',
+    opacity: 0.75,
   },
   planPerMonthNew: {
     fontSize: 13,
-    color: '#888',
+    color: '#111111',
     marginTop: 4,
+    opacity: 0.6,
   },
-  activeTextWhite: { color: '#FFF' },
-  activeTextWhiteSub: { color: 'rgba(255, 255, 255, 0.8)' },
-  activeTextDark: { color: '#111111' },
-  activeTextDarkSub: { color: 'rgba(0, 0, 0, 0.65)' },
+  activeTextWhite: { color: '#FFF', opacity: 1 },
+  activeTextWhiteSub: { color: 'rgba(255, 255, 255, 0.8)', opacity: 1 },
+  activeTextDark: { color: '#111111', opacity: 1 },
+  activeTextDarkSub: { color: 'rgba(0, 0, 0, 0.65)', opacity: 1 },
+
+  currentPlanBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  currentPlanBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
 
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -363,6 +488,19 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', gap: 10,
   },
   ctaText: { fontSize: 16, fontWeight: '700', color: '#fff', fontFamily: FONT_MED },
+  cancelSubBtn: {
+    marginTop: 8,
+    marginBottom: 12,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  cancelSubText: {
+    color: '#E94057',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: FONT_MED,
+  },
   footerNote: { fontSize: 11, color: '#AAA', textAlign: 'center', fontFamily: FONT },
 });
 

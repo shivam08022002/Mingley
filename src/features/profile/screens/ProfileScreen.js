@@ -375,10 +375,9 @@ export const ProfileScreen = React.memo(() => {
       />
 
       {/* ── Premium Visual Cover Photo Modal ── */}
-      <Modal visible={coverModalVisible} transparent animationType="slide" onRequestClose={() => setCoverModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => !updatingCover && setCoverModalVisible(false)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHandle} />
+      <Modal visible={coverModalVisible} transparent animationType="fade" onRequestClose={() => setCoverModalVisible(false)}>
+        <BottomSheetContainer onClose={() => setCoverModalVisible(false)} height={480}>
+          <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <Text style={styles.modalTitle}>Choose Cover Photo</Text>
               {updatingCover && <ActivityIndicator color="#E94057" />}
@@ -440,14 +439,13 @@ export const ProfileScreen = React.memo(() => {
               <Text style={styles.deleteCoverBtnText}>Delete Cover Photo</Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </BottomSheetContainer>
       </Modal>
 
       {/* ── Visual Avatar Selection Modal ── */}
-      <Modal visible={avatarModalVisible} transparent animationType="slide" onRequestClose={() => setAvatarModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => !updatingAvatar && setAvatarModalVisible(false)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
-            <View style={styles.modalHandle} />
+      <Modal visible={avatarModalVisible} transparent animationType="fade" onRequestClose={() => setAvatarModalVisible(false)}>
+        <BottomSheetContainer onClose={() => setAvatarModalVisible(false)} height={540}>
+          <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <Text style={styles.modalTitle}>
                 {avatarSelectionMode === 'avatar' ? 'Choose Profile Picture' : 'Add Photo to Gallery'}
@@ -494,7 +492,7 @@ export const ProfileScreen = React.memo(() => {
               ))}
             </View>
           </View>
-        </TouchableOpacity>
+        </BottomSheetContainer>
       </Modal>
 
 
