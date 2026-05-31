@@ -63,6 +63,49 @@ const SettingsRow = React.memo(({ icon, label, onPress, isLast }) => (
   </TouchableOpacity>
 ));
 
+const NotificationItem = React.memo(({ item, onDoubleTap, FONT }) => {
+  const lastTap = React.useRef(0);
+  
+  const handlePress = () => {
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300;
+    if (now - lastTap.current < DOUBLE_PRESS_DELAY) {
+      onDoubleTap(item.id || item._id);
+    }
+    lastTap.current = now;
+  };
+
+  let iconName = 'notifications-outline';
+  let iconColor = '#999';
+  
+  if (item.type === 'match') {
+    iconName = 'heart';
+    iconColor = '#E94057';
+  } else if (item.type === 'coins') {
+    iconName = 'planet';
+    iconColor = '#E94057';
+  }
+
+  return (
+    <TouchableOpacity 
+      style={[s.notifItem, !item.isRead && s.notifUnread]}
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <View style={[s.notifIconWrap, { backgroundColor: item.isRead ? '#F5F5F5' : '#FFF' }]}>
+        <Icon name={iconName} size={20} color={iconColor} />
+      </View>
+      <View style={s.notifContent}>
+        <Text style={[s.notifTitle, !item.isRead && { fontWeight: '800' }]}>
+          {decodeEmoji(item.title)}
+        </Text>
+        <Text style={s.notifBody}>{decodeEmoji(item.body || item.message)}</Text>
+        <Text style={s.notifTime}>{new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
 export const SettingsScreen = React.memo(() => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -230,6 +273,26 @@ We reserve the right to terminate or suspend your account at our sole discretion
     }
   };
 
+  const handleAcceptPrivacyPolicy = async () => {
+    try {
+      const userParam = userData?.id || userData?._id || 'user';
+      await userService.acceptPrivacyPolicy(userParam);
+      Alert.alert('Success', 'Privacy Policy accepted successfully!');
+      setPrivacyModalVisible(false);
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Failed to accept privacy policy');
+    }
+  };
+
+  const handleNotifDoubleTap = async (id) => {
+    try {
+      await userService.markNotificationAsRead(id);
+      fetchNotifications();
+    } catch (e) {
+      console.error('Mark notification as read failed:', e);
+    }
+  };
+
   const performDeleteAccount = async () => {
     try {
       await userService.deleteAccount({ password: deletePassword, reason: 'User requested' });
@@ -386,7 +449,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
             ) : (
               <FlatList
                 data={blockedUsers}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item.id || item._id}
                 contentContainerStyle={{ paddingVertical: 10 }}
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => (
@@ -394,9 +457,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     <View style={row.iconWrap}>
                       <Icon name="person-circle-outline" size={24} color="#999" />
                     </View>
-                    <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#111', marginLeft: 12 }}>{item.fullName || 'User'}</Text>
+                    <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#111', marginLeft: 12 }}>{item.fullName || item.name || 'User'}</Text>
                     <TouchableOpacity 
-                      onPress={() => handleUnblock(item.id)}
+                      onPress={() => handleUnblock(item.id || item._id)}
                       style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFF0F3', borderWidth: 1, borderColor: '#F2D0D6' }}
                     >
                       <Text style={{ color: '#E94057', fontWeight: '700' }}>Unblock</Text>
@@ -433,44 +496,16 @@ We reserve the right to terminate or suspend your account at our sole discretion
             ) : (
               <FlatList
                 data={notifications}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item.id || item._id}
                 contentContainerStyle={s.notifList}
                 showsVerticalScrollIndicator={false}
-                renderItem={({ item }) => {
-                  let iconName = 'notifications-outline';
-                  let iconColor = '#999';
-                  
-                  if (item.type === 'match') {
-                    iconName = 'heart';
-                    iconColor = '#E94057';
-                  } else if (item.type === 'coins') {
-                    iconName = 'planet';
-                    iconColor = '#E94057';
-                  }
-
-                  return (
-                    <TouchableOpacity 
-                      style={[s.notifItem, !item.isRead && s.notifUnread]}
-                      onPress={async () => {
-                        if (!item.isRead) {
-                          await userService.markNotificationAsRead(item.id);
-                          fetchNotifications();
-                        }
-                      }}
-                    >
-                      <View style={[s.notifIconWrap, { backgroundColor: item.isRead ? '#F5F5F5' : '#FFF' }]}>
-                        <Icon name={iconName} size={20} color={iconColor} />
-                      </View>
-                      <View style={s.notifContent}>
-                        <Text style={[s.notifTitle, !item.isRead && { fontWeight: '800' }]}>
-                          {decodeEmoji(item.title)}
-                        </Text>
-                        <Text style={s.notifBody}>{decodeEmoji(item.body || item.message)}</Text>
-                        <Text style={s.notifTime}>{new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                }}
+                renderItem={({ item }) => (
+                  <NotificationItem 
+                    item={item} 
+                    onDoubleTap={handleNotifDoubleTap} 
+                    FONT={FONT} 
+                  />
+                )}
                 ListEmptyComponent={
                   <View style={{ padding: 40, alignItems: 'center' }}>
                     <Text style={{ color: '#AAA', fontFamily: FONT }}>No notifications yet.</Text>
@@ -492,17 +527,37 @@ We reserve the right to terminate or suspend your account at our sole discretion
             {loadingPrivacy ? (
               <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
             ) : (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
-                {privacyData.lastUpdated && (
-                  <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
-                    Last Updated: {privacyData.lastUpdated}
+              <View style={{ flex: 1 }}>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
+                  {privacyData.lastUpdated && (
+                    <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
+                      Last Updated: {privacyData.lastUpdated}
+                    </Text>
+                  )}
+                  <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
+                    {privacyData.content}
                   </Text>
-                )}
-                <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
-                  {privacyData.content}
-                </Text>
-                <View style={{ height: 40 }} />
-              </ScrollView>
+                  <View style={{ height: 20 }} />
+                </ScrollView>
+                
+                <TouchableOpacity 
+                  onPress={handleAcceptPrivacyPolicy}
+                  style={{
+                    backgroundColor: '#E94057', 
+                    paddingVertical: 14, 
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    marginBottom: 10,
+                    shadowColor: '#E94057',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, fontFamily: FONT_MED }}>Accept Privacy Policy</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </BottomSheetContainer>

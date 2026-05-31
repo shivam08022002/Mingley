@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useFilterStore } from '../store/useFilterStore';
 import { useChatStore } from '../../../store/useChatStore';
-import { userService } from '../../../services/apiServices';
+import { userService, subscriptionService } from '../../../services/apiServices';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
 const { height, width } = Dimensions.get('window');
@@ -142,6 +142,21 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 
         setAllInterests(intRes.data?.interests || []);
 
+        // Fetch subscription status to enforce limits
+        let userIsActive = false;
+        let userPlan = null;
+        try {
+          const statusRes = await subscriptionService.getStatus();
+          const activeStatus = statusRes.data || statusRes;
+          userIsActive = activeStatus?.isActive || activeStatus?.status === 'active';
+          userPlan = userIsActive ? activeStatus?.planName?.toLowerCase() : null;
+        } catch (subErr) {
+          console.error('Fetch subscription status error in filter:', subErr);
+        }
+
+        const hasPlatinum = userPlan === 'platinum';
+        const hasGoldOrPlatinum = userPlan === 'gold' || userPlan === 'platinum';
+
         // Sync filter store with backend preferences
         const pref = meRes.data?.preference;
         if (pref) {
@@ -150,9 +165,9 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
             distance: pref.maxDistance || 50,
             ageRange: [pref.minAge || 18, pref.maxAge || 40],
             relationshipType: pref.relationshipType || 'both',
-            nearbyOnly: pref.nearbyOnly || false,
-            onlineStatus: pref.onlineOnly || false,
-            verifiedOnly: pref.verifiedOnly || false,
+            nearbyOnly: hasPlatinum ? (pref.nearbyOnly || false) : false,
+            onlineStatus: hasGoldOrPlatinum ? (pref.onlineOnly || false) : false,
+            verifiedOnly: userIsActive ? (pref.verifiedOnly || false) : false,
             location: pref.location || ''
           });
         }
@@ -165,9 +180,18 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
     if (visible) fetchInterestsAndPreferences();
   }, [visible]);
 
-  const { currentStatus } = useSubscriptionStore();
+  const { currentStatus, fetchStatus } = useSubscriptionStore();
   const isPremium = currentStatus?.isActive || false;
+  const isPlatinum = currentStatus?.isActive && currentStatus?.planName?.toLowerCase() === 'platinum';
+  const isGold = currentStatus?.isActive && currentStatus?.planName?.toLowerCase() === 'gold';
+  const isGoldOrPlatinum = isGold || isPlatinum;
   const navigation = useNavigation();
+
+  useEffect(() => {
+    if (visible) {
+      fetchStatus();
+    }
+  }, [visible, fetchStatus]);
 
   const handleUpgradePrompt = (feature) => {
     Alert.alert(
@@ -360,10 +384,21 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               <View style={s.toggleLabelRow}>
                 <Icon name="navigate-outline" size={16} color="#E94057" style={{ marginRight: 6 }} />
                 <Text style={s.toggleLabel}>Show only nearby users</Text>
+                {!isPlatinum && (
+                  <View style={[s.upgradePill, { backgroundColor: '#4FACFE', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2 }]}>
+                    <Text style={[s.upgradePillText, { fontSize: 9 }]}>Platinum</Text>
+                  </View>
+                )}
               </View>
               <Switch
                 value={nearbyOnly}
-                onValueChange={setNearbyOnly}
+                onValueChange={(val) => {
+                  if (val && !isPlatinum) {
+                    handleUpgradePrompt('Nearby Users');
+                  } else {
+                    setNearbyOnly(val);
+                  }
+                }}
                 trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
                 thumbColor={nearbyOnly ? '#E94057' : '#fff'}
               />
@@ -376,10 +411,21 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               <View style={s.toggleLabelRow}>
                 <Icon name="radio-button-on" size={14} color="#22C55E" style={{ marginRight: 6 }} />
                 <Text style={s.toggleLabel}>Show only online users</Text>
+                {!isGoldOrPlatinum && (
+                  <View style={[s.upgradePill, { backgroundColor: '#F59E0B', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2 }]}>
+                    <Text style={[s.upgradePillText, { fontSize: 9 }]}>Gold</Text>
+                  </View>
+                )}
               </View>
               <Switch
                 value={onlineStatus}
-                onValueChange={setOnlineStatus}
+                onValueChange={(val) => {
+                  if (val && !isGoldOrPlatinum) {
+                    handleUpgradePrompt('Online Now');
+                  } else {
+                    setOnlineStatus(val);
+                  }
+                }}
                 trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
                 thumbColor={onlineStatus ? '#E94057' : '#fff'}
               />

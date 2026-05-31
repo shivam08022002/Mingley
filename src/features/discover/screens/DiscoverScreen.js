@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import FAIcon from 'react-native-vector-icons/FontAwesome5';
+import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { SwipeCard } from '../components/SwipeCard';
 import { ActionButtons } from '../components/ActionButtons';
 import { FilterSheet } from '../components/FilterSheet';
@@ -47,7 +48,7 @@ export const DiscoverScreen = React.memo(() => {
   const {
     profiles, fetchProfiles, swipe, isLoading, resetPage,
   } = useDiscoverStore();
-  
+
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [isSuperchatVisible, setSuperchatVisible] = useState(false);
   const swipeRef = useRef(null);
@@ -73,7 +74,7 @@ export const DiscoverScreen = React.memo(() => {
   useFocusEffect(
     useCallback(() => {
       fetchProfile();
-      
+
       const currentFilters = {
         interestedIn: filters.interestedIn,
         location: filters.location,
@@ -91,7 +92,7 @@ export const DiscoverScreen = React.memo(() => {
         fetchProfiles(currentFilters);
         lastFiltersRef.current = currentFilters;
       }
-      
+
       // Reset card position if it was swiped up (for super like) and returned
       swipeRef.current?.reset();
     }, [fetchProfile, fetchProfiles, resetPage, filters])
@@ -132,7 +133,7 @@ export const DiscoverScreen = React.memo(() => {
     }
 
     const result = await swipe(user.id || user._id, 'like');
-    
+
     // Show match screen if API confirms a match
     if (result?.isMatch) {
       navigation.navigate('Match', { matchedUser: user });
@@ -159,8 +160,8 @@ export const DiscoverScreen = React.memo(() => {
     navigation.navigate('SubscriptionIntro');
   }, [navigation, currentStatus]);
 
-  const triggerDislike   = () => swipeRef.current?.swipeLeft();
-  const triggerLike      = () => swipeRef.current?.swipeRight();
+  const triggerDislike = () => swipeRef.current?.swipeLeft();
+  const triggerLike = () => swipeRef.current?.swipeRight();
   const triggerSuperchat = () => {
     if (profiles.length > 0) {
       setSuperchatVisible(true);
@@ -197,7 +198,13 @@ export const DiscoverScreen = React.memo(() => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerPlaceholder} />
+        <TouchableOpacity
+          style={styles.crownButton}
+          onPress={() => navigation.navigate('SubscriptionPlans')}
+          activeOpacity={0.8}
+        >
+          <FAIcon name="crown" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Discover</Text>
@@ -249,9 +256,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerButtonActive: { borderColor: '#E94057' },
-  headerPlaceholder: {
+  crownButton: {
     width: 52,
     height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    borderColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    // shadowColor: COLORS.primary,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.15,
+    // shadowRadius: 4,
+    elevation: 3,
   },
   filterDot: {
     position: 'absolute', top: 10, right: 10,
