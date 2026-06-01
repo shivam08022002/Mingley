@@ -101,6 +101,24 @@ export const walletService = {
       throw error.response?.data || error.message;
     }
   },
+
+  createRazorpayOrder: async (packageId) => {
+    try {
+      const response = await api.post('/v1/wallet/razorpay/order', { packageId });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  verifyRazorpayPayment: async (verifyData) => {
+    try {
+      const response = await api.post('/v1/wallet/razorpay/verify', verifyData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export const discoverService = {

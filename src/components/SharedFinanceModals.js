@@ -9,12 +9,42 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../store/useChatStore';
 import { BottomSheetContainer } from './common/BottomSheetContainer';
 import { walletService } from '../services/apiServices';
+import { useProfileStore } from '../features/profile/store/useProfileStore';
+
+// Conditional Native import to prevent Web bundler crashes
+let RazorpayCheckout = null;
+if (Platform.OS !== 'web') {
+  try {
+    RazorpayCheckout = require('react-native-razorpay').default;
+  } catch (e) {
+    console.warn('react-native-razorpay is not available in this environment');
+  }
+}
+
+// Dynamic script loader for Web Razorpay checkout
+const loadRazorpayWebScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    if (typeof document === 'undefined') {
+      resolve(false);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 // ─── Deposit / Top-Up Modal ────────────────────────────────────────────────────
 export const DepositModal = ({ visible, onClose }) => {
   const [packages, setPackages] = useState([]);
   const [selectedPkg, setSelectedPkg] = useState(null);
-  const [utrIdText, setUtrIdText] = useState('');
   const [loadingPkgs, setLoadingPkgs] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const wallet = useChatStore((s) => s.wallet);
@@ -52,37 +82,126 @@ export const DepositModal = ({ visible, onClose }) => {
       }
       return;
     }
-    if (!utrIdText.trim()) {
-      if (Platform.OS === 'web') {
-        alert('Please enter your UTR ID.');
-      } else {
-        Alert.alert('Error', 'Please enter your UTR ID.');
+
+    const refreshProfileBalance = async () => {
+      try {
+        await useProfileStore.getState().fetchProfile();
+      } catch (e) {
+        console.warn('Failed to refresh profile balance:', e);
       }
-      return;
-    }
+    };
+
     setSubmitting(true);
     try {
-      await walletService.deposit({
-        utrId: utrIdText,
-        screenshotUrl: 'mock-screenshot-url',
-        requestedCoins: selectedPkg.coins,
-      });
-      if (Platform.OS === 'web') {
-        alert(`Deposit request submitted for ${selectedPkg.coins} coins. They will reflect soon!`);
-      } else {
-        Alert.alert('Success', `Deposit request submitted for ${selectedPkg.coins} coins. They will reflect soon!`);
+      // 1. Create order on the backend
+      const orderRes = await walletService.createRazorpayOrder(selectedPkg.id);
+      const { orderId, amount, key } = orderRes?.data || orderRes || {};
+
+      if (!orderId || !amount || !key) {
+        throw new Error('Invalid order response from payment gateway.');
       }
-      onClose();
-      setUtrIdText('');
-      setSelectedPkg(null);
-      fetchWalletBalance();
+
+      if (Platform.OS === 'web') {
+        // 2. Web Checkout Flow
+        const isLoaded = await loadRazorpayWebScript();
+        if (!isLoaded) {
+          throw new Error('Failed to load Razorpay Checkout SDK.');
+        }
+
+        const options = {
+          key: key,
+          amount: amount,
+          currency: 'INR',
+          name: 'Mingley Premium',
+          description: `Top up ${selectedPkg.coins} Coins`,
+          order_id: orderId,
+          handler: async (response) => {
+            try {
+              setSubmitting(true);
+              await walletService.verifyRazorpayPayment({
+                orderId: response.razorpay_order_id || orderId,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                packageId: selectedPkg.id,
+              });
+              alert(`Payment successful! ${selectedPkg.coins} coins credited to your wallet.`);
+              onClose();
+              await refreshProfileBalance();
+              fetchWalletBalance();
+            } catch (err) {
+              await refreshProfileBalance();
+              alert(err.message || 'Payment verification failed.');
+            } finally {
+              setSubmitting(false);
+            }
+          },
+          prefill: {
+            name: 'Mingley User',
+            email: 'user@mingley.com',
+          },
+          theme: {
+            color: '#E94057',
+          },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        setSubmitting(false);
+      } else {
+        // 2. Native Checkout Flow
+        if (!RazorpayCheckout) {
+          throw new Error('Razorpay Checkout SDK is not available on this device.');
+        }
+
+        const options = {
+          description: `Top up ${selectedPkg.coins} Coins`,
+          image: 'https://i.imgur.com/3g7A6cz.png',
+          currency: 'INR',
+          key: key,
+          amount: amount,
+          name: 'Mingley Premium',
+          order_id: orderId,
+          prefill: {
+            email: 'user@mingley.com',
+            contact: '',
+            name: 'Mingley User',
+          },
+          theme: { color: '#E94057' },
+        };
+
+        RazorpayCheckout.open(options)
+          .then(async (data) => {
+            try {
+              setSubmitting(true);
+              await walletService.verifyRazorpayPayment({
+                orderId: data.razorpay_order_id || orderId,
+                paymentId: data.razorpay_payment_id,
+                signature: data.razorpay_signature,
+                packageId: selectedPkg.id,
+              });
+              Alert.alert('Success', `Payment successful! ${selectedPkg.coins} coins credited to your wallet.`);
+              onClose();
+              await refreshProfileBalance();
+              fetchWalletBalance();
+            } catch (err) {
+              await refreshProfileBalance();
+              Alert.alert('Error', err.message || 'Payment verification failed.');
+            } finally {
+              setSubmitting(false);
+            }
+          })
+          .catch(async (error) => {
+            await refreshProfileBalance();
+            Alert.alert('Payment Cancelled', error.description || 'Payment was cancelled.');
+            setSubmitting(false);
+          });
+      }
     } catch (error) {
+      await refreshProfileBalance();
       if (Platform.OS === 'web') {
-        alert(error.message || 'Deposit failed');
+        alert(error.message || 'Payment initiation failed.');
       } else {
-        Alert.alert('Error', error.message || 'Deposit failed');
+        Alert.alert('Error', error.message || 'Payment initiation failed.');
       }
-    } finally {
       setSubmitting(false);
     }
   };
@@ -171,43 +290,31 @@ export const DepositModal = ({ visible, onClose }) => {
               </View>
             )}
 
-            {/* Payment Instructions */}
-            <View style={s.payInstructions}>
-              <Icon name="qr-code-outline" size={36} color="#555" />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={s.bankLine}>Acc: 1234567890 • IFSC: MING999</Text>
-                <Text style={s.bankLine}>UPI: mingley@axl</Text>
+            {/* Secure Trust Indicator */}
+            <View style={s.trustBanner}>
+              <Icon name="shield-checkmark" size={22} color="#4CAF50" />
+              <View style={{ flex: 1 }}>
+                <Text style={s.trustTitle}>100% Secure Checkout</Text>
+                <Text style={s.trustSubtitle}>Your transaction is encrypted & securely processed via Razorpay.</Text>
               </View>
-            </View>
-
-            {/* UTR Input */}
-            <View style={{ marginBottom: 6 }}>
-              <Text style={s.inputLabel}>Payment UTR / Transaction ID</Text>
-              <TextInput
-                style={s.amountInput}
-                placeholder="Enter UTR ID after payment"
-                placeholderTextColor="#A0A0A0"
-                value={utrIdText}
-                onChangeText={setUtrIdText}
-              />
             </View>
 
             {/* Submit */}
             <TouchableOpacity
               style={[
                 s.modalActionBtn,
-                (!selectedPkg || !utrIdText || submitting) && s.modalActionBtnDisabled,
+                (!selectedPkg || submitting) && s.modalActionBtnDisabled,
               ]}
               onPress={handleDepositSubmit}
-              disabled={!selectedPkg || !utrIdText || submitting}
+              disabled={!selectedPkg || submitting}
             >
               {submitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Icon name="checkmark-circle" size={16} color="#fff" style={{ marginRight: 8 }} />
+                  <Icon name="lock-closed" size={16} color="#fff" style={{ marginRight: 8 }} />
                   <Text style={s.modalActionBtnText}>
-                    {selectedPkg ? `Pay ₹${selectedPkg.price} → ${selectedPkg.coins} Coins` : 'Select a Package'}
+                    {selectedPkg ? `Pay ₹${selectedPkg.price} Securely` : 'Select a Package'}
                   </Text>
                 </>
               )}
@@ -463,22 +570,28 @@ const s = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Payment instructions
-  payInstructions: {
+  // Secure Trust Indicator
+  trustBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#F3FBF7',
     padding: 14,
     borderRadius: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#C8E6C9',
+    gap: 12,
   },
-  bankLine: {
-    fontSize: 12,
-    color: '#555',
-    fontWeight: '600',
-    marginBottom: 2,
+  trustTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2E7D32',
+  },
+  trustSubtitle: {
+    fontSize: 11,
+    color: '#4CAF50',
+    lineHeight: 15,
+    marginTop: 1,
   },
 
   // Inputs

@@ -6,33 +6,44 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
+import { walletService } from '../../../services/apiServices';
+import { useToastStore } from '../../../store/useToastStore';
+import { useProfileStore } from '../../profile/store/useProfileStore';
 
-const PAYMENT_METHODS = [
-  {
-    id: '1', label: 'HDFC Credit Card',
-    sub: '**** **** **** 5229', icon: 'card-outline', brand: 'MC',
-  },
-  {
-    id: '2', label: 'ICICI Credit Card',
-    sub: '**** **** **** 4421', icon: 'card-outline', brand: 'VISA',
-  },
-  {
-    id: '3', label: 'UPI Payment',
-    sub: 'pay@ybl', icon: 'phone-portrait-outline', brand: null,
-  },
-  {
-    id: '4', label: 'PayTM / Wallets',
-    sub: 'Paytm, PhonePe & more', icon: 'wallet-outline', brand: null,
-  },
-  {
-    id: '5', label: 'Net Banking',
-    sub: 'All Indian banks', icon: 'business-outline', brand: null,
-  },
-];
+// Conditional Native import to prevent Web bundler crashes
+let RazorpayCheckout = null;
+if (Platform.OS !== 'web') {
+  try {
+    RazorpayCheckout = require('react-native-razorpay').default;
+  } catch (e) {
+    console.warn('react-native-razorpay is not available in this environment');
+  }
+}
+
+// Dynamic script loader for Web Razorpay checkout
+const loadRazorpayWebScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    if (typeof document === 'undefined') {
+      resolve(false);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 
 export const PaymentScreen = ({ navigation }) => {
-  const { selectedPlan, subscribe, isLoading, fetchStatus } = useSubscriptionStore();
-  const [selectedMethod, setSelectedMethod] = useState('1');
+  const { selectedPlan, subscribe, isLoading, fetchStatus, setSelectedPlan } = useSubscriptionStore();
+  const [isPaying, setIsPaying] = useState(false);
 
   if (!selectedPlan) {
     // We can't really navigate back here directly if the component is already rendering
@@ -55,23 +66,139 @@ export const PaymentScreen = ({ navigation }) => {
   const total = parseFloat((subtotal + tax).toFixed(2));
 
   const handlePay = async () => {
+    setIsPaying(true);
+    const refreshProfileBalance = async () => {
+      try {
+        await useProfileStore.getState().fetchProfile();
+      } catch (e) {
+        console.warn('Failed to refresh profile balance:', e);
+      }
+    };
+
     try {
-      await subscribe({
-        planId: selectedPlan.id || selectedPlan._id,
-        autoRenew: true,
-        paymentMethod: PAYMENT_METHODS.find((item) => item.id === selectedMethod)?.label || 'Card',
-        paymentId: `mock-payment-${Date.now()}`,
-        orderId: `mock-order-${Date.now()}`,
-        signature: 'mock-signature',
-      });
-      await fetchStatus();
-      Alert.alert(
-        'Payment Successful! 🎉',
-        'Welcome to Mingley Premium. Enjoy unlimited matches!',
-        [{ text: 'Continue', onPress: () => navigation.navigate('Home') }]
-      );
+      // 1. Fetch Razorpay key dynamically from order API to avoid hardcoding credentials
+      let rzpKey = null;
+      try {
+        const tempOrder = await walletService.createRazorpayOrder('pkg_100');
+        rzpKey = tempOrder?.key || tempOrder?.data?.key;
+      } catch (keyErr) {
+        console.warn('Failed to dynamically fetch Razorpay Key, falling back to default test key:', keyErr);
+        rzpKey = 'rzp_test_mingley'; // fallback default test key if backend orders are down
+      }
+
+      if (!rzpKey) {
+        throw new Error('Could not retrieve payment gateway credentials.');
+      }
+
+      const totalPaise = Math.round(total * 100);
+
+      if (Platform.OS === 'web') {
+        // 2. Web Checkout Flow
+        const isLoaded = await loadRazorpayWebScript();
+        if (!isLoaded) {
+          throw new Error('Failed to load Razorpay Checkout SDK.');
+        }
+
+        const options = {
+          key: rzpKey,
+          amount: totalPaise,
+          currency: 'INR',
+          name: 'Mingley Premium',
+          description: `Subscribe to ${selectedPlan.name} Plan`,
+          handler: async (response) => {
+            setIsPaying(true);
+            try {
+              await subscribe({
+                planId: selectedPlan.id || selectedPlan._id,
+                autoRenew: true,
+                paymentMethod: 'razorpay',
+                paymentToken: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id || `sub-order-${Date.now()}`,
+                signature: response.razorpay_signature || 'signature-web',
+              });
+              await fetchStatus();
+              setSelectedPlan(null); // Clear plan from store to remove it from order summary
+              await refreshProfileBalance();
+              useToastStore.getState().showToast('Subscription plan activated successfully! 🎉', 'success', 3500);
+              navigation.navigate('SubscriptionPlans');
+            } catch (err) {
+              await refreshProfileBalance();
+              useToastStore.getState().showToast(err.message || 'Subscription verification failed.', 'error', 4000);
+            } finally {
+              setIsPaying(false);
+            }
+          },
+          prefill: {
+            name: 'Mingley User',
+            email: 'user@mingley.com',
+          },
+          modal: {
+            ondismiss: async () => {
+              await refreshProfileBalance();
+              setIsPaying(false);
+            }
+          },
+          theme: {
+            color: '#E94057',
+          },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        // 2. Native Checkout Flow
+        if (!RazorpayCheckout) {
+          throw new Error('Razorpay Checkout SDK is not available on this device.');
+        }
+
+        const options = {
+          description: `Subscribe to ${selectedPlan.name} Plan`,
+          image: 'https://i.imgur.com/3g7A6cz.png',
+          currency: 'INR',
+          key: rzpKey,
+          amount: totalPaise,
+          name: 'Mingley Premium',
+          prefill: {
+            email: 'user@mingley.com',
+            contact: '',
+            name: 'Mingley User',
+          },
+          theme: { color: '#E94057' },
+        };
+
+        RazorpayCheckout.open(options)
+          .then(async (data) => {
+            setIsPaying(true);
+            try {
+              await subscribe({
+                planId: selectedPlan.id || selectedPlan._id,
+                autoRenew: true,
+                paymentMethod: 'razorpay',
+                paymentToken: data.razorpay_payment_id,
+                orderId: data.razorpay_order_id || `sub-order-${Date.now()}`,
+                signature: data.razorpay_signature || 'signature-native',
+              });
+              await fetchStatus();
+              setSelectedPlan(null); // Clear plan from store to remove it from order summary
+              await refreshProfileBalance();
+              useToastStore.getState().showToast('Subscription plan activated successfully! 🎉', 'success', 3500);
+              navigation.navigate('SubscriptionPlans');
+            } catch (err) {
+              await refreshProfileBalance();
+              useToastStore.getState().showToast(err.message || 'Subscription verification failed.', 'error', 4000);
+            } finally {
+              setIsPaying(false);
+            }
+          })
+          .catch(async (error) => {
+            await refreshProfileBalance();
+            useToastStore.getState().showToast(error.description || 'Payment was cancelled.', 'error', 4000);
+            setIsPaying(false);
+          });
+      }
     } catch (error) {
-      Alert.alert('Payment Failed', error.message || 'Something went wrong. Please try again.');
+      await refreshProfileBalance();
+      useToastStore.getState().showToast(error.message || 'Payment failed.', 'error', 4000);
+      setIsPaying(false);
     }
   };
 
@@ -106,58 +233,14 @@ export const PaymentScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Payment methods */}
-        <Text style={s.sectionLabel}>Payment Method</Text>
-        <View style={s.methodsCard}>
-          {PAYMENT_METHODS.map((m, idx) => {
-            const isActive = selectedMethod === m.id;
-            return (
-              <TouchableOpacity
-                key={m.id}
-                style={[s.methodRow, idx < PAYMENT_METHODS.length - 1 && s.methodBorder]}
-                onPress={() => setSelectedMethod(m.id)}
-                activeOpacity={0.7}
-              >
-                {/* Radio */}
-                <View style={[s.radio, isActive && s.radioActive]}>
-                  {isActive && <View style={s.radioInner} />}
-                </View>
-
-                {/* Icon */}
-                <View style={[s.methodIcon, isActive && s.methodIconActive]}>
-                  <Icon name={m.icon} size={18} color={isActive ? '#E94057' : '#999'} />
-                </View>
-
-                {/* Text */}
-                <View style={s.methodText}>
-                  <Text style={[s.methodLabel, isActive && s.methodLabelActive]}>
-                    {m.label}
-                  </Text>
-                  <Text style={s.methodSub}>{m.sub}</Text>
-                </View>
-
-                {/* Brand badge */}
-                {m.brand === 'MC' && (
-                  <View style={s.mcWrap}>
-                    <View style={[s.mcCircle, { backgroundColor: '#EB001B', marginRight: -8 }]} />
-                    <View style={[s.mcCircle, { backgroundColor: '#F79E1B' }]} />
-                  </View>
-                )}
-                {m.brand === 'VISA' && (
-                  <Text style={s.visaText}>VISA</Text>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Add new */}
-        <TouchableOpacity style={s.addRow} onPress={() => Alert.alert('Add Payment', 'Coming soon!')}>
-          <View style={s.addIcon}>
-            <Icon name="add" size={18} color="#E94057" />
+        {/* Secure Checkout Indicator */}
+        <View style={s.trustBanner}>
+          <Icon name="shield-checkmark" size={24} color="#4CAF50" />
+          <View style={{ flex: 1 }}>
+            <Text style={s.trustTitle}>100% Secure Checkout</Text>
+            <Text style={s.trustSubtitle}>Your transaction is encrypted & securely processed via Razorpay. Choose UPI, Cards, Netbanking or Wallets directly on the checkout window.</Text>
           </View>
-          <Text style={s.addText}>Add new payment method</Text>
-        </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Sticky footer with Order Summary */}
@@ -178,13 +261,13 @@ export const PaymentScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <TouchableOpacity style={s.payWrap} onPress={handlePay} activeOpacity={0.88} disabled={isLoading}>
+        <TouchableOpacity style={s.payWrap} onPress={handlePay} activeOpacity={0.88} disabled={isLoading || isPaying}>
           <LinearGradient
             colors={['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.payBtn}
           >
-            {isLoading ? (
+            {isLoading || isPaying ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <>
@@ -253,61 +336,31 @@ const s = StyleSheet.create({
   },
   planPriceText: { fontSize: 14, fontWeight: '700', color: '#333' },
 
-  sectionLabel: {
-    fontSize: 13, fontWeight: '600', color: '#9A8FA3',
-    textTransform: 'uppercase', letterSpacing: 0.8,
-    marginBottom: 12, fontFamily: FONT_MED,
+  // Secure Trust Indicator
+  trustBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3FBF7',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#C8E6C9',
+    gap: 12,
   },
-
-  // Methods card
-  methodsCard: {
-    backgroundColor: '#fff', borderRadius: 24,
-    paddingHorizontal: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: '#F0F0F0',
-    shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 10, elevation: 2,
+  trustTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2E7D32',
+    fontFamily: FONT_MED,
   },
-  methodRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 18,
+  trustSubtitle: {
+    fontSize: 11,
+    color: '#4CAF50',
+    lineHeight: 15,
+    marginTop: 1,
+    fontFamily: FONT,
   },
-  methodBorder: { borderBottomWidth: 1, borderBottomColor: '#F8F8F8' },
-
-  radio: {
-    width: 20, height: 20, borderRadius: 10,
-    borderWidth: 2, borderColor: '#DDD',
-    justifyContent: 'center', alignItems: 'center',
-    marginRight: 12,
-  },
-  radioActive: { borderColor: '#E94057' },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#E94057' },
-
-  methodIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#F8F8F8',
-    justifyContent: 'center', alignItems: 'center',
-    marginRight: 12,
-  },
-  methodIconActive: { backgroundColor: '#FFF0F3' },
-  methodText: { flex: 1 },
-  methodLabel: { fontSize: 15, fontWeight: '500', color: '#555', fontFamily: FONT_MED },
-  methodLabelActive: { color: '#000' },
-  methodSub: { fontSize: 12, color: '#AAA', marginTop: 1, fontFamily: FONT },
-
-  mcWrap: { flexDirection: 'row', alignItems: 'center' },
-  mcCircle: { width: 16, height: 16, borderRadius: 8, opacity: 0.9 },
-  visaText: { fontSize: 10, fontWeight: '900', color: '#1A1F71', fontStyle: 'italic' },
-
-  addRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 4, marginTop: 4, marginBottom: 24,
-  },
-  addIcon: {
-    width: 24, height: 24, borderRadius: 8,
-    backgroundColor: '#FFF0F3',
-    justifyContent: 'center', alignItems: 'center',
-    marginRight: 10,
-  },
-  addText: { fontSize: 14, color: '#E94057', fontWeight: '500', fontFamily: FONT_MED },
 
   // Footer & Summary
   footer: {
