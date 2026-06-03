@@ -101,24 +101,6 @@ export const walletService = {
       throw error.response?.data || error.message;
     }
   },
-
-  createRazorpayOrder: async (packageId) => {
-    try {
-      const response = await api.post('/v1/wallet/razorpay/order', { packageId });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-
-  verifyRazorpayPayment: async (verifyData) => {
-    try {
-      const response = await api.post('/v1/wallet/razorpay/verify', verifyData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
 };
 
 export const discoverService = {
@@ -322,6 +304,15 @@ export const userService = {
   updateLocation: async (locationData) => {
     try {
       const response = await api.put('/v1/users/me/location', locationData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  setTravelMode: async (payload) => {
+    try {
+      const response = await api.put('/v1/users/me/travel-mode', payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
