@@ -45,6 +45,7 @@ export const MessagesListScreen = ({ navigation }) => {
     { id: '4', name: 'Neha', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80', seen: false },
   ]);
   const [loadingChats, setLoadingChats] = useState(false);
+  const [loadingSuperchats, setLoadingSuperchats] = useState(false);
   const [storyViewer, setStoryViewer] = useState(null);
 
   const [callHistoryModalVisible, setCallHistoryModalVisible] = useState(false);
@@ -87,15 +88,29 @@ export const MessagesListScreen = ({ navigation }) => {
     }
   }, [fetchChats]);
 
+  const loadSuperchatsData = useCallback(async () => {
+    setLoadingSuperchats(true);
+    try {
+      if (superchatTab === 'received') {
+        await fetchReceivedSuperchats();
+      } else {
+        await fetchSentSuperchats();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingSuperchats(false);
+    }
+  }, [superchatTab, fetchReceivedSuperchats, fetchSentSuperchats]);
+
   useFocusEffect(
     useCallback(() => {
       if (activeTab === 'messages') {
         loadChatsData();
       } else {
-        if (superchatTab === 'received') fetchReceivedSuperchats();
-        else fetchSentSuperchats();
+        loadSuperchatsData();
       }
-    }, [activeTab, superchatTab, loadChatsData, fetchReceivedSuperchats, fetchSentSuperchats])
+    }, [activeTab, loadChatsData, loadSuperchatsData])
   );
 
   const showToast = useToastStore((s) => s.showToast);
@@ -339,7 +354,7 @@ export const MessagesListScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={activeTab === 'messages' ? (loadingChats ? [] : chats) : (superchatTab === 'received' ? receivedSuperchats : sentSuperchats)}
+        data={activeTab === 'messages' ? (loadingChats ? [] : chats) : (loadingSuperchats ? [] : (superchatTab === 'received' ? receivedSuperchats : sentSuperchats))}
         keyExtractor={item => item.id}
         ListHeaderComponent={ListHeader}
         renderItem={activeTab === 'messages' ? ({ item }) => (
@@ -369,9 +384,15 @@ export const MessagesListScreen = ({ navigation }) => {
               </View>
             )
           ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No superchats found</Text>
-            </View>
+            loadingSuperchats ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#E94057" />
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No superchats found</Text>
+              </View>
+            )
           )
         }
       />

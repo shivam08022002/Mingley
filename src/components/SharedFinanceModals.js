@@ -207,16 +207,16 @@ export const DepositModal = ({ visible, onClose }) => {
   };
 
   const PACKAGE_GRADIENTS = {
-    pkg_100:  ['#6B7280', '#374151'],
-    pkg_300:  ['#E94057', '#8A2387'],
-    pkg_700:  ['#F59E0B', '#D97706'],
+    pkg_100: ['#6B7280', '#374151'],
+    pkg_300: ['#E94057', '#8A2387'],
+    pkg_700: ['#F59E0B', '#D97706'],
     pkg_1500: ['#7C3AED', '#4C1D95'],
     pkg_5000: ['#059669', '#064E3B'],
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <BottomSheetContainer onClose={onClose} height={580}>
+      <BottomSheetContainer onClose={onClose} height={700}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ width: '100%', flex: 1 }}
@@ -501,13 +501,13 @@ const s = StyleSheet.create({
     elevation: 6,
   },
   pkgInner: {
-    paddingVertical: 16,
+    paddingVertical: 22,
     paddingHorizontal: 10,
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
   },
   pkgCoins: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '800',
     color: '#333',
     marginTop: 4,
@@ -526,7 +526,7 @@ const s = StyleSheet.create({
     marginVertical: 6,
   },
   pkgPrice: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
   },
