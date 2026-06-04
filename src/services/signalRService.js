@@ -86,8 +86,8 @@ class SignalRService {
       });
 
       // Listen for read receipts
-      this.connection.on('MessagesRead', (data) => {
-        console.log('SignalR Event: MessagesRead', data);
+      this.connection.on('MessageRead', (data) => {
+        console.log('SignalR Event: MessageRead', data);
         useChatStore.getState().fetchChats();
       });
 
@@ -160,34 +160,6 @@ class SignalRService {
       console.error('SignalR: Failed to stop connection:', error);
     }
   }
-
-  // ── Join a specific chat room group so this client receives that chat's live messages ──
-  async joinChat(chatId) {
-    if (!this.started || !this.connection || !chatId) return;
-    // If connection is still starting, wait briefly then retry
-    if (this.connection.state !== 'Connected') {
-      setTimeout(() => this.joinChat(chatId), 500);
-      return;
-    }
-    try {
-      await this.connection.invoke('JoinChat', chatId);
-      console.log(`SignalR: Joined chat group chat_${chatId}`);
-    } catch (error) {
-      console.error('SignalR: JoinChat failed:', error);
-    }
-  }
-
-  // ── Leave a chat room group when the ChatScreen unmounts ──
-  async leaveChat(chatId) {
-    if (!this.started || !this.connection || !chatId) return;
-    try {
-      await this.connection.invoke('LeaveChat', chatId);
-      console.log(`SignalR: Left chat group chat_${chatId}`);
-    } catch (error) {
-      console.error('SignalR: LeaveChat failed:', error);
-    }
-  }
 }
 
 export const signalRService = new SignalRService();
-

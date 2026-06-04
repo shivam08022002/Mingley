@@ -14,8 +14,8 @@ import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { ChatBubble } from '../components/ChatBubble';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useChatStore } from '../../../store/useChatStore';
-import { signalRService } from '../../../services/signalRService';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
+import { useMatchesStore } from '../../matches/store/useMatchesStore';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const nowTime = () => {
@@ -113,11 +113,9 @@ export const ChatScreen = ({ navigation, route }) => {
   React.useEffect(() => {
     if (chatId) {
       setActiveChatId(chatId);
-      signalRService.joinChat(chatId);   // join the SignalR group for live messages
     }
     return () => {
       setActiveChatId(null);
-      if (chatId) signalRService.leaveChat(chatId);  // leave when screen closes
     };
   }, [chatId, setActiveChatId]);
 
@@ -274,7 +272,7 @@ export const ChatScreen = ({ navigation, route }) => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await userService.blockUser(userId);
+            await userService.blockUser(partnerInfo.id);
             Alert.alert('Success', 'User blocked successfully.');
             navigation.goBack();
           } catch (e) {
@@ -297,7 +295,7 @@ export const ChatScreen = ({ navigation, route }) => {
       return;
     }
     try {
-      await userService.reportUser(userId, { reason: reportReason, description: reportDesc });
+      await userService.reportUser(partnerInfo.id, { reason: reportReason, description: reportDesc });
       setReportModalVisible(false);
       Alert.alert('Success', 'Report submitted successfully');
     } catch (e) {
@@ -308,7 +306,45 @@ export const ChatScreen = ({ navigation, route }) => {
   const MENU_OPTIONS = [
     { icon: 'notifications-off-outline', label: isMuted ? 'Unmute Notifications' : 'Mute Notifications', action: () => { setIsMuted(!isMuted); setMenuModalVisible(false); } },
     { icon: 'trash-outline', label: 'Clear Chat', action: () => { clearMessages(); setMenuModalVisible(false); } },
-    { icon: 'person-remove-outline', label: 'Unmatch', action: () => { Alert.alert('Unmatch', `Are you sure you want to unmatch ${partnerInfo.name}?`, [{ text: 'Yes', style: 'destructive', onPress: () => navigation.goBack() }, { text: 'Cancel', style: 'cancel' }]); setMenuModalVisible(false); } },
+    {
+      icon: 'person-remove-outline',
+      label: 'Unmatch',
+      action: () => {
+        Alert.alert(
+          'Unmatch',
+          `Are you sure you want to unmatch ${partnerInfo.name}?`,
+          [
+            {
+              text: 'Yes',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  const matches = useMatchesStore.getState().matches || [];
+                  const matchObj = matches.find(m => {
+                    const mUser = m.matchedUser || m.user;
+                    const mUserId = mUser?.id || mUser?._id;
+                    return mUserId === partnerInfo.id;
+                  });
+                  const matchIdToDecline = matchObj?.matchId || matchObj?.id || matchObj?._id || chatId;
+
+                  if (matchIdToDecline) {
+                    await useMatchesStore.getState().removeMatch(matchIdToDecline);
+                    Alert.alert('Success', 'User unmatched successfully.');
+                    navigation.goBack();
+                  } else {
+                    Alert.alert('Error', 'Match session not found.');
+                  }
+                } catch (e) {
+                  Alert.alert('Error', e.message || 'Failed to unmatch.');
+                }
+              }
+            },
+            { text: 'Cancel', style: 'cancel' }
+          ]
+        );
+        setMenuModalVisible(false);
+      }
+    },
     { icon: 'ban-outline', label: 'Block User', action: handleBlockUser },
     { icon: 'flag-outline', label: 'Report', action: handleReportUser },
   ];
@@ -883,4 +919,3 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 });
-
