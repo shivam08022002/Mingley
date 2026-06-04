@@ -154,8 +154,8 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           console.error('Fetch subscription status error in filter:', subErr);
         }
 
-        const hasPlatinum = userPlan === 'platinum';
-        const hasGoldOrPlatinum = userPlan === 'gold' || userPlan === 'platinum';
+        const hasPlatinum = userPlan === 'platinum' || userPlan === 'vip';
+        const hasGoldOrPlatinum = userPlan === 'gold' || userPlan === 'platinum' || userPlan === 'vip';
 
         // Sync filter store with backend preferences
         const pref = meRes.data?.preference;
@@ -182,9 +182,12 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 
   const { currentStatus, fetchStatus } = useSubscriptionStore();
   const isPremium = currentStatus?.isActive || false;
-  const isPlatinum = currentStatus?.isActive && currentStatus?.planName?.toLowerCase() === 'platinum';
-  const isGold = currentStatus?.isActive && currentStatus?.planName?.toLowerCase() === 'gold';
-  const isGoldOrPlatinum = isGold || isPlatinum;
+  const planLower = currentStatus?.planName?.toLowerCase() || '';
+  const isVip = currentStatus?.isActive && planLower.includes('vip');
+  const isPlatinum = currentStatus?.isActive && planLower.includes('platinum');
+  const isGold = currentStatus?.isActive && planLower.includes('gold');
+  const hasNearbyAccess = isPlatinum || isVip;
+  const hasOnlineAccess = isGold || isPlatinum || isVip;
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -265,7 +268,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
       onRequestClose={onClose}
     >
       <BottomSheetContainer 
-        height={height * 0.65} 
+        height={height * 0.85} 
         onClose={onClose}
         containerStyle={s.containerStyle}
         contentStyle={s.contentStyle}
@@ -384,7 +387,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               <View style={s.toggleLabelRow}>
                 <Icon name="navigate-outline" size={16} color="#E94057" style={{ marginRight: 6 }} />
                 <Text style={s.toggleLabel}>Show only nearby users</Text>
-                {!isPlatinum && (
+                {!hasNearbyAccess && (
                   <View style={[s.upgradePill, { backgroundColor: '#4FACFE', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2 }]}>
                     <Text style={[s.upgradePillText, { fontSize: 9 }]}>Platinum</Text>
                   </View>
@@ -393,7 +396,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               <Switch
                 value={nearbyOnly}
                 onValueChange={(val) => {
-                  if (val && !isPlatinum) {
+                  if (val && !hasNearbyAccess) {
                     handleUpgradePrompt('Nearby Users');
                   } else {
                     setNearbyOnly(val);
@@ -411,7 +414,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               <View style={s.toggleLabelRow}>
                 <Icon name="radio-button-on" size={14} color="#22C55E" style={{ marginRight: 6 }} />
                 <Text style={s.toggleLabel}>Show only online users</Text>
-                {!isGoldOrPlatinum && (
+                {!hasOnlineAccess && (
                   <View style={[s.upgradePill, { backgroundColor: '#F59E0B', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2 }]}>
                     <Text style={[s.upgradePillText, { fontSize: 9 }]}>Gold</Text>
                   </View>
@@ -420,7 +423,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               <Switch
                 value={onlineStatus}
                 onValueChange={(val) => {
-                  if (val && !isGoldOrPlatinum) {
+                  if (val && !hasOnlineAccess) {
                     handleUpgradePrompt('Online Now');
                   } else {
                     setOnlineStatus(val);

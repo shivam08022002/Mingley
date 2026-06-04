@@ -157,7 +157,7 @@ export const DiscoverScreen = React.memo(() => {
       return;
     }
 
-    navigation.navigate('SubscriptionIntro');
+    navigation.navigate('SubscriptionPlans');
   }, [navigation, currentStatus]);
 
   const triggerDislike = () => swipeRef.current?.swipeLeft();

@@ -98,8 +98,15 @@ export const useChatStore = create((set, get) => ({
   fetchGiftCatalog: async () => {
     try {
       const response = await giftService.getCatalog();
-      const gifts = response.data?.gifts ?? response.gifts ?? [];
-      set({ gifts });
+      let gifts = [];
+      const categoriesData = response.data?.categories ?? response.categories;
+      if (Array.isArray(categoriesData)) {
+        gifts = categoriesData.flatMap(c => c.gifts || []);
+        set({ gifts, giftCategories: categoriesData });
+      } else {
+        gifts = response.data?.gifts ?? response.gifts ?? [];
+        set({ gifts });
+      }
     } catch (error) {
       console.error('Fetch gift catalog error:', error);
     }

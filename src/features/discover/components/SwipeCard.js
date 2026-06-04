@@ -112,7 +112,16 @@ export const SwipeCard = forwardRef(
         [0.85, 1],
         Extrapolate.CLAMP
       );
-      return { transform: [{ scale }], opacity };
+      const translateYVal = interpolate(
+        Math.abs(translateX.value),
+        [0, width / 2],
+        [-15, 0],
+        Extrapolate.CLAMP
+      );
+      return {
+        transform: [{ scale }, { translateY: translateYVal }],
+        opacity,
+      };
     });
 
     // Centered overlay animations based on swipe distance
@@ -203,7 +212,7 @@ const CardContent = ({ user, onPress }) => {
       {/* Distance glassmorphism badge */}
       <View style={styles.distanceBadge}>
         <Icon name="location-outline" size={13} color="#FFFFFF" />
-        <Text style={styles.distanceText}>{user.distance || 0} km</Text>
+        <Text style={styles.distanceText}>{user.distance != null ? Math.max(1, Math.round(user.distance)) : 1} km</Text>
       </View>
 
       {/* Vertical pagination dots capsule from reference design */}
@@ -311,16 +320,16 @@ const styles = StyleSheet.create({
   },
   paginationDots: {
     position: 'absolute',
-    right: 16,
+    right: 0,
     top: '38%',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    paddingVertical: 18,
+    paddingHorizontal: 8,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    gap: 8,
   },
   dot: {
     width: 6,

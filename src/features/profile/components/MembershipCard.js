@@ -10,6 +10,7 @@ const GRADIENTS = {
   Silver: ['#E2E8F0', '#94A3B8'],
   Gold: ['#ECC844', '#8E6E1D'],
   Platinum: ['#4FACFE', '#00F2FE'],
+  Vip: ['#1A1A1A', '#CF9F52'],
 };
 
 const FONT = Platform.OS === 'ios' ? 'System' : 'sans-serif';

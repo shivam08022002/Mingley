@@ -83,7 +83,7 @@ export const PaymentScreen = ({ navigation }) => {
         rzpKey = tempOrder?.key || tempOrder?.data?.key;
       } catch (keyErr) {
         console.warn('Failed to dynamically fetch Razorpay Key, falling back to default test key:', keyErr);
-        rzpKey = 'rzp_test_mingley'; // fallback default test key if backend orders are down
+        rzpKey = 'rzp_test_Sq4maCpZVgCTeM'; // fallback default test key if backend orders are down
       }
 
       if (!rzpKey) {
@@ -112,7 +112,7 @@ export const PaymentScreen = ({ navigation }) => {
                 planId: selectedPlan.id || selectedPlan._id,
                 autoRenew: true,
                 paymentMethod: 'razorpay',
-                paymentToken: response.razorpay_payment_id,
+                paymentId: response.razorpay_payment_id,
                 orderId: response.razorpay_order_id || `sub-order-${Date.now()}`,
                 signature: response.razorpay_signature || 'signature-web',
               });
@@ -173,7 +173,7 @@ export const PaymentScreen = ({ navigation }) => {
                 planId: selectedPlan.id || selectedPlan._id,
                 autoRenew: true,
                 paymentMethod: 'razorpay',
-                paymentToken: data.razorpay_payment_id,
+                paymentId: data.razorpay_payment_id,
                 orderId: data.razorpay_order_id || `sub-order-${Date.now()}`,
                 signature: data.razorpay_signature || 'signature-native',
               });

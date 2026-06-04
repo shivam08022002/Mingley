@@ -14,6 +14,7 @@ import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { ChatBubble } from '../components/ChatBubble';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useChatStore } from '../../../store/useChatStore';
+import { signalRService } from '../../../services/signalRService';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 import { useMatchesStore } from '../../matches/store/useMatchesStore';
 
@@ -51,51 +52,51 @@ export const ChatScreen = ({ navigation, route }) => {
 
   const flatRef = useRef(null);
   const [inputText, setInputText] = useState('');
-  const [isMuted, setIsMuted]     = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [sendingGift, setSendingGift] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
   // Modal visibility
-  const [giftModalVisible,    setGiftModalVisible]    = useState(false);
-  const [coinsModalVisible,   setCoinsModalVisible]   = useState(false);
-  const [menuModalVisible,    setMenuModalVisible]    = useState(false);
-  const [reportModalVisible,  setReportModalVisible]   = useState(false);
+  const [giftModalVisible, setGiftModalVisible] = useState(false);
+  const [coinsModalVisible, setCoinsModalVisible] = useState(false);
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   // Report inputs
   const [reportReason, setReportReason] = useState('');
-  const [reportDesc, setReportDesc]     = useState('');
+  const [reportDesc, setReportDesc] = useState('');
 
   // Coin-transfer inputs
   const [coinInputText, setCoinInputText] = useState('');
-  const [utrIdText, setUtrIdText]         = useState('');
+  const [utrIdText, setUtrIdText] = useState('');
 
   // Selected gift category
   const [selectedGiftCategory, setSelectedGiftCategory] = useState('all');
 
 
   // ── Zustand ──────────────────────────────────────────────────────────────
-  const currentUser           = useChatStore((s) => s.user);
-  const wallet                = useChatStore((s) => s.wallet);
-  const messages              = useChatStore((s) => s.messages);
-  const gifts                 = useChatStore((s) => s.gifts);
-  const fetchGiftCatalog      = useChatStore((s) => s.fetchGiftCatalog);
-  const giftCategories        = useChatStore((s) => s.giftCategories);
-  const fetchGiftCategories   = useChatStore((s) => s.fetchGiftCategories);
-  const freeMessagesLeft      = useChatStore((s) => s.freeMessagesLeft);
-  const deductCoin            = useChatStore((s) => s.deductCoin);
+  const currentUser = useChatStore((s) => s.user);
+  const wallet = useChatStore((s) => s.wallet);
+  const messages = useChatStore((s) => s.messages);
+  const gifts = useChatStore((s) => s.gifts);
+  const fetchGiftCatalog = useChatStore((s) => s.fetchGiftCatalog);
+  const giftCategories = useChatStore((s) => s.giftCategories);
+  const fetchGiftCategories = useChatStore((s) => s.fetchGiftCategories);
+  const freeMessagesLeft = useChatStore((s) => s.freeMessagesLeft);
+  const deductCoin = useChatStore((s) => s.deductCoin);
   const decrementFreeMessages = useChatStore((s) => s.decrementFreeMessages);
-  const sendGiftAction        = useChatStore((s) => s.sendGift);
-  const sendCoinsInChat       = useChatStore((s) => s.sendCoinsInChat);
-  const withdrawCoins         = useChatStore((s) => s.withdrawCoins);
-  const pushMessage           = useChatStore((s) => s.pushMessage);
-  const clearMessages         = useChatStore((s) => s.clearMessages);
-  const fetchChatMessages     = useChatStore((s) => s.fetchMessages);
-  const sendChatMessage       = useChatStore((s) => s.sendChatMessage);
-  const markChatAsRead        = useChatStore((s) => s.markChatAsRead);
-  const getChatQuota          = useChatStore((s) => s.getChatQuota);
-  const chatQuota             = useChatStore((s) => s.chatQuota);
+  const sendGiftAction = useChatStore((s) => s.sendGift);
+  const sendCoinsInChat = useChatStore((s) => s.sendCoinsInChat);
+  const withdrawCoins = useChatStore((s) => s.withdrawCoins);
+  const pushMessage = useChatStore((s) => s.pushMessage);
+  const clearMessages = useChatStore((s) => s.clearMessages);
+  const fetchChatMessages = useChatStore((s) => s.fetchMessages);
+  const sendChatMessage = useChatStore((s) => s.sendChatMessage);
+  const markChatAsRead = useChatStore((s) => s.markChatAsRead);
+  const getChatQuota = useChatStore((s) => s.getChatQuota);
+  const chatQuota = useChatStore((s) => s.chatQuota);
   const setDepositModalVisible = useChatStore((s) => s.setDepositModalVisible);
-  const setActiveChatId       = useChatStore((s) => s.setActiveChatId);
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId);
 
 
   React.useEffect(() => {
@@ -103,7 +104,7 @@ export const ChatScreen = ({ navigation, route }) => {
     fetchGiftCategories();
     useChatStore.getState().fetchWalletBalance();
     useSubscriptionStore.getState().fetchStatus();
-    
+
     if (!initialChatId) {
       fetchChats();
     }
@@ -113,9 +114,11 @@ export const ChatScreen = ({ navigation, route }) => {
   React.useEffect(() => {
     if (chatId) {
       setActiveChatId(chatId);
+      signalRService.joinChat(chatId);   // join the SignalR group for live messages
     }
     return () => {
       setActiveChatId(null);
+      if (chatId) signalRService.leaveChat(chatId);  // leave when screen closes
     };
   }, [chatId, setActiveChatId]);
 
@@ -143,7 +146,7 @@ export const ChatScreen = ({ navigation, route }) => {
         }
       };
       loadMessages();
-      
+
       const currentChat = chats.find(c => c.chatId === chatId);
       if (currentChat?.user) {
         setPartnerInfo({
@@ -156,7 +159,7 @@ export const ChatScreen = ({ navigation, route }) => {
     }
   }, [chatId, fetchChatMessages, markChatAsRead, getChatQuota, chats]);
 
-  const isMale   = currentUser.gender === 'male';
+  const isMale = currentUser.gender === 'male';
   const isFemale = currentUser.gender === 'female';
 
   // Quota-based sending logic
@@ -164,7 +167,7 @@ export const ChatScreen = ({ navigation, route }) => {
   const hasPaidQuota = chatQuota?.remaining > 0;
   const canAffordMessage = wallet.coins >= (chatQuota?.costPerMessage || 0);
 
-  const canSend = chatQuota 
+  const canSend = chatQuota
     ? (hasFreeMessages || (hasPaidQuota && canAffordMessage))
     : (isMale ? wallet.coins > 0 : isFemale ? freeMessagesLeft > 0 || wallet.coins > 0 : true);
 
@@ -232,7 +235,7 @@ export const ChatScreen = ({ navigation, route }) => {
       Alert.alert('Error', 'Please enter a valid amount.');
       return;
     }
-    
+
     if (wallet.coins < amount) {
       Alert.alert('Error', 'Insufficient coins.');
       return;
@@ -251,11 +254,13 @@ export const ChatScreen = ({ navigation, route }) => {
   const handleDepositSubmit = () => {
     if (!utrIdText.trim()) { Alert.alert('Error', 'Please enter your UTR ID.'); return; }
     Alert.alert('Screenshot Upload', 'Please upload a screenshot of your payment.', [
-      { text: 'Mock Upload', onPress: () => {
+      {
+        text: 'Mock Upload', onPress: () => {
           Alert.alert('Success', 'Deposit request submitted. Your coins will reflect soon.');
           setDepositModalVisible(false);
           setUtrIdText('');
-      }},
+        }
+      },
       { text: 'Cancel', style: 'cancel' }
     ]);
   };
@@ -303,7 +308,7 @@ export const ChatScreen = ({ navigation, route }) => {
 
   const MENU_OPTIONS = [
     { icon: 'notifications-off-outline', label: isMuted ? 'Unmute Notifications' : 'Mute Notifications', action: () => { setIsMuted(!isMuted); setMenuModalVisible(false); } },
-    { icon: 'trash-outline',             label: 'Clear Chat',       action: () => { clearMessages(); setMenuModalVisible(false); } },
+    { icon: 'trash-outline', label: 'Clear Chat', action: () => { clearMessages(); setMenuModalVisible(false); } },
     {
       icon: 'person-remove-outline',
       label: 'Unmatch',
@@ -324,7 +329,7 @@ export const ChatScreen = ({ navigation, route }) => {
                     return mUserId === partnerInfo.id;
                   });
                   const matchIdToDecline = matchObj?.matchId || matchObj?.id || matchObj?._id || chatId;
-                  
+
                   if (matchIdToDecline) {
                     await useMatchesStore.getState().removeMatch(matchIdToDecline);
                     Alert.alert('Success', 'User unmatched successfully.');
@@ -343,8 +348,8 @@ export const ChatScreen = ({ navigation, route }) => {
         setMenuModalVisible(false);
       }
     },
-    { icon: 'ban-outline',               label: 'Block User',       action: handleBlockUser },
-    { icon: 'flag-outline',              label: 'Report',           action: handleReportUser },
+    { icon: 'ban-outline', label: 'Block User', action: handleBlockUser },
+    { icon: 'flag-outline', label: 'Report', action: handleReportUser },
   ];
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -373,16 +378,16 @@ export const ChatScreen = ({ navigation, route }) => {
         </View>
 
         {/* Voice Call Button */}
-        <TouchableOpacity 
-          style={styles.iconBtn} 
+        <TouchableOpacity
+          style={styles.iconBtn}
           onPress={() => navigation.navigate('Calling', { user: partnerInfo, callType: 'audio' })}
         >
           <Icon name="call-outline" size={20} color="#E94057" />
         </TouchableOpacity>
 
         {/* Video Call Button */}
-        <TouchableOpacity 
-          style={styles.iconBtn} 
+        <TouchableOpacity
+          style={styles.iconBtn}
           onPress={() => {
             const videoCallEnabled = currentStatus?.plan?.videoCallEnabled || false;
             if (!videoCallEnabled) {
@@ -429,7 +434,7 @@ export const ChatScreen = ({ navigation, route }) => {
             {/* Category tabs selection */}
             {giftCategories && giftCategories.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll} contentContainerStyle={styles.categoryScrollContent}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.categoryTab, selectedGiftCategory === 'all' && styles.categoryTabActive]}
                   onPress={() => setSelectedGiftCategory('all')}
                   activeOpacity={0.8}
@@ -437,11 +442,11 @@ export const ChatScreen = ({ navigation, route }) => {
                   <Text style={[styles.categoryTabText, selectedGiftCategory === 'all' && styles.categoryTabTextActive]}>All</Text>
                 </TouchableOpacity>
                 {giftCategories.map((cat, idx) => {
-                  const name = typeof cat === 'string' ? cat : cat.name || cat.label || `Category ${idx+1}`;
-                  const id = typeof cat === 'string' ? cat : cat.id || cat.key || name;
+                  const name = typeof cat === 'string' ? cat : cat.title || cat.name || cat.label || `Category ${idx + 1}`;
+                  const id = typeof cat === 'string' ? cat : cat.category || cat.id || cat.key || name;
                   return (
-                    <TouchableOpacity 
-                      key={id} 
+                    <TouchableOpacity
+                      key={id}
                       style={[styles.categoryTab, selectedGiftCategory === id && styles.categoryTabActive]}
                       onPress={() => setSelectedGiftCategory(id)}
                       activeOpacity={0.8}
@@ -463,25 +468,25 @@ export const ChatScreen = ({ navigation, route }) => {
                   const cost = gift.coinCost || gift.price || 0;
                   const afford = wallet.coins >= cost;
 
-                return (
-                  <TouchableOpacity 
-                    key={gift.id} 
-                    style={[styles.giftCardHorizontal, (!afford || sendingGift) && styles.giftCardDisabled]} 
-                    onPress={() => handleSendGift(gift)} 
-                    disabled={!afford || sendingGift} 
-                    activeOpacity={0.75}
-                  >
-                    <View style={styles.giftIconWrap}>
-                      <Icon name={gift.icon || 'gift-outline'} size={32} color={afford ? '#E94057' : '#999'} />
-                    </View>
-                    <Text style={styles.giftCardLabel} numberOfLines={1}>{gift.name}</Text>
-                    <View style={styles.giftCardCostRow}>
-                      <Icon name="logo-bitcoin" size={11} color={afford ? '#FFD700' : '#C0C0C0'} />
-                      <Text style={[styles.giftCardCost, !afford && { color: '#C0C0C0' }]}>{cost}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+                  return (
+                    <TouchableOpacity
+                      key={gift.id}
+                      style={[styles.giftCardHorizontal, (!afford || sendingGift) && styles.giftCardDisabled]}
+                      onPress={() => handleSendGift(gift)}
+                      disabled={!afford || sendingGift}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.giftIconWrap}>
+                        <Icon name={gift.icon || 'gift-outline'} size={32} color={afford ? '#E94057' : '#999'} />
+                      </View>
+                      <Text style={styles.giftCardLabel} numberOfLines={1}>{gift.name}</Text>
+                      <View style={styles.giftCardCostRow}>
+                        <Icon name="logo-bitcoin" size={11} color={afford ? '#FFD700' : '#C0C0C0'} />
+                        <Text style={[styles.giftCardCost, !afford && { color: '#C0C0C0' }]}>{cost}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
             </ScrollView>
           </View>
         </BottomSheetContainer>
@@ -534,20 +539,20 @@ export const ChatScreen = ({ navigation, route }) => {
       <BottomSheetContainer onClose={() => setReportModalVisible(false)} height={380}>
         <View style={{ flex: 1, width: '100%' }}>
           <Text style={styles.modalTitle}>Report User</Text>
-          <TextInput 
-            style={styles.amountInput} 
-            placeholder="Reason (e.g., Harassment)" 
-            placeholderTextColor="#A0A0A0" 
-            value={reportReason} 
-            onChangeText={setReportReason} 
+          <TextInput
+            style={styles.amountInput}
+            placeholder="Reason (e.g., Harassment)"
+            placeholderTextColor="#A0A0A0"
+            value={reportReason}
+            onChangeText={setReportReason}
           />
-          <TextInput 
-            style={[styles.amountInput, { height: 100, textAlignVertical: 'top' }]} 
-            placeholder="Description (optional)" 
-            placeholderTextColor="#A0A0A0" 
-            multiline 
-            value={reportDesc} 
-            onChangeText={setReportDesc} 
+          <TextInput
+            style={[styles.amountInput, { height: 100, textAlignVertical: 'top' }]}
+            placeholder="Description (optional)"
+            placeholderTextColor="#A0A0A0"
+            multiline
+            value={reportDesc}
+            onChangeText={setReportDesc}
           />
           <TouchableOpacity style={[styles.modalActionBtn, !reportReason && styles.modalActionBtnDisabled]} onPress={submitReport} disabled={!reportReason}>
             <Text style={styles.modalActionBtnText}>Submit Report</Text>
@@ -788,20 +793,20 @@ const styles = StyleSheet.create({
   modalSubBold: { fontWeight: '700', color: '#E94057' },
 
   // ── Gift grid ────────────────────────────────────────────────────────────
-  giftGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'flex-start', 
+  giftGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
     gap: 12,
-    marginTop: 8 
+    marginTop: 8
   },
   giftCard: {
     width: (SCREEN_WIDTH - 48 - 24) / 3, // ScreenWidth - Padding - Gap
-    alignItems: 'center', 
+    alignItems: 'center',
     paddingVertical: 16,
-    borderRadius: 18, 
+    borderRadius: 18,
     backgroundColor: '#FFF0F3',
-    borderWidth: 1.5, 
+    borderWidth: 1.5,
     borderColor: '#FFD6DE',
   },
   giftCardDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0', opacity: 0.55 },
@@ -863,12 +868,12 @@ const styles = StyleSheet.create({
   },
   giftCardHorizontal: {
     width: 110,
-    alignItems: 'center', 
+    alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 8,
-    borderRadius: 20, 
+    borderRadius: 20,
     backgroundColor: '#FFF0F3',
-    borderWidth: 1.5, 
+    borderWidth: 1.5,
     borderColor: '#FFD6DE',
     boxShadow: '0px 4px 6px rgba(0,0,0,0.05)',
     elevation: 2,

@@ -49,15 +49,18 @@ export const DepositModal = ({ visible, onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const wallet = useChatStore((s) => s.wallet);
   const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
+  const { profile } = useProfileStore();
+  const isFemale = profile?.gender?.toLowerCase() === 'female' || profile?.gender?.toLowerCase() === 'woman';
 
   useEffect(() => {
-    if (visible) {
+    if (visible && !isFemale) {
       fetchWalletBalance();
       loadPackages();
     }
-  }, [visible]);
+  }, [visible, isFemale]);
 
   const loadPackages = async () => {
+    if (isFemale) return;
     setLoadingPkgs(true);
     try {
       const res = await walletService.getPackages();

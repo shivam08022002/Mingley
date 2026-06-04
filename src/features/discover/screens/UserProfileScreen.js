@@ -308,7 +308,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
               </View>
             </View>
             <View style={styles.distanceBadgeRight}>
-              <Text style={styles.distanceBadgeText}>{user.distance != null ? user.distance : 0} km</Text>
+              <Text style={styles.distanceBadgeText}>{user.distance != null ? Math.max(1, Math.round(user.distance)) : 0} km</Text>
             </View>
           </View>
 

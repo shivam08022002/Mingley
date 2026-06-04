@@ -319,6 +319,15 @@ export const userService = {
     }
   },
 
+  setTravelMode: async (payload) => {
+    try {
+      const response = await api.put('/v1/users/me/travel-mode', payload);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   updateLocation: async (locationData) => {
     try {
       const response = await api.put('/v1/users/me/location', locationData);

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet,
-  TouchableOpacity, ScrollView, Platform, ActivityIndicator, Dimensions, Alert
+  TouchableOpacity, ScrollView, Platform, ActivityIndicator, Dimensions, Alert, StatusBar
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -12,6 +12,32 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useToastStore } from '../../../store/useToastStore';
 
 const DEFAULT_ICONS = ['star-outline', 'trophy-outline', 'rocket-outline', 'flash-outline'];
+
+const FEATURE_METADATA = {
+  '3 free messages per chat': { icon: 'chatbubbles-outline', desc: 'Chat limit per conversation' },
+  '1 Super Like/day': { icon: 'star-outline', desc: 'Stand out from the crowd' },
+  'Basic matching': { icon: 'heart-outline', desc: 'Standard matching system' },
+  'Standard support': { icon: 'help-circle-outline', desc: 'Regular customer service' },
+  'Unlimited likes': { icon: 'heart-outline', desc: 'Swipe right as much as you want' },
+  'No ads': { icon: 'eye-off-outline', desc: 'Clean and ad-free experience' },
+  '5 Super Likes/day': { icon: 'star-outline', desc: 'Stand out from the crowd' },
+  'See who liked you': { icon: 'eye-outline', desc: 'Instantly view your admirers' },
+  'All Silver': { icon: 'sparkles-outline', desc: 'Includes all Silver benefits' },
+  'Video calls': { icon: 'videocam-outline', desc: 'Connect directly via video' },
+  '10 Super Likes/day': { icon: 'star-outline', desc: 'Get maximum attention daily' },
+  '2 Profile boosts': { icon: 'rocket-outline', desc: 'Boost visibility to get matches' },
+  '5 coins/msg': { icon: 'wallet-outline', desc: 'Earn coins for chatting' },
+  'All Gold': { icon: 'sparkles-outline', desc: 'Includes all Gold benefits' },
+  'Top picks daily': { icon: 'trophy-outline', desc: 'Curated high-quality profiles' },
+  'Unlimited Super Likes': { icon: 'star-outline', desc: 'Unlimited stand-out interactions' },
+  '5 boosts/month': { icon: 'rocket-outline', desc: 'Boost profile multiple times a month' },
+  'Priority support': { icon: 'flash-outline', desc: 'Priority customer service' },
+  'All Platinum': { icon: 'sparkles-outline', desc: 'Includes all Platinum benefits' },
+  'VIP badge': { icon: 'ribbon-outline', desc: 'Exclusive VIP status badge' },
+  'Global search': { icon: 'globe-outline', desc: 'Unlock Travel Mode globally' },
+  'Dedicated support': { icon: 'headset-outline', desc: '24/7 personal customer assistant' },
+  'Early features': { icon: 'time-outline', desc: 'Try new features before anyone else' }
+};
 
 export const SubscriptionPlansScreen = ({ navigation }) => {
   const { 
@@ -40,13 +66,80 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
     return null;
   })();
 
-  useEffect(() => {
-    if (isSubscriptionActive && currentActivePlanId) {
-      setSelected(currentActivePlanId);
-    } else if (plans.length > 0 && !selected) {
-      setSelected(plans[0].id || plans[0]._id);
+  const mappedPlans = plans.map((p, idx) => {
+    const name = p.name?.toLowerCase() || '';
+    let colors = ['#F8FAFC', '#F1F5F9']; // Default light grey
+    let accentColor = '#64748B';
+    let textColor = '#0F172A';
+
+    if (name.includes('vip')) {
+      colors = ['#FFFDF5', '#FDF5D6']; // Premium Soft Luxury Gold
+      accentColor = '#D97706';
+      textColor = '#0F172A';
+    } else if (name.includes('gold')) {
+      colors = ['#FFFDF5', '#FEF9E7'];
+      accentColor = '#ECC844';
+      textColor = '#0F172A';
+    } else if (name.includes('silver')) {
+      colors = ['#F8FAFC', '#F1F5F9'];
+      accentColor = '#475569';
+      textColor = '#0F172A';
+    } else if (name.includes('platinum')) {
+      colors = ['#ECFEFF', '#CFFAFE'];
+      accentColor = '#06B6D4';
+      textColor = '#0F172A';
+    } else if (name.includes('free')) {
+      colors = ['#F8FAFC', '#F1F5F9'];
+      accentColor = '#E94057';
+      textColor = '#0F172A';
     }
-  }, [plans, selected, currentStatus, isSubscriptionActive, currentActivePlanId]);
+
+    return {
+      id: p.id || p._id,
+      name: p.name,
+      duration: (p.id === 'free' || p.durationDays === 0) ? 'Lifetime' : (p.durationDays ? `${p.durationDays} Days` : (p.duration || `${p.validityDays} Days`)),
+      price: p.price === 0 ? 'Free' : `₹${p.price}`,
+      perMonth: p.perMonth || (p.price > 0 && p.durationDays > 30 ? `₹${Math.round(p.price / (p.durationDays / 30))}/mo` : (p.price > 0 && p.validityDays > 30 ? `₹${Math.round(p.price / (p.validityDays / 30))}/mo` : '')),
+      features: Array.isArray(p.features) ? p.features : [],
+      icon: p.icon || (
+        name.includes('free') ? 'star-outline' :
+        name.includes('silver') ? 'trophy-outline' :
+        name.includes('gold') ? 'ribbon-outline' :
+        name.includes('platinum') ? 'sparkles-outline' : 'diamond-outline'
+      ),
+      badge: p.badge || (p.isPopular ? 'MOST POPULAR' : (name.includes('gold') ? 'MOST POPULAR' : name.includes('vip') ? 'BEST VALUE' : null)),
+      colors,
+      accentColor,
+      textColor,
+      isFree: (p.id === 'free' || name.includes('free'))
+    };
+  });
+
+  const carouselRef = useRef(null);
+
+  useEffect(() => {
+    if (mappedPlans.length > 0 && !selected) {
+      let initialPlanId = null;
+      if (isSubscriptionActive && currentActivePlanId) {
+        initialPlanId = currentActivePlanId;
+      } else {
+        const defaultPlan = mappedPlans.find(p => p.badge?.includes('POPULAR') || p.name?.toLowerCase().includes('gold'))
+          || mappedPlans.find(p => !p.isFree)
+          || mappedPlans[0];
+        initialPlanId = defaultPlan.id;
+      }
+
+      if (initialPlanId) {
+        setSelected(initialPlanId);
+        const index = mappedPlans.findIndex(p => p.id === initialPlanId);
+        if (index !== -1) {
+          setTimeout(() => {
+            carouselRef.current?.scrollTo({ x: index * (width - 32), animated: false });
+          }, 150);
+        }
+      }
+    }
+  }, [plans, selected, currentStatus, isSubscriptionActive, currentActivePlanId, mappedPlans]);
 
   const handleSelectPlan = (planId) => {
     if (isSubscriptionActive && planId !== currentActivePlanId) {
@@ -60,6 +153,38 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
       return;
     }
     setSelected(planId);
+    const index = mappedPlans.findIndex(p => p.id === planId);
+    if (index !== -1 && carouselRef.current) {
+      carouselRef.current.scrollTo({ x: index * (width - 32), animated: true });
+    }
+  };
+
+  const handleCarouselScroll = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(offsetX / (width - 32));
+    if (index >= 0 && index < mappedPlans.length) {
+      const planId = mappedPlans[index].id;
+      if (selected !== planId) {
+        setSelected(planId);
+      }
+    }
+  };
+
+  const handleDotPress = (index, planId) => {
+    if (isSubscriptionActive && planId !== currentActivePlanId) {
+      const expiry = currentStatus?.expiresAt || currentStatus?.endDate;
+      const formattedDate = expiry ? new Date(expiry).toLocaleDateString([], { dateStyle: 'medium' }) : 'expiry';
+      useToastStore.getState().showToast(
+        `Active plan exists. You can switch after it expires on ${formattedDate}.`,
+        'info',
+        3000
+      );
+      return;
+    }
+    setSelected(planId);
+    if (carouselRef.current) {
+      carouselRef.current.scrollTo({ x: index * (width - 32), animated: true });
+    }
   };
 
   const handleContinue = async () => {
@@ -123,86 +248,84 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
     );
   };
 
-  const mappedPlans = plans.map((p, idx) => {
-    const name = p.name?.toLowerCase() || '';
-    let colors = ['#E94057', '#8A2387']; // Default
-    let textColor = '#FFF';
-
-    if (name.includes('gold')) {
-      colors = ['#ECC844', '#8E6E1D'];
-      textColor = '#111111';
-    } else if (name.includes('silver')) {
-      colors = ['#E2E8F0', '#94A3B8'];
-      textColor = '#111111';
-    } else if (name.includes('platinum')) {
-      colors = ['#4FACFE', '#00F2FE'];
-      textColor = '#FFF';
-    } else if (name.includes('free')) {
-      colors = ['#E94057', '#8A2387'];
-      textColor = '#FFF';
-    }
-
-    return {
-      id: p.id || p._id,
-      name: p.name,
-      duration: (p.id === 'free' || p.durationDays === 0) ? 'Lifetime' : (p.durationDays ? `${p.durationDays} Days` : (p.duration || `${p.validityDays} Days`)),
-      price: `₹${p.price}`,
-      perMonth: p.perMonth || (p.durationDays > 30 ? `₹${Math.round(p.price / (p.durationDays / 30))}/mo` : (p.validityDays > 30 ? `₹${Math.round(p.price / (p.validityDays / 30))}/mo` : '')),
-      features: Array.isArray(p.features) ? p.features : [],
-      icon: p.icon || (name.includes('free') ? 'star-outline' : DEFAULT_ICONS[idx % DEFAULT_ICONS.length]),
-      badge: p.badge || (p.isPopular ? 'MOST POPULAR' : (idx === 1 ? 'MOST POPULAR' : idx === 2 ? 'BEST VALUE' : null)),
-      colors,
-      textColor,
-      isFree: (p.id === 'free' || name.includes('free'))
-    };
-  });
   const activePlan = mappedPlans.find((plan) => plan.id === selected);
   const planFeatures = activePlan?.features || [];
 
-  if (isLoading && plans.length === 0) {
-    return (
-      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#E94057" />
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={s.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" />
       <LinearGradient
-        colors={['#fff0f3', '#ffffff', '#f3f0ff']}
+        colors={['#FFF5F6', '#F8FAFC', '#F1F5F9']}
         style={StyleSheet.absoluteFill}
       />
 
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={22} color="#2b1c50" />
+          <Icon name="close" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Choose Plan</Text>
+        <Text style={s.headerTitle}>Upgrade Membership</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-        <View style={s.topSection}>
-          <Text style={s.title}>Upgrade to Premium</Text>
-          <Text style={s.subtitle}>Get more matches and unlimited features with our premium plans</Text>
-        </View>
-
-        {/* Features list with better UI */}
-        <View style={s.featuresContainer}>
-          {planFeatures.map((f, i) => (
-            <View key={i} style={s.featureItem}>
-              <View style={s.featureIconBg}>
-                <Icon name="checkmark" size={14} color="#E94057" />
+        
+        {/* Special rotated banner (swipable carousel) */}
+        <View style={s.bannerCardWrapper}>
+          <ScrollView
+            ref={carouselRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleCarouselScroll}
+            style={s.carouselScrollView}
+            contentContainerStyle={s.carouselContentContainer}
+          >
+            {mappedPlans.map((plan) => (
+              <View key={plan.id} style={s.bannerCardContainer}>
+                <View style={s.bannerCard}>
+                  {!plan.isFree && (
+                    <View style={s.discountBadge}>
+                      <Text style={s.discountText}>20% OFF</Text>
+                    </View>
+                  )}
+                  <View style={s.bannerInfo}>
+                    <Icon name={plan.icon || 'sparkles'} size={32} color={plan.accentColor || '#E94057'} />
+                    <View>
+                      <Text style={s.bannerTitle}>Mingley {plan.name || 'Premium'}</Text>
+                      <Text style={s.bannerSubtitle}>
+                        {plan.isFree ? 'Explore basic features with standard limits' : 'Unlock full matching power & global search'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               </View>
-              <Text style={s.featureText}>{f}</Text>
-            </View>
-          ))}
+            ))}
+          </ScrollView>
+          
+          {/* Slide Indicator Dots */}
+          <View style={s.pagerDots}>
+            {mappedPlans.map((p, idx) => (
+              <TouchableOpacity
+                key={p.id} 
+                onPress={() => handleDotPress(idx, p.id)}
+                activeOpacity={0.7}
+                style={[
+                  s.pagerDot, 
+                  selected === p.id ? [s.pagerDotActive, { backgroundColor: p.accentColor }] : s.pagerDotInactive
+                ]} 
+              />
+            ))}
+          </View>
         </View>
 
-        {/* Plans - Vertical Column */}
-        <View style={s.plansColumn}>
+        {/* Horizontal Plans Card Selectors */}
+        <Text style={s.sectionLabel}>Select a Plan</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={s.plansHorizontalList}
+        >
           {mappedPlans.map((plan) => {
             const active = selected === plan.id;
             return (
@@ -211,86 +334,119 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
                 onPress={() => handleSelectPlan(plan.id)}
                 activeOpacity={0.9}
                 style={[
-                  s.planCard, 
-                  active && s.planCardActive,
-                  active && { borderColor: plan.colors[0] }
+                  s.planCard,
+                  active && [s.planCardActive, { borderColor: plan.accentColor }]
                 ]}
               >
                 {active && (
                   <LinearGradient
                     colors={plan.colors}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={[StyleSheet.absoluteFillObject, { borderRadius: 22 }]}
+                    style={[StyleSheet.absoluteFillObject, { borderRadius: 20 }]}
                   />
                 )}
 
                 {plan.badge && (
-                  <View style={[
-                    s.badgeWrapNew, 
-                    active ? (plan.textColor === '#111111' ? { backgroundColor: '#111111' } : { backgroundColor: '#FFF' }) : { backgroundColor: '#111111' }
-                  ]}>
-                    <Text style={[
-                      s.badgeTextNew, 
-                      active ? { color: plan.textColor === '#111111' ? '#FFF' : plan.colors[1] } : { color: '#FFF' }
-                    ]}>{plan.badge}</Text>
+                  <View style={[s.badgeWrap, { backgroundColor: plan.accentColor }]}>
+                    <Text 
+                      style={[
+                        s.badgeText, 
+                        { 
+                          color: (plan.name?.toLowerCase().includes('gold') || 
+                                  plan.name?.toLowerCase().includes('vip') || 
+                                  plan.name?.toLowerCase().includes('platinum')) 
+                            ? '#0F172A' 
+                            : '#FFF' 
+                        }
+                      ]}
+                    >
+                      {plan.badge}
+                    </Text>
                   </View>
                 )}
-                
-                <View style={s.planHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1 }}>
-                    <Text style={[s.planNameNew, active && (plan.textColor === '#111111' ? s.activeTextDark : s.activeTextWhite)]}>{plan.name}</Text>
-                    {isSubscriptionActive && plan.id === currentActivePlanId && (
-                      <View style={[
-                        s.currentPlanBadge, 
-                        active ? (plan.textColor === '#111111' ? { backgroundColor: 'rgba(17, 17, 17, 0.08)' } : { backgroundColor: 'rgba(255, 255, 255, 0.25)' }) : { backgroundColor: 'rgba(76, 175, 80, 0.12)' }
-                      ]}>
-                        <Text style={[
-                          s.currentPlanBadgeText, 
-                          active ? { color: plan.textColor === '#111111' ? '#111111' : '#FFF' } : { color: '#4CAF50' }
-                        ]}>Current Plan</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={[s.planIconWrap, active && (plan.textColor === '#111111' ? { backgroundColor: 'rgba(0, 0, 0, 0.08)' } : s.planIconWrapActive)]}>
-                    <Icon name={plan.icon} size={24} color={active ? (plan.textColor === '#111111' ? '#111111' : plan.colors[1]) : '#111111'} />
-                  </View>
+
+                <View style={s.cardPlanHeader}>
+                  <Text style={s.planName}>{plan.name}</Text>
+                  <Icon name={plan.icon} size={18} color={active ? plan.accentColor : '#64748B'} />
                 </View>
 
-                <View style={s.planPriceSection}>
-                  <Text style={[s.planPriceNew, active && (plan.textColor === '#111111' ? s.activeTextDark : s.activeTextWhite)]}>{plan.price}</Text>
-                  <Text style={[s.planDurationNew, active && (plan.textColor === '#111111' ? s.activeTextDarkSub : s.activeTextWhiteSub)]}>{plan.duration}</Text>
+                <View style={s.priceContainer}>
+                  <Text style={s.priceText}>{plan.price}</Text>
+                  <Text style={s.durationText}>/ {plan.duration}</Text>
                 </View>
 
                 {plan.perMonth ? (
-                  <Text style={[s.planPerMonthNew, active && (plan.textColor === '#111111' ? s.activeTextDarkSub : s.activeTextWhiteSub)]}>{plan.perMonth}</Text>
-                ) : null}
+                  <Text style={s.perMonthText}>{plan.perMonth}</Text>
+                ) : (
+                  <Text style={s.perMonthText}>One-time entry</Text>
+                )}
+
+                {isSubscriptionActive && plan.id === currentActivePlanId && (
+                  <View style={s.activeBadge}>
+                    <Text style={s.activeBadgeText}>Active</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
+        </ScrollView>
+
+        {/* Plan comparison section */}
+        <View style={s.comparisonDivider}>
+          <View style={s.dividerLine} />
+          <Text style={s.comparisonTitle}>
+            {activePlan ? `${activePlan.name} Features` : 'Plan Features'}
+          </Text>
+          <View style={s.dividerLine} />
+        </View>
+
+        {/* Features Checklist */}
+        <View style={s.featuresContainer}>
+          {planFeatures.length > 0 ? (
+            planFeatures.map((f, i) => {
+              const meta = FEATURE_METADATA[f] || { icon: 'checkmark-circle-outline', desc: 'Premium exclusive feature' };
+              return (
+                <View key={i} style={s.featureItem}>
+                  <View style={[s.featureIconBg, { backgroundColor: '#F8FAFC' }]}>
+                    <Icon name={meta.icon} size={18} color={activePlan?.accentColor || '#E94057'} />
+                  </View>
+                  <View style={s.featureTextWrap}>
+                    <View style={s.featureHeaderRow}>
+                      <Text style={s.featureTitle}>{f}</Text>
+                      <Icon name="information-circle-outline" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+                    </View>
+                    <Text style={s.featureDesc}>{meta.desc}</Text>
+                  </View>
+                  <View style={[s.checkmarkCircle, { backgroundColor: activePlan?.accentColor || '#E94057' }]}>
+                    <Icon name="checkmark" size={12} color="#FFF" />
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={s.noFeaturesText}>No special features listed.</Text>
+          )}
         </View>
       </ScrollView>
 
-      {/* Sticky footer */}
+      {/* Sticky Footer */}
       {(() => {
         const isCurrentActiveSelected = isSubscriptionActive && selected === currentActivePlanId;
+        const selectedMappedPlan = mappedPlans.find((plan) => plan.id === selected);
+        const isFreeSelected = selectedMappedPlan?.isFree;
+
+        let buttonLabel = '';
+        if (isCurrentActiveSelected) {
+          buttonLabel = 'Cancel Active Subscription';
+        } else if (isFreeSelected) {
+          buttonLabel = 'Your Current Plan';
+        } else {
+          buttonLabel = `Get ${selectedMappedPlan?.name || ''} plan for ${selectedMappedPlan?.price || ''}`;
+        }
+
         return (
           <View style={s.footer}>
-            {!isCurrentActiveSelected ? (
-              <TouchableOpacity
-                style={s.ctaWrap}
-                onPress={handleContinue}
-                activeOpacity={0.88}
-              >
-                <LinearGradient
-                  colors={['#E94057', '#8A2387']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={s.ctaBtn}
-                >
-                  <Text style={s.ctaText}>Continue</Text>
-                  <Icon name="arrow-forward" size={18} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-            ) : (
+            {isCurrentActiveSelected ? (
               <TouchableOpacity
                 style={s.ctaWrap}
                 onPress={handleCancelSubscription}
@@ -301,13 +457,34 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={s.ctaBtn}
                 >
-                  <Text style={s.ctaText}>Cancel Subscription</Text>
+                  <Text style={s.ctaText}>{buttonLabel}</Text>
                   <Icon name="close-circle-outline" size={18} color="#fff" />
                 </LinearGradient>
               </TouchableOpacity>
+            ) : isFreeSelected ? (
+              <View style={[s.ctaWrap, { opacity: 0.8 }]}>
+                <View style={[s.ctaBtn, { backgroundColor: '#64748B' }]}>
+                  <Text style={[s.ctaText, { color: '#FFF' }]}>{buttonLabel}</Text>
+                  <Icon name="checkmark-circle-outline" size={18} color="#FFF" />
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={s.ctaWrap}
+                onPress={handleContinue}
+                activeOpacity={0.88}
+              >
+                <LinearGradient
+                  colors={selectedMappedPlan ? [selectedMappedPlan.accentColor, selectedMappedPlan.accentColor] : ['#E94057', '#8A2387']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={s.ctaBtn}
+                >
+                  <Text style={[s.ctaText, { color: '#FFF' }]}>{buttonLabel}</Text>
+                  <Icon name="arrow-forward" size={18} color="#FFF" />
+                </LinearGradient>
+              </TouchableOpacity>
             )}
-
-            <Text style={s.footerNote}>Cancel anytime • Secure payment</Text>
+            <Text style={s.footerNote}>Cancel anytime • Secure SSL encrypted payment</Text>
           </View>
         );
       })()}
@@ -315,210 +492,305 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
   );
 };
 
-const PlanContent = ({ plan, active }) => (
-  <View style={pc.row}>
-    <View style={[pc.iconWrap, { backgroundColor: active ? (plan.isFree ? '#EEE' : '#FFF0F3') : '#F5F5F5' }]}>
-      <Icon name={plan.icon} size={24} color={active ? (plan.isFree ? '#666' : '#E94057') : '#999'} />
-    </View>
-    <View style={pc.info}>
-      <Text style={[pc.name, active && { color: plan.textColor || '#2b1c50' }]}>{plan.name}</Text>
-      <Text style={[pc.duration, active && { color: plan.textColor || '#888', opacity: 0.8 }]}>{plan.duration}</Text>
-    </View>
-    <View style={pc.priceBlock}>
-      <Text style={[pc.price, active && { color: plan.isFree ? '#666' : '#E94057' }]}>{plan.price}</Text>
-      <Text style={pc.perMonth}>{plan.perMonth}</Text>
-    </View>
-  </View>
-);
-
 const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
-const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
+const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#F5F5F5',
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#FFF',
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#2b1c50', fontFamily: FONT_MED },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', fontFamily: FONT_MED },
   scroll: { paddingBottom: 160 },
-  topSection: { paddingHorizontal: 24, marginTop: 12 },
-  title: {
-    fontSize: 28, fontWeight: '800', color: '#111',
-    fontFamily: FONT_MED, marginBottom: 8,
+
+  // Special rotated banner
+  bannerCardWrapper: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 20,
+    alignItems: 'center',
   },
-  subtitle: { fontSize: 15, color: '#666', lineHeight: 22, fontFamily: FONT, marginBottom: 24 },
-  
-  featuresContainer: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+  bannerCard: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 20,
+    position: 'relative',
+    overflow: 'hidden',
+    height: 100,
+    justifyContent: 'center',
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  featureItem: {
+  discountBadge: {
+    position: 'absolute',
+    left: -28,
+    top: 14,
+    backgroundColor: '#FF3366',
+    transform: [{ rotate: '-45deg' }],
+    paddingHorizontal: 28,
+    paddingVertical: 4,
+  },
+  discountText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  bannerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
-    gap: 12,
-  },
-  featureIconBg: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFF0F3',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  featureText: {
-    fontSize: 15,
-    color: '#444',
-    fontFamily: FONT,
-    fontWeight: '500',
-  },
-
-  plansColumn: {
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    marginLeft: 32,
     gap: 16,
   },
+  bannerTitle: {
+    color: '#0F172A',
+    fontSize: 20,
+    fontWeight: '800',
+    fontFamily: FONT_MED,
+  },
+  bannerSubtitle: {
+    color: '#64748B',
+    fontSize: 12,
+    fontFamily: FONT,
+    marginTop: 2,
+  },
+  pagerDots: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 14,
+  },
+  pagerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  pagerDotActive: {
+    width: 16,
+  },
+  pagerDotInactive: {
+    backgroundColor: '#E2E8F0',
+  },
+
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    paddingHorizontal: 18,
+    marginBottom: 12,
+  },
+
+  // Horizontal Card Selection
+  plansHorizontalList: {
+    paddingHorizontal: 16,
+    gap: 12,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
   planCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 20,
-    borderWidth: 2,
-    borderColor: '#F0F0F0',
-    position: 'relative',
+    width: 145,
+    height: 170,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 12,
     justifyContent: 'space-between',
-    minHeight: 160,
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   planCardActive: {
-    // Dynamic styles applied inline based on plan.colors
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2.5,
   },
-  badgeWrapNew: {
+  badgeWrap: {
     position: 'absolute',
-    top: -12,
-    right: 20,
-    backgroundColor: '#E94057',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  badgeTextNew: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  planNameNew: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111111',
-  },
-  planIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  planIconWrapActive: {
-    backgroundColor: '#FFF',
-  },
-  planPriceSection: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-  },
-  planPriceNew: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#111111',
-  },
-  planDurationNew: {
-    fontSize: 16,
-    color: '#111111',
-    fontWeight: '600',
-    opacity: 0.75,
-  },
-  planPerMonthNew: {
-    fontSize: 13,
-    color: '#111111',
-    marginTop: 4,
-    opacity: 0.6,
-  },
-  activeTextWhite: { color: '#FFF', opacity: 1 },
-  activeTextWhiteSub: { color: 'rgba(255, 255, 255, 0.8)', opacity: 1 },
-  activeTextDark: { color: '#111111', opacity: 1 },
-  activeTextDarkSub: { color: 'rgba(0, 0, 0, 0.65)', opacity: 1 },
-
-  currentPlanBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    top: -11,
+    left: 8,
+    right: 8,
+    paddingVertical: 3.5,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  currentPlanBadgeText: {
+  badgeText: {
+    fontSize: 8.5,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  cardPlanHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  planName: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  priceContainer: {
+    marginTop: 6,
+  },
+  priceText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  durationText: {
     fontSize: 10,
-    fontWeight: '700',
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  perMonthText: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  activeBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    backgroundColor: '#10B981',
+    borderTopLeftRadius: 10,
+    borderBottomRightRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  activeBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
     textTransform: 'uppercase',
   },
 
+  // Comparison Divider
+  comparisonDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    marginTop: 30,
+    marginBottom: 20,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  comparisonTitle: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
+
+  // Features checklist
+  featuresContainer: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 18,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  featureIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  featureTextWrap: {
+    flex: 1,
+  },
+  featureHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  featureDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  checkmarkCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noFeaturesText: {
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+
+  // Sticky footer
   footer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingBottom: 34, paddingTop: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1, borderTopColor: '#F0F0F0',
+    paddingHorizontal: 16, paddingBottom: Platform.OS === 'ios' ? 34 : 20, paddingTop: 14,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1.5, borderTopColor: '#E2E8F0',
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.03, shadowRadius: 10, elevation: 10,
   },
-  ctaWrap: { borderRadius: 18, overflow: 'hidden', marginBottom: 8 },
+  ctaWrap: { borderRadius: 20, overflow: 'hidden', marginBottom: 8 },
   ctaBtn: {
     height: 56, flexDirection: 'row',
     justifyContent: 'center', alignItems: 'center', gap: 10,
   },
-  ctaText: { fontSize: 16, fontWeight: '700', color: '#fff', fontFamily: FONT_MED },
-  cancelSubBtn: {
-    marginTop: 8,
-    marginBottom: 12,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  ctaText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
+  footerNote: { fontSize: 11, color: '#64748B', textAlign: 'center', fontFamily: FONT },
+  
+  // Swipable Carousel Styles
+  carouselScrollView: {
+    width: width - 32,
+    height: 100,
   },
-  cancelSubText: {
-    color: '#E94057',
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: FONT_MED,
+  carouselContentContainer: {
+    alignItems: 'center',
   },
-  footerNote: { fontSize: 11, color: '#AAA', textAlign: 'center', fontFamily: FONT },
-});
-
-const pc = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconWrap: {
-    width: 48, height: 48, borderRadius: 14,
-    justifyContent: 'center', alignItems: 'center',
+  bannerCardContainer: {
+    width: width - 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  info: { flex: 1 },
-  name: {
-    fontSize: 16, fontWeight: '600', color: '#555', fontFamily: FONT_MED,
-  },
-  nameActive: { color: '#2b1c50' },
-  duration: { fontSize: 12, color: '#AAA', marginTop: 2 },
-  durationActive: { color: '#888' },
-  priceBlock: { alignItems: 'flex-end' },
-  price: { fontSize: 18, fontWeight: '700', color: '#CCC', fontFamily: FONT_MED },
-  priceActive: { color: '#E94057' },
-  perMonth: { fontSize: 10, color: '#AAA', marginTop: 2 },
 });

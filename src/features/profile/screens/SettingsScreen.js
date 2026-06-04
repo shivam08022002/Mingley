@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import * as Location from 'expo-location';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator, TextInput, Platform, Alert, Modal, FlatList, Dimensions
@@ -18,12 +19,11 @@ const SECTIONS = [
   {
     title: 'Account',
     items: [
-      { key: 'editProfile',    icon: 'person-outline',       label: 'Edit Profile' },
-      { key: 'changePassword', icon: 'lock-closed-outline',  label: 'Change Password' },
-      { key: 'notifications',  icon: 'notifications-outline', label: 'Notifications' },
-      { key: 'privacy',        icon: 'shield-outline',        label: 'Privacy' },
-      { key: 'blocked',        icon: 'ban-outline',           label: 'Blocked Accounts' },
-      { key: 'deleteAccount',  icon: 'trash-outline',         label: 'Delete My Account' },
+      { key: 'editProfile', icon: 'person-outline', label: 'Edit Profile' },
+      { key: 'changePassword', icon: 'lock-closed-outline', label: 'Change Password' },
+      { key: 'notifications', icon: 'notifications-outline', label: 'Notifications' },
+      { key: 'blocked', icon: 'ban-outline', label: 'Blocked Accounts' },
+      { key: 'deleteAccount', icon: 'trash-outline', label: 'Delete My Account' },
     ],
   },
   {
@@ -35,16 +35,17 @@ const SECTIONS = [
   {
     title: 'Discovery',
     items: [
-      { key: 'discoverPrefs', icon: 'options-outline',    label: 'Filters' },
-      { key: 'location',      icon: 'location-outline',   label: 'Location' },
+      { key: 'discoverPrefs', icon: 'options-outline', label: 'Filters' },
+      { key: 'location', icon: 'location-outline', label: 'Location' },
+      { key: 'travelMode', icon: 'airplane-outline', label: 'Travel Mode' },
     ],
   },
   {
     title: 'Support',
     items: [
-      { key: 'help',       icon: 'help-circle-outline',    label: 'Help & Support' },
-      { key: 'terms',      icon: 'document-text-outline',  label: 'Terms of Service' },
-      { key: 'privPolicy', icon: 'lock-closed-outline',    label: 'Privacy Policy' },
+      { key: 'help', icon: 'help-circle-outline', label: 'Help & Support' },
+      { key: 'terms', icon: 'document-text-outline', label: 'Terms of Service' },
+      { key: 'privPolicy', icon: 'lock-closed-outline', label: 'Privacy Policy' },
     ],
   },
 ];
@@ -63,21 +64,16 @@ const SettingsRow = React.memo(({ icon, label, onPress, isLast }) => (
   </TouchableOpacity>
 ));
 
-const NotificationItem = React.memo(({ item, onDoubleTap, FONT }) => {
-  const lastTap = React.useRef(0);
-  
+const NotificationItem = React.memo(({ item, onPress, FONT }) => {
   const handlePress = () => {
-    const now = Date.now();
-    const DOUBLE_PRESS_DELAY = 300;
-    if (now - lastTap.current < DOUBLE_PRESS_DELAY) {
-      onDoubleTap(item.id || item._id);
+    if (!item.isRead && onPress) {
+      onPress(item.id || item._id);
     }
-    lastTap.current = now;
   };
 
   let iconName = 'notifications-outline';
   let iconColor = '#999';
-  
+
   if (item.type === 'match') {
     iconName = 'heart';
     iconColor = '#E94057';
@@ -87,7 +83,7 @@ const NotificationItem = React.memo(({ item, onDoubleTap, FONT }) => {
   }
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[s.notifItem, !item.isRead && s.notifUnread]}
       onPress={handlePress}
       activeOpacity={0.7}
@@ -105,6 +101,14 @@ const NotificationItem = React.memo(({ item, onDoubleTap, FONT }) => {
     </TouchableOpacity>
   );
 });
+
+const TRAVEL_PRESETS = [
+  { city: 'Delhi', country: 'India', lat: 28.6139, lng: 77.2090 },
+  { city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
+  { city: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
+  { city: 'New York', country: 'USA', lat: 40.7128, lng: -74.0060 },
+  { city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
+];
 
 export const SettingsScreen = React.memo(() => {
   const navigation = useNavigation();
@@ -131,7 +135,11 @@ export const SettingsScreen = React.memo(() => {
   const [loadingPrivacy, setLoadingPrivacy] = useState(false);
   const [loadingTos, setLoadingTos] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [travelModeEnabled, setTravelModeEnabled] = useState(false);
+  const [loadingTravelMode, setLoadingTravelMode] = useState(false);
   const [loadingChangePwd, setLoadingChangePwd] = useState(false);
+  const [locationTab, setLocationTab] = useState('myLocation');
+  const [travelCityInput, setTravelCityInput] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -140,6 +148,13 @@ export const SettingsScreen = React.memo(() => {
   useEffect(() => {
     fetchUserData();
   }, []);
+
+  // Sync travel mode toggle from server data
+  useEffect(() => {
+    if (userData?.isTravelMode !== undefined) {
+      setTravelModeEnabled(userData.isTravelMode);
+    }
+  }, [userData]);
 
   const fetchUserData = async () => {
     try {
@@ -284,7 +299,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
     }
   };
 
-  const handleNotifDoubleTap = async (id) => {
+  const handleMarkOneRead = async (id) => {
     try {
       await userService.markNotificationAsRead(id);
       fetchNotifications();
@@ -328,6 +343,10 @@ We reserve the right to terminate or suspend your account at our sole discretion
     } else if (key === 'discoverPrefs') {
       navigation.navigate('Filter');
     } else if (key === 'location') {
+      setLocationTab('myLocation');
+      setLocationModalVisible(true);
+    } else if (key === 'travelMode') {
+      setLocationTab('travelMode');
       setLocationModalVisible(true);
     } else if (key === 'blocked') {
       setBlockedModalVisible(true);
@@ -344,22 +363,66 @@ We reserve the right to terminate or suspend your account at our sole discretion
     }
   }, [navigation, fetchTransactions, handleDeleteAccount]);
 
-  const handleUpdateLocation = async (loc) => {
+  const handleUpdateLocation = async (manualCoords) => {
     setLoadingLocation(true);
     try {
-      await userService.updateLocation({
-        lat: loc.lat,
-        lng: loc.lng,
-        city: loc.city,
-        country: loc.country
-      });
+      let lat, lng, city, country;
+      if (manualCoords && manualCoords.lat) {
+        lat = manualCoords.lat;
+        lng = manualCoords.lng;
+        city = manualCoords.city;
+        country = manualCoords.country || 'India';
+      } else {
+        // Request GPS permission
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Location permission is required to update your location.');
+          setLoadingLocation(false);
+          return;
+        }
+        // Get current GPS coordinates
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        // Reverse geocode to get city/country
+        const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        lat = loc.coords.latitude;
+        lng = loc.coords.longitude;
+        city = geo?.city || geo?.subregion || geo?.region || 'Unknown';
+        country = geo?.country || 'Unknown';
+      }
+
+      await userService.updateLocation({ lat, lng, city, country });
       await fetchUserData();
-      Alert.alert('Success', 'Location updated successfully!');
+      Alert.alert('Success', `Location updated to ${city}, ${country}!`);
       setLocationModalVisible(false);
     } catch (e) {
-      Alert.alert('Error', 'Failed to update location');
+      Alert.alert('Error', 'Failed to update location. Please try again.');
     } finally {
       setLoadingLocation(false);
+    }
+  };
+
+  const handleToggleTravelMode = async (enabled, travelDetails = null) => {
+    setLoadingTravelMode(true);
+    try {
+      if (enabled && travelDetails) {
+        await userService.setTravelMode({
+          enabled: true,
+          city: travelDetails.city,
+          lat: travelDetails.lat,
+          lng: travelDetails.lng,
+        });
+        setTravelModeEnabled(true);
+        Alert.alert('Travel Mode On', `Showing you people near ${travelDetails.city}.`);
+      } else {
+        await userService.setTravelMode({ enabled: false });
+        setTravelModeEnabled(false);
+        Alert.alert('Travel Mode Off', 'Back to your home location.');
+      }
+      await fetchUserData();
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Failed to update Travel Mode.');
+    } finally {
+      setLoadingTravelMode(false);
     }
   };
 
@@ -420,6 +483,11 @@ We reserve the right to terminate or suspend your account at our sole discretion
                 if (item.key === 'location' && userData?.location?.city) {
                   label = `${userData.location.city}, ${userData.location.country || ''}`;
                 }
+                if (item.key === 'travelMode') {
+                  label = travelModeEnabled
+                    ? `Travelling: ${userData?.location?.city || 'Selected City'}`
+                    : 'Travel Mode (Off)';
+                }
                 return (
                   <SettingsRow
                     key={item.key}
@@ -436,264 +504,410 @@ We reserve the right to terminate or suspend your account at our sole discretion
 
         {/* Sign Out — at bottom, above safe area */}
         <View style={s.section}>
-      {/* Blocked Accounts Modal */}
-      <Modal visible={blockedModalVisible} transparent animationType="fade" onRequestClose={() => setBlockedModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setBlockedModalVisible(false)} height={height * 0.8}>
-          <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.modalHeader}>
-              <Text style={s.modalHeaderTitle}>Blocked Accounts</Text>
-            </View>
-            
-            {loadingBlocked ? (
-              <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
-            ) : (
-              <FlatList
-                data={blockedUsers}
-                keyExtractor={item => item.id || item._id}
-                contentContainerStyle={{ paddingVertical: 10 }}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item }) => (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
-                    <View style={row.iconWrap}>
-                      <Icon name="person-circle-outline" size={24} color="#999" />
-                    </View>
-                    <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#111', marginLeft: 12 }}>{item.fullName || item.name || 'User'}</Text>
-                    <TouchableOpacity 
-                      onPress={() => handleUnblock(item.id || item._id)}
-                      style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFF0F3', borderWidth: 1, borderColor: '#F2D0D6' }}
+          {/* Blocked Accounts Modal */}
+          <Modal visible={blockedModalVisible} transparent animationType="fade" onRequestClose={() => setBlockedModalVisible(false)}>
+            <BottomSheetContainer onClose={() => setBlockedModalVisible(false)} height={height * 0.8}>
+              <View style={{ flex: 1, width: '100%' }}>
+                <View style={s.modalHeader}>
+                  <Text style={s.modalHeaderTitle}>Blocked Accounts</Text>
+                </View>
+
+                {loadingBlocked ? (
+                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                ) : (
+                  <FlatList
+                    data={blockedUsers}
+                    keyExtractor={item => item.id || item._id}
+                    contentContainerStyle={{ paddingVertical: 10 }}
+                    showsVerticalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
+                        <View style={row.iconWrap}>
+                          <Icon name="person-circle-outline" size={24} color="#999" />
+                        </View>
+                        <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#111', marginLeft: 12 }}>{item.fullName || item.name || 'User'}</Text>
+                        <TouchableOpacity
+                          onPress={() => handleUnblock(item.id || item._id)}
+                          style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFF0F3', borderWidth: 1, borderColor: '#F2D0D6' }}
+                        >
+                          <Text style={{ color: '#E94057', fontWeight: '700' }}>Unblock</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    ListEmptyComponent={
+                      <View style={{ padding: 60, alignItems: 'center' }}>
+                        <Icon name="ban-outline" size={48} color="#EEE" />
+                        <Text style={{ color: '#AAA', marginTop: 12, fontFamily: FONT }}>No blocked users</Text>
+                      </View>
+                    }
+                  />
+                )}
+              </View>
+            </BottomSheetContainer>
+          </Modal>
+
+          {/* Notifications Modal */}
+          <Modal visible={notifModalVisible} transparent animationType="fade" onRequestClose={() => setNotifModalVisible(false)}>
+            <BottomSheetContainer onClose={() => setNotifModalVisible(false)} height={height * 0.85}>
+              <View style={{ flex: 1, width: '100%' }}>
+                <View style={s.notifHeader}>
+                  <Text style={s.notifHeaderTitle}>Notifications</Text>
+                  <View style={{ flexDirection: 'row', gap: 15 }}>
+                    <TouchableOpacity onPress={handleMarkAllRead}>
+                      <Icon name="checkmark-done-outline" size={22} color="#E94057" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {loadingNotifs ? (
+                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                ) : (
+                  <FlatList
+                    data={notifications}
+                    keyExtractor={item => item.id || item._id}
+                    contentContainerStyle={s.notifList}
+                    showsVerticalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                      <NotificationItem
+                        item={item}
+                        onPress={handleMarkOneRead}
+                        FONT={FONT}
+                      />
+                    )}
+                    ListEmptyComponent={
+                      <View style={{ padding: 40, alignItems: 'center' }}>
+                        <Text style={{ color: '#AAA', fontFamily: FONT }}>No notifications yet.</Text>
+                      </View>
+                    }
+                  />
+                )}
+              </View>
+            </BottomSheetContainer>
+          </Modal>
+
+          {/* Privacy Policy Modal */}
+          <Modal visible={privacyModalVisible} transparent animationType="fade" onRequestClose={() => setPrivacyModalVisible(false)}>
+            <BottomSheetContainer onClose={() => setPrivacyModalVisible(false)} height={height * 0.85}>
+              <View style={{ flex: 1, width: '100%' }}>
+                <View style={s.modalHeader}>
+                  <Text style={s.modalHeaderTitle}>{privacyData.title || 'Privacy Policy'}</Text>
+                </View>
+                {loadingPrivacy ? (
+                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                ) : (
+                  <View style={{ flex: 1 }}>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
+                      {privacyData.lastUpdated && (
+                        <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
+                          Last Updated: {privacyData.lastUpdated}
+                        </Text>
+                      )}
+                      <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
+                        {privacyData.content}
+                      </Text>
+                      <View style={{ height: 20 }} />
+                    </ScrollView>
+
+                    <TouchableOpacity
+                      onPress={handleAcceptPrivacyPolicy}
+                      style={{
+                        backgroundColor: '#E94057',
+                        paddingVertical: 14,
+                        borderRadius: 12,
+                        alignItems: 'center',
+                        marginBottom: 10,
+                        shadowColor: '#E94057',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 5,
+                        elevation: 3,
+                      }}
                     >
-                      <Text style={{ color: '#E94057', fontWeight: '700' }}>Unblock</Text>
+                      <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, fontFamily: FONT_MED }}>Accept Privacy Policy</Text>
                     </TouchableOpacity>
                   </View>
                 )}
-                ListEmptyComponent={
-                  <View style={{ padding: 60, alignItems: 'center' }}>
-                    <Icon name="ban-outline" size={48} color="#EEE" />
-                    <Text style={{ color: '#AAA', marginTop: 12, fontFamily: FONT }}>No blocked users</Text>
-                  </View>
-                }
-              />
-            )}
-          </View>
-        </BottomSheetContainer>
-      </Modal>
-
-      {/* Notifications Modal */}
-      <Modal visible={notifModalVisible} transparent animationType="fade" onRequestClose={() => setNotifModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setNotifModalVisible(false)} height={height * 0.85}>
-          <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.notifHeader}>
-              <Text style={s.notifHeaderTitle}>Notifications</Text>
-              <View style={{ flexDirection: 'row', gap: 15 }}>
-                <TouchableOpacity onPress={handleMarkAllRead}>
-                  <Icon name="checkmark-done-outline" size={22} color="#E94057" />
-                </TouchableOpacity>
               </View>
-            </View>
-            
-            {loadingNotifs ? (
-              <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
-            ) : (
-              <FlatList
-                data={notifications}
-                keyExtractor={item => item.id || item._id}
-                contentContainerStyle={s.notifList}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item }) => (
-                  <NotificationItem 
-                    item={item} 
-                    onDoubleTap={handleNotifDoubleTap} 
-                    FONT={FONT} 
-                  />
-                )}
-                ListEmptyComponent={
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <Text style={{ color: '#AAA', fontFamily: FONT }}>No notifications yet.</Text>
-                  </View>
-                }
-              />
-            )}
-          </View>
-        </BottomSheetContainer>
-      </Modal>
+            </BottomSheetContainer>
+          </Modal>
 
-      {/* Privacy Policy Modal */}
-      <Modal visible={privacyModalVisible} transparent animationType="fade" onRequestClose={() => setPrivacyModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setPrivacyModalVisible(false)} height={height * 0.85}>
-          <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.modalHeader}>
-              <Text style={s.modalHeaderTitle}>{privacyData.title || 'Privacy Policy'}</Text>
-            </View>
-            {loadingPrivacy ? (
-              <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
-            ) : (
-              <View style={{ flex: 1 }}>
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
-                  {privacyData.lastUpdated && (
-                    <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
-                      Last Updated: {privacyData.lastUpdated}
+          {/* Terms of Service Modal */}
+          <Modal visible={tosModalVisible} transparent animationType="fade" onRequestClose={() => setTosModalVisible(false)}>
+            <BottomSheetContainer onClose={() => setTosModalVisible(false)} height={height * 0.85}>
+              <View style={{ flex: 1, width: '100%' }}>
+                <View style={s.modalHeader}>
+                  <Text style={s.modalHeaderTitle}>{tosData.title || 'Terms of Service'}</Text>
+                </View>
+                {loadingTos ? (
+                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
+                    {tosData.lastUpdated && (
+                      <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
+                        Last Updated: {tosData.lastUpdated}
+                      </Text>
+                    )}
+                    <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
+                      {tosData.content}
                     </Text>
-                  )}
-                  <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
-                    {privacyData.content}
-                  </Text>
-                  <View style={{ height: 20 }} />
-                </ScrollView>
-                
-                <TouchableOpacity 
-                  onPress={handleAcceptPrivacyPolicy}
-                  style={{
-                    backgroundColor: '#E94057', 
-                    paddingVertical: 14, 
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    marginBottom: 10,
-                    shadowColor: '#E94057',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 5,
-                    elevation: 3,
-                  }}
-                >
-                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, fontFamily: FONT_MED }}>Accept Privacy Policy</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </BottomSheetContainer>
-      </Modal>
-
-      {/* Terms of Service Modal */}
-      <Modal visible={tosModalVisible} transparent animationType="fade" onRequestClose={() => setTosModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setTosModalVisible(false)} height={height * 0.85}>
-          <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.modalHeader}>
-              <Text style={s.modalHeaderTitle}>{tosData.title || 'Terms of Service'}</Text>
-            </View>
-            {loadingTos ? (
-              <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
-            ) : (
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
-                {tosData.lastUpdated && (
-                  <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
-                    Last Updated: {tosData.lastUpdated}
-                  </Text>
+                    <View style={{ height: 40 }} />
+                  </ScrollView>
                 )}
-                <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
-                  {tosData.content}
-                </Text>
-                <View style={{ height: 40 }} />
-              </ScrollView>
-            )}
-          </View>
-        </BottomSheetContainer>
-      </Modal>
-
-      {/* Location Modal */}
-      <Modal visible={locationModalVisible} transparent animationType="fade" onRequestClose={() => setLocationModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setLocationModalVisible(false)} height={height * 0.5}>
-          <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.modalHeader}>
-              <Text style={s.modalHeaderTitle}>Update Location</Text>
-            </View>
-            <View style={{ paddingVertical: 30, alignItems: 'center' }}>
-              <View style={[row.iconWrap, { width: 60, height: 60, borderRadius: 30, marginBottom: 16 }]}>
-                <Icon name="location" size={30} color="#E94057" />
               </View>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#111', marginBottom: 8 }}>
-                {userData?.location?.city || 'City'}, {userData?.location?.country || 'Country'}
-              </Text>
-              <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 40, marginBottom: 30 }}>
-                Current Coordinates: {userData?.location?.lat ? Number(userData.location.lat).toFixed(4) : '0.0000'}, {userData?.location?.lng ? Number(userData.location.lng).toFixed(4) : '0.0000'}
-              </Text>
+            </BottomSheetContainer>
+          </Modal>
 
-              {loadingLocation ? (
-                <ActivityIndicator color="#E94057" />
-              ) : (
-                <TouchableOpacity 
-                  onPress={() => {
-                    // Mocking location pick as requested by UI PUT API
-                    handleUpdateLocation({
-                      lat: 28.6139,
-                      lng: 77.209,
-                      city: 'Delhi',
-                      country: 'India'
-                    });
-                  }}
-                  style={{ 
-                    backgroundColor: '#E94057', 
-                    paddingHorizontal: 30, 
-                    paddingVertical: 14, 
-                    borderRadius: 100,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10
-                  }}
-                >
-                  <Icon name="refresh" size={18} color="#FFF" />
-                  <Text style={{ color: '#FFF', fontWeight: '700' }}>Update Location</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </BottomSheetContainer>
-      </Modal>
+          {/* Location Modal */}
+          <Modal visible={locationModalVisible} transparent animationType="fade" onRequestClose={() => setLocationModalVisible(false)}>
+            <BottomSheetContainer onClose={() => setLocationModalVisible(false)} height={height * 0.73}>
+              <View style={{ flex: 1, width: '100%' }}>
+                <View style={s.modalHeader}>
+                  <Text style={s.modalHeaderTitle}>Discovery Location</Text>
+                </View>
 
-      {/* Change Password Modal */}
-      <Modal visible={changePwdModalVisible} transparent animationType="fade" onRequestClose={() => setChangePwdModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setChangePwdModalVisible(false)} height={height * 0.6}>
-          <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.modalHeader}>
-              <Text style={s.modalHeaderTitle}>Change Password</Text>
-            </View>
-            
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
-              <Text style={s.inputLabel}>Current Password</Text>
-              <TextInput
-                style={s.amountInput}
-                placeholder="Enter current password"
-                placeholderTextColor="#A0A0A0"
-                secureTextEntry
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-              />
+                {/* Custom Segmented Tab Bar */}
+                <View style={s.modalTabBar}>
+                  <TouchableOpacity
+                    style={[s.modalTabItem, locationTab === 'myLocation' && s.modalTabItemActive]}
+                    onPress={() => setLocationTab('myLocation')}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="location-outline" size={18} color={locationTab === 'myLocation' ? '#E94057' : '#666'} />
+                    <Text style={[s.modalTabItemText, locationTab === 'myLocation' && s.modalTabItemTextActive]}>My Location</Text>
+                  </TouchableOpacity>
 
-              <Text style={s.inputLabel}>New Password</Text>
-              <TextInput
-                style={s.amountInput}
-                placeholder="Enter new password"
-                placeholderTextColor="#A0A0A0"
-                secureTextEntry
-                value={newPassword}
-                onChangeText={setNewPassword}
-              />
+                  <TouchableOpacity
+                    style={[s.modalTabItem, locationTab === 'travelMode' && s.modalTabItemActive]}
+                    onPress={() => setLocationTab('travelMode')}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="airplane-outline" size={18} color={locationTab === 'travelMode' ? '#E94057' : '#666'} style={{ transform: [{ rotate: '45deg' }] }} />
+                    <Text style={[s.modalTabItemText, locationTab === 'travelMode' && s.modalTabItemTextActive]}>Travel Mode</Text>
+                  </TouchableOpacity>
+                </View>
 
-              <Text style={s.inputLabel}>Confirm New Password</Text>
-              <TextInput
-                style={s.amountInput}
-                placeholder="Confirm new password"
-                placeholderTextColor="#A0A0A0"
-                secureTextEntry
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
+                {locationTab === 'myLocation' ? (
+                  <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                    <View style={[row.iconWrap, { width: 60, height: 60, borderRadius: 30, marginBottom: 16 }]}>
+                      <Icon name="location" size={30} color="#E94057" />
+                    </View>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111', marginBottom: 8 }}>
+                      {userData?.location?.city || 'City'}, {userData?.location?.country || 'Country'}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 40, marginBottom: 30 }}>
+                      Current Coordinates: {userData?.location?.lat ? Number(userData.location.lat).toFixed(4) : '0.0000'}, {userData?.location?.lng ? Number(userData.location.lng).toFixed(4) : '0.0000'}
+                    </Text>
 
-              {loadingChangePwd ? (
-                <ActivityIndicator color="#E94057" style={{ marginTop: 10 }} />
-              ) : (
-                <TouchableOpacity 
-                  onPress={handleChangePassword}
-                  style={s.submitBtn}
-                >
-                  <Text style={s.submitBtnText}>Change Password</Text>
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-          </View>
-        </BottomSheetContainer>
-      </Modal>
+                    {loadingLocation ? (
+                      <ActivityIndicator color="#E94057" />
+                    ) : (
+                      <View style={{ flexDirection: 'column', gap: 12, width: '80%', alignItems: 'center' }}>
+                        <TouchableOpacity
+                          onPress={() => handleUpdateLocation()}
+                          style={{
+                            backgroundColor: '#E94057',
+                            paddingHorizontal: 30,
+                            paddingVertical: 14,
+                            borderRadius: 100,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 10,
+                            width: '100%',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Icon name="locate" size={18} color="#FFF" />
+                          <Text style={{ color: '#FFF', fontWeight: '700' }}>Detect via GPS</Text>
+                        </TouchableOpacity>
 
-      <TouchableOpacity style={s.signOutBtn} onPress={handleSignOut}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            handleUpdateLocation({
+                              lat: 28.6139,
+                              lng: 77.2090,
+                              city: 'Delhi',
+                              country: 'India'
+                            });
+                          }}
+                          style={{
+                            backgroundColor: '#FAFAFA',
+                            borderWidth: 1.5,
+                            borderColor: '#F0F0F0',
+                            paddingHorizontal: 30,
+                            paddingVertical: 14,
+                            borderRadius: 100,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 10,
+                            width: '100%',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Icon name="refresh" size={18} color="#666" />
+                          <Text style={{ color: '#666', fontWeight: '700' }}>Mock to Delhi (Web/Testing)</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false} style={{ paddingHorizontal: 10, paddingVertical: 15 }} contentContainerStyle={{ paddingBottom: 40 }}>
+                    <Text style={{ fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 16 }}>
+                      Travel Mode lets you virtually change your city so you can find matches from other cities worldwide!
+                    </Text>
+
+                    {/* Active Travel Mode Status Banner */}
+                    <View style={[s.travelStatusBanner, travelModeEnabled ? s.travelStatusBannerActive : s.travelStatusBannerInactive]}>
+                      <Icon
+                        name={travelModeEnabled ? 'navigate-circle' : 'airplane-outline'}
+                        size={20}
+                        color={travelModeEnabled ? '#2E7D32' : '#777'}
+                        style={!travelModeEnabled && { transform: [{ rotate: '45deg' }] }}
+                      />
+                      <Text style={[s.travelStatusText, travelModeEnabled ? { color: '#2E7D32' } : { color: '#666' }]}>
+                        {travelModeEnabled
+                          ? `Travelling in: ${userData?.location?.city || 'Selected City'}`
+                          : 'Travel Mode is currently Off'}
+                      </Text>
+                    </View>
+
+                    {/* Quick Pick presets */}
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Popular Destinations</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 10 }}>
+                      {TRAVEL_PRESETS.map((preset) => (
+                        <TouchableOpacity
+                          key={preset.city}
+                          onPress={() => {
+                            setTravelCityInput(preset.city);
+                            handleToggleTravelMode(true, preset);
+                          }}
+                          style={[
+                            s.travelPresetCard,
+                            userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && s.travelPresetCardActive
+                          ]}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={{ fontSize: 22, marginBottom: 2 }}>{preset.city === 'Delhi' || preset.city === 'Mumbai' ? '🇮🇳' : preset.city === 'London' ? '🇬🇧' : preset.city === 'New York' ? '🇺🇸' : '🇫🇷'}</Text>
+                          <Text style={[s.travelPresetName, userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && { color: '#E94057' }]}>{preset.city}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+
+                    {/* Manual City entry */}
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Custom City Destination</Text>
+                    <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                      <TextInput
+                        style={[s.amountInput, { flex: 1, marginBottom: 0 }]}
+                        placeholder="Enter city name (e.g. Mumbai, Paris)"
+                        placeholderTextColor="#A0A0A0"
+                        value={travelCityInput}
+                        onChangeText={setTravelCityInput}
+                      />
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (!travelCityInput.trim()) {
+                            Alert.alert('Error', 'Please enter a city name.');
+                            return;
+                          }
+                          const found = TRAVEL_PRESETS.find(p => p.city.toLowerCase() === travelCityInput.trim().toLowerCase());
+                          if (found) {
+                            handleToggleTravelMode(true, found);
+                          } else {
+                            // Custom geocode mockup
+                            handleToggleTravelMode(true, {
+                              city: travelCityInput.trim(),
+                              lat: 28.6139 + (Math.random() - 0.5) * 2,
+                              lng: 77.2090 + (Math.random() - 0.5) * 2,
+                            });
+                          }
+                        }}
+                        style={{
+                          backgroundColor: '#E94057',
+                          width: 52,
+                          height: 52,
+                          borderRadius: 14,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {loadingTravelMode ? (
+                          <ActivityIndicator color="#FFF" />
+                        ) : (
+                          <Icon name="search-outline" size={20} color="#FFF" />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+
+                    {travelModeEnabled && (
+                      <TouchableOpacity
+                        onPress={() => handleToggleTravelMode(false)}
+                        style={s.turnOffTravelBtn}
+                        activeOpacity={0.8}
+                      >
+                        <Icon name="power" size={16} color="#E94057" style={{ marginRight: 6 }} />
+                        <Text style={{ color: '#E94057', fontWeight: '700' }}>Turn Off Travel Mode</Text>
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </BottomSheetContainer>
+          </Modal>
+
+          {/* Change Password Modal */}
+          <Modal visible={changePwdModalVisible} transparent animationType="fade" onRequestClose={() => setChangePwdModalVisible(false)}>
+            <BottomSheetContainer onClose={() => setChangePwdModalVisible(false)} height={height * 0.6}>
+              <View style={{ flex: 1, width: '100%' }}>
+                <View style={s.modalHeader}>
+                  <Text style={s.modalHeaderTitle}>Change Password</Text>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
+                  <Text style={s.inputLabel}>Current Password</Text>
+                  <TextInput
+                    style={s.amountInput}
+                    placeholder="Enter current password"
+                    placeholderTextColor="#A0A0A0"
+                    secureTextEntry
+                    value={currentPassword}
+                    onChangeText={setCurrentPassword}
+                  />
+
+                  <Text style={s.inputLabel}>New Password</Text>
+                  <TextInput
+                    style={s.amountInput}
+                    placeholder="Enter new password"
+                    placeholderTextColor="#A0A0A0"
+                    secureTextEntry
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                  />
+
+                  <Text style={s.inputLabel}>Confirm New Password</Text>
+                  <TextInput
+                    style={s.amountInput}
+                    placeholder="Confirm new password"
+                    placeholderTextColor="#A0A0A0"
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                  />
+
+                  {loadingChangePwd ? (
+                    <ActivityIndicator color="#E94057" style={{ marginTop: 10 }} />
+                  ) : (
+                    <TouchableOpacity
+                      onPress={handleChangePassword}
+                      style={s.submitBtn}
+                    >
+                      <Text style={s.submitBtnText}>Change Password</Text>
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
+              </View>
+            </BottomSheetContainer>
+          </Modal>
+
+          <TouchableOpacity style={s.signOutBtn} onPress={handleSignOut}>
             <Icon name="log-out-outline" size={18} color="#E94057" />
             <Text style={s.signOutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -718,10 +932,10 @@ We reserve the right to terminate or suspend your account at our sole discretion
                 return (
                   <View style={s.txItem}>
                     <View style={row.iconWrap}>
-                      <Icon 
-                        name={isCredit ? 'arrow-down-outline' : 'arrow-up-outline'} 
-                        size={18} 
-                        color={isCredit ? '#059669' : '#E94057'} 
+                      <Icon
+                        name={isCredit ? 'arrow-down-outline' : 'arrow-up-outline'}
+                        size={18}
+                        color={isCredit ? '#059669' : '#E94057'}
                       />
                     </View>
                     <View style={s.txLeft}>
@@ -740,7 +954,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
           </View>
         </BottomSheetContainer>
       </Modal>
-      
+
       {/* Delete Account Warning Modal */}
       <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
         <View style={s.alertOverlay}>
@@ -761,15 +975,15 @@ We reserve the right to terminate or suspend your account at our sole discretion
               onChangeText={setDeletePassword}
             />
             <View style={s.alertActionRow}>
-              <TouchableOpacity 
-                style={[s.alertBtn, s.alertBtnCancel]} 
+              <TouchableOpacity
+                style={[s.alertBtn, s.alertBtnCancel]}
                 onPress={() => setDeleteModalVisible(false)}
                 activeOpacity={0.8}
               >
                 <Text style={s.alertBtnCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[s.alertBtn, s.alertBtnDelete, !deletePassword.trim() && s.alertBtnDeleteDisabled]} 
+              <TouchableOpacity
+                style={[s.alertBtn, s.alertBtnDelete, !deletePassword.trim() && s.alertBtnDeleteDisabled]}
                 onPress={() => {
                   if (!deletePassword.trim()) {
                     Alert.alert('Error', 'Please enter your password to proceed.');
@@ -791,9 +1005,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
   );
 });
 
-const FONT     = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
-const PINK     = '#E94057';
+const PINK = '#E94057';
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F7F7' },
@@ -831,7 +1045,7 @@ const s = StyleSheet.create({
   signOutText: {
     fontSize: 15, fontWeight: '700', color: PINK, fontFamily: FONT_MED,
   },
-  
+
   // Transaction Modal Styles
   txHeader: {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
@@ -1005,6 +1219,85 @@ const s = StyleSheet.create({
   alertBtnDeleteDisabled: {
     backgroundColor: '#F2A0AC',
     opacity: 0.7,
+  },
+  modalTabBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#F0F0F0',
+    marginBottom: 10,
+  },
+  modalTabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  modalTabItemActive: {
+    borderBottomColor: '#E94057',
+  },
+  modalTabItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  modalTabItemTextActive: {
+    color: '#E94057',
+    fontWeight: '700',
+  },
+  travelStatusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    gap: 10,
+  },
+  travelStatusBannerActive: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#C6F6D5',
+  },
+  travelStatusBannerInactive: {
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
+  },
+  travelStatusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  travelPresetCard: {
+    backgroundColor: '#FFF',
+    borderWidth: 1.5,
+    borderColor: '#F0F0F0',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    minWidth: 90,
+  },
+  travelPresetCardActive: {
+    borderColor: '#E94057',
+    backgroundColor: '#FFF0F3',
+  },
+  travelPresetName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#444',
+  },
+  turnOffTravelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F3',
+    borderWidth: 1.5,
+    borderColor: '#FFD6DE',
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginTop: 10,
+    width: '100%',
   },
 });
 

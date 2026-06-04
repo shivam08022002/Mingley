@@ -29,6 +29,9 @@ export const ProfileScreen = React.memo(() => {
   const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
   const logoutAction = useAuthStore((s) => s.logout);
 
+  const profileData = profile || {};
+  const isFemale = profileData.gender?.toLowerCase() === 'female' || profileData.gender?.toLowerCase() === 'woman';
+
   const handleSignOut = useCallback(async () => {
     try {
       await authService.logout();
@@ -63,16 +66,14 @@ export const ProfileScreen = React.memo(() => {
     }
   }, [isFocused, fetchProfile, fetchStatus, fetchWalletBalance]);
 
-  // Only fetch coin packages for male users (API rejects for female/woman)
+  // Only fetch coin packages if user is not female
   useEffect(() => {
-    if (isFocused && profile?.gender) {
-      const gender = profile.gender.toLowerCase();
-      const isMale = gender === 'male' || gender === 'man';
-      if (isMale) {
+    if (isFocused && profileData.gender) {
+      if (!isFemale) {
         fetchCoinPackages();
       }
     }
-  }, [isFocused, profile?.gender]);
+  }, [isFocused, profileData.gender, isFemale]);
 
   useEffect(() => {
     if (notifModalVisible) {
@@ -101,6 +102,15 @@ export const ProfileScreen = React.memo(() => {
     }
   };
 
+  const handleMarkOneRead = async (id) => {
+    try {
+      await userService.markNotificationAsRead(id);
+      fetchNotifications();
+    } catch (e) {
+      console.error('Failed to mark notification as read:', e);
+    }
+  };
+
   const handleMarkAllRead = async () => {
     try {
       await userService.markAllNotificationsAsRead();
@@ -115,8 +125,6 @@ export const ProfileScreen = React.memo(() => {
     await fetchProfile();
     setRefreshing(false);
   }, [fetchProfile]);
-
-  const profileData = profile || {};
 
   const handleManageSubscription = useCallback(() => {
     navigation.navigate('SubscriptionPlans');
@@ -221,8 +229,6 @@ export const ProfileScreen = React.memo(() => {
     }
   }, [fetchProfile]);
 
-  const isFemale = profileData.gender?.toLowerCase() === 'female' || profileData.gender?.toLowerCase() === 'woman';
-
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
@@ -298,13 +304,15 @@ export const ProfileScreen = React.memo(() => {
                 <Icon name="chevron-forward" size={16} color="#CCC" />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionRow} onPress={() => setDepositModalVisible(true)}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="wallet-outline" size={18} color="#E94057" />
-                </View>
-                <Text style={styles.actionLabel}>Coin Packages</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
-              </TouchableOpacity>
+              {!isFemale && (
+                <TouchableOpacity style={styles.actionRow} onPress={() => setDepositModalVisible(true)}>
+                  <View style={styles.actionIconWrap}>
+                    <Icon name="wallet-outline" size={18} color="#E94057" />
+                  </View>
+                  <Text style={styles.actionLabel}>Coin Packages</Text>
+                  <Icon name="chevron-forward" size={16} color="#CCC" />
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity style={[styles.actionRow, styles.lastActionRow]} onPress={handleSignOut}>
                 <View style={styles.actionIconWrap}>
@@ -337,7 +345,11 @@ export const ProfileScreen = React.memo(() => {
                 contentContainerStyle={styles.notifList}
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => (
-                  <View style={[styles.notifItem, !item.isRead && styles.notifItemUnread]}>
+                  <TouchableOpacity
+                    style={[styles.notifItem, !item.isRead && styles.notifItemUnread]}
+                    onPress={() => !item.isRead && handleMarkOneRead(item.id)}
+                    activeOpacity={0.7}
+                  >
                     <View style={[styles.notifIconWrap, { backgroundColor: item.type === 'MATCH' ? '#FFF0F3' : item.type === 'SUPERCHAT' ? '#F3E8FF' : '#F0F9FF' }]}>
                       <Icon
                         name={item.type === 'MATCH' ? 'heart-circle' : item.type === 'SUPERCHAT' ? 'flash' : 'megaphone-outline'}
@@ -351,7 +363,7 @@ export const ProfileScreen = React.memo(() => {
                       <Text style={styles.notifTime}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                     </View>
                     {!item.isRead && <View style={styles.unreadDot} />}
-                  </View>
+                  </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                   <View style={styles.emptyState}>
