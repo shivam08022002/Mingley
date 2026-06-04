@@ -33,9 +33,6 @@ export const GenderSelectionScreen = ({ navigation }) => {
         >
           <Icon name="chevron-back" size={24} color="#E94057" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>

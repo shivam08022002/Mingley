@@ -55,15 +55,27 @@ export const ProfileDetailsScreen = ({ navigation }) => {
     setAvatarModalVisible(true);
   };
 
+  const handleConfirm = () => {
+    if (!profileDetails.firstName?.trim()) {
+      Alert.alert('Validation Error', 'First name is required.');
+      return;
+    }
+    if (!profileDetails.lastName?.trim()) {
+      Alert.alert('Validation Error', 'Last name is required.');
+      return;
+    }
+    if (!profileDetails.birthday) {
+      Alert.alert('Validation Error', 'Please select your birthday.');
+      return;
+    }
+    navigation.navigate('GenderSelection');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <DismissKeyboard>
         <View style={{ flex: 1 }}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={handleSkip}>
-              <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
-          </View>
+          <View style={styles.header} />
 
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -119,7 +131,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
 
             <Button
               title="Confirm"
-              onPress={() => navigation.navigate('GenderSelection')}
+              onPress={handleConfirm}
               style={styles.confirmButton}
               textStyle={styles.buttonText}
               variant="solid"

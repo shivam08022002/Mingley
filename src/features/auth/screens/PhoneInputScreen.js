@@ -17,8 +17,8 @@ const phoneSchema = yup.object().shape({
   phone: yup
     .string()
     .required('Phone number is required')
-    .min(10, 'Must be a valid phone number'),
-  password: yup.string().required('Password is required').min(6, 'Must be at least 6 characters'),
+    .matches(/^[0-9]{10}$/, 'Must be a valid 10-digit phone number'),
+  password: yup.string().required('Password is required').min(8, 'Must be at least 8 characters'),
   confirmPassword: yup.string()
     .oneOf([yup.ref('password'), null], 'Passwords must match')
     .required('Confirm password is required'),

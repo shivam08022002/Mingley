@@ -55,13 +55,19 @@ export const InterestsSelectionScreen = ({ navigation }) => {
   const handleRegister = async () => {
     setIsLoading(true);
     try {
+      const rawGender = (gender || '').toLowerCase();
+      const mappedGender = rawGender === 'man' ? 'male' : rawGender === 'woman' ? 'female' : 'other';
+
+      const rawPhone = authDetails.phone || '';
+      const formattedPhone = rawPhone ? (rawPhone.startsWith('+') ? rawPhone : `+91${rawPhone}`) : '';
+
       const userData = {
         email: authDetails.email,
-        phone: authDetails.phone || '',
+        phone: formattedPhone,
         password: authDetails.password,
         confirmPassword: authDetails.confirmPassword,
         fullName: `${profileDetails.firstName} ${profileDetails.lastName}`,
-        gender: gender.toLowerCase(),
+        gender: mappedGender,
         dateOfBirth: profileDetails.birthday || new Date().toISOString(),
         avatar: profileDetails.avatar || 'https://via.placeholder.com/150',
         interests: interests, // Including interests as well
