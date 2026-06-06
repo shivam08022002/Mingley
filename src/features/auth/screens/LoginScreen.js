@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -29,14 +29,17 @@ export const LoginScreen = ({ navigation }) => {
   });
 
   const onSubmit = async (data) => {
-    // Instead of logging in directly, we navigate to the OTP screen.
-    // We pass the login data to the OTP screen so it can perform the final login with the OTP.
-    navigation.navigate('OTPVerification', { 
-      type: 'login', 
-      identifier: data.identifier, 
-      password: data.password 
+    // If the identifier looks like a phone number (all digits, 10 chars), prefix +91
+    const isPhone = /^[0-9]{10}$/.test(data.identifier.trim());
+    const finalIdentifier = isPhone ? `+91${data.identifier.trim()}` : data.identifier.trim();
+
+    navigation.navigate('OTPVerification', {
+      type: 'login',
+      identifier: finalIdentifier,
+      password: data.password
     });
   };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Back button */}
@@ -48,7 +51,7 @@ export const LoginScreen = ({ navigation }) => {
         <Icon name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboard}
       >
@@ -61,7 +64,10 @@ export const LoginScreen = ({ navigation }) => {
             <View style={styles.header}>
               <Text style={styles.title}>Login</Text>
               <Text style={styles.subtitle}>
-                Please enter your valid phone number. We will send you a 4-digit code to verify
+                Please enter your registered email or phone number.
+              </Text>
+              <Text style={styles.subtitle}>
+                We will send you a 4-digit code to verify
               </Text>
             </View>
 
@@ -71,6 +77,7 @@ export const LoginScreen = ({ navigation }) => {
                 name="identifier"
                 placeholder="Email or phone number"
                 keyboardType="default"
+                showCountryCode={false}
                 autoCapitalize="none"
                 error={errors.identifier?.message}
               />
@@ -83,7 +90,7 @@ export const LoginScreen = ({ navigation }) => {
                 error={errors.password?.message}
               />
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.forgotPassword}
                 onPress={() => navigation.navigate('ForgotPassword')}
               >

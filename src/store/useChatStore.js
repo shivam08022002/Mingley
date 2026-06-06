@@ -298,17 +298,25 @@ export const useChatStore = create((set, get) => ({
       // Get current user ID from either auth store or chat store
       const currentUserId = get().user?.id || get().user?._id;
       
-      const mappedMessages = rawMessages.map(m => ({
+      const mappedMessages = rawMessages
+        .filter(m => !m.content?.startsWith('Sent a ') && !m.text?.startsWith('Sent a '))
+        .map(m => ({
         ...m,
         id: m.id || m._id,
         text: m.content || m.text,
         type: m.messageType?.toLowerCase() || 'text',
-        giftName: m.giftName,
-        cost: m.giftCost,
+        giftName: m.giftName || m.gift?.name,
+        giftId: m.giftId || m.gift?.id || m.gift?._id,
+        icon: m.icon || m.giftIcon || m.gift?.icon || m.gift?.iconName,
+        cost: m.giftCost || m.gift?.price || m.gift?.coinCost,
         amount: m.coinAmount,
         imageUrl: m.imageUrl,
         time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-        isMine: m.senderId === currentUserId,
+        isMine: (m.senderId && currentUserId && String(m.senderId) === String(currentUserId)) ||
+                (m.sender && currentUserId && String(m.sender) === String(currentUserId)) ||
+                (m.sender?._id && currentUserId && String(m.sender._id) === String(currentUserId)) ||
+                (m.sender?.id && currentUserId && String(m.sender.id) === String(currentUserId)) ||
+                m.isMine === true,
       }));
 
       // Sort descending by date (newest first, index 0 is newest -> bottom of inverted FlatList)
@@ -389,18 +397,27 @@ export const useChatStore = create((set, get) => ({
   },
 
   pushReceivedMessage: (chatId, rawMessage) => {
+    if (rawMessage.content?.startsWith('Sent a ') || rawMessage.text?.startsWith('Sent a ')) {
+      return;
+    }
     const currentUserId = get().user?.id || get().user?._id;
     const mapped = {
       ...rawMessage,
       id: rawMessage.id || rawMessage._id,
       text: rawMessage.content || rawMessage.text,
       type: rawMessage.messageType?.toLowerCase() || 'text',
-      giftName: rawMessage.giftName,
-      cost: rawMessage.giftCost,
+      giftName: rawMessage.giftName || rawMessage.gift?.name,
+      giftId: rawMessage.giftId || rawMessage.gift?.id || rawMessage.gift?._id,
+      icon: rawMessage.icon || rawMessage.giftIcon || rawMessage.gift?.icon || rawMessage.gift?.iconName,
+      cost: rawMessage.giftCost || rawMessage.gift?.price || rawMessage.gift?.coinCost,
       amount: rawMessage.coinAmount,
       imageUrl: rawMessage.imageUrl,
       time: rawMessage.createdAt ? new Date(rawMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-      isMine: rawMessage.senderId === currentUserId,
+      isMine: (rawMessage.senderId && currentUserId && String(rawMessage.senderId) === String(currentUserId)) ||
+              (rawMessage.sender && currentUserId && String(rawMessage.sender) === String(currentUserId)) ||
+              (rawMessage.sender?._id && currentUserId && String(rawMessage.sender._id) === String(currentUserId)) ||
+              (rawMessage.sender?.id && currentUserId && String(rawMessage.sender.id) === String(currentUserId)) ||
+              rawMessage.isMine === true,
     };
 
     // Only append to the messages list if the message belongs to the currently active chat screen

@@ -121,6 +121,7 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
               <Icon name="location" size={16} color="#E94057" />
               <Text style={s.locText}>{location?.city || 'Location not set'}{location?.country ? `, ${location.country}` : ''}</Text>
             </View>
+
             <Text style={s.bioText} numberOfLines={3}>{decodeEmoji(bio) || 'Add a bio to your profile'}</Text>
           </View>
 
@@ -136,21 +137,30 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
         </View>
       </View>
 
-      {/* ── Profile Completion Bar ── */}
-      <View style={s.completionContainer}>
-        <View style={s.completionHeader}>
-          <Text style={s.completionLabel}>Profile completion</Text>
-          <Text style={s.completionValue}>{profileCompletion}%</Text>
+      {/* ── Profile Completion Card (Outside/Below Bio Section) ── */}
+      <View style={s.completionCard}>
+        <View style={s.completionInfoRow}>
+          <View style={s.completionTitleRow}>
+            <Icon name="sparkles" size={14} color="#E94057" style={{ marginRight: 6 }} />
+            <Text style={s.completionLabel}>Profile completion</Text>
+          </View>
+          <View style={s.completionBadge}>
+            <Text style={s.completionBadgeText}>{profileCompletion}%</Text>
+          </View>
         </View>
         <View style={s.progressBarBackground}>
           <LinearGradient
-            colors={['#E94057', '#8A2387']}
+            colors={['#FF6B6B', '#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={[s.progressBarFill, { width: `${profileCompletion}%` }]}
           />
         </View>
+        {profileCompletion < 100 && (
+          <Text style={s.completionTipText}>
+            ✨ Complete your profile to get 3x more matches!
+          </Text>
+        )}
       </View>
-
     </View>
   );
 });
@@ -325,35 +335,63 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#FFF',
   },
-  completionContainer: {
+  completionCard: {
+    backgroundColor: '#FFF5F6',
+    borderRadius: 22,
+    padding: 16,
     marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 2,
+    marginTop: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFE3E7',
+    boxShadow: '0px 4px 12px rgba(0,0,0,0.04)',
+    elevation: 3,
   },
-  completionHeader: {
+  completionInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  completionLabel: {
-    fontSize: 14,
-    color: '#AAA',
-    fontWeight: '600',
+  completionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  completionValue: {
-    fontSize: 14,
-    color: '#E94057',
+  completionLabel: {
+    fontSize: 12,
+    color: '#8E1D2C',
+    fontWeight: '700',
+    fontFamily: FONT_MED,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  completionBadge: {
+    backgroundColor: '#E94057',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  completionBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
     fontWeight: '800',
+    fontFamily: FONT_BOLD,
   },
   progressBarBackground: {
-    height: 8,
-    backgroundColor: '#F0F0F0',
+    height: 6,
+    backgroundColor: '#FFE3E7',
     borderRadius: 99,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     borderRadius: 99,
+  },
+  completionTipText: {
+    fontSize: 11,
+    color: '#E94057',
+    fontWeight: '600',
+    marginTop: 6,
+    fontFamily: FONT_REG,
   },
 });

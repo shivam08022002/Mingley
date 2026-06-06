@@ -10,12 +10,39 @@ import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 const GIFT_ICONS = {
   'heart': 'heart-outline',
   'rose': 'rose-outline',
+  'balloon': 'balloon-outline',
+  'love letter': 'mail-outline',
+  'cake': 'cake-outline',
+  'confetti': 'sparkles-outline',
+  'party popper': 'sparkles-outline',
+  'bouquet': 'flower-outline',
   'gift box': 'gift-outline',
+  'chocolate box': 'heart-outline',
+  'trophy': 'trophy-outline',
   'coffee date': 'cafe-outline',
+  'candlelight': 'flame-outline',
+  'fireworks': 'sparkles-outline',
+  'teddy bear': 'gift-outline',
+  'shooting star': 'star-outline',
+  'magic wand': 'sparkles-outline',
+  'rainbow': 'color-fill-outline',
   'diamond ring': 'diamond-outline',
-  'dinner': 'restaurant-outline',
-  'teddy bear': 'ribbon-outline',
-  'castle': 'business-outline',
+  'crown': 'diamond-outline',
+  'sports car': 'car-outline',
+  'golden rose': 'rose-outline',
+  'private jet': 'airplane-outline',
+  'yacht': 'boat-outline',
+  'diamond heart': 'diamond-outline',
+  'king package': 'trophy-outline',
+  'luxury suite': 'star-outline',
+  'universe': 'telescope-outline',
+};
+
+
+const isOnlyEmojis = (str) => {
+  if (!str) return false;
+  const clean = str.replace(/[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u200d|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c[\udc04-\udc0f]|\ud83c[\udd10-\udd2f]|\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f]|\ud83d[\ude80-\udeff]|\ud83e[\udd00-\uddff]|\ufe0f|\xa0/g, '').trim();
+  return clean.length === 0;
 };
 
 export const ChatBubble = React.memo(({ item }) => {
@@ -42,7 +69,12 @@ export const ChatBubble = React.memo(({ item }) => {
   // ── Gift bubble ──────────────────────────────────────────────────────────
   if (item.type === 'gift') {
     const key = (item.giftName || '').toLowerCase();
-    const iconName = item.icon || GIFT_ICONS[key] || 'gift-outline';
+    const giftsList = useChatStore.getState().gifts || [];
+    const matchedGift = giftsList.find(g => 
+      (g.id && item.giftId && g.id === item.giftId) || 
+      (g.name && item.giftName && g.name.toLowerCase() === item.giftName.toLowerCase())
+    );
+    const iconName = item.icon || item.giftIcon || matchedGift?.icon || GIFT_ICONS[key] || 'gift-outline';
 
     return (
       <TouchableOpacity
@@ -110,13 +142,19 @@ export const ChatBubble = React.memo(({ item }) => {
   }
 
   // ── Standard text bubble ─────────────────────────────────────────────────
+  const emojiOnly = isOnlyEmojis(item.text);
+
   return (
     <TouchableOpacity
       onLongPress={handleLongPress}
       activeOpacity={0.9}
       style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
     >
-      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
+      <View style={[
+        styles.bubble, 
+        isMine ? styles.bubbleMine : styles.bubbleTheirs,
+        emojiOnly && { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 4 }
+      ]}>
         {item.imageUrl && item.imageUrl !== '' ? (
           <View style={styles.imageContainer}>
             <FastImage
@@ -125,13 +163,22 @@ export const ChatBubble = React.memo(({ item }) => {
               resizeMode="cover"
             />
             {item.text && item.text !== '[image]' && (
-              <Text style={[styles.text, isMine ? styles.textMine : styles.textTheirs, { marginTop: 8 }]}>
+              <Text style={[
+                styles.text, 
+                isMine ? styles.textMine : styles.textTheirs, 
+                { marginTop: 8 },
+                emojiOnly && { fontSize: 32, lineHeight: 40 }
+              ]}>
                 {decodeEmoji(item.text)}
               </Text>
             )}
           </View>
         ) : (
-          <Text style={[styles.text, isMine ? styles.textMine : styles.textTheirs]}>
+          <Text style={[
+            styles.text, 
+            isMine ? styles.textMine : styles.textTheirs,
+            emojiOnly && { fontSize: 32, lineHeight: 40 }
+          ]}>
             {decodeEmoji(item.text)}
           </Text>
         )}

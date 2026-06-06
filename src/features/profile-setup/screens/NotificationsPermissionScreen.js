@@ -7,12 +7,14 @@ import { Button } from '../../../components/common/Button';
 
 import { useAuthStore } from '../../../store/useAuthStore';
 import { notificationService } from '../../../services/apiServices';
+import { useToastStore } from '../../../store/useToastStore';
 
 export const NotificationsPermissionScreen = ({ navigation, route }) => {
   const { userData } = route?.params || {};
   const login = useAuthStore(state => state.login);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const [enabling, setEnabling] = React.useState(false);
+  const { showToast } = useToastStore();
 
   const handleFinishOnboarding = () => {
     if (isAuthenticated) {
@@ -29,6 +31,13 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
       // 1. Generate realistic mock Firebase FCM token
       const mockToken = `fcm_token_shivam_${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`;
       
+      // Validate that the token is not empty/null before sending
+      if (!mockToken || mockToken.trim() === '') {
+        showToast({ title: 'Invalid FCM Token', text: 'The device notification token is invalid. Please try again.', type: 'error' });
+        setEnabling(false);
+        return;
+      }
+
       // 2. Post token to endpoint /v1/notifications/fcm-token
       await notificationService.updateFcmToken(mockToken);
       
@@ -38,27 +47,19 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
         "Awesome! Push notifications are successfully enabled. 🚀 Keep matching!"
       );
       
-      // 4. Alert user beautifully
-      Alert.alert(
-        "Notifications Enabled! 🔔",
-        "Success! A confirmation test push notification has been sent.",
-        [
-          { 
-            text: "Let's Go! 🚀", 
-            onPress: handleFinishOnboarding 
-          }
-        ]
-      );
+      // 4. Show success toast then proceed
+      showToast({ title: 'Notifications Enabled! 🔔', text: 'A test push notification has been sent to your device.', type: 'success' });
+      setTimeout(handleFinishOnboarding, 1800);
     } catch (error) {
       console.error("Enable push notification error:", error);
-      Alert.alert(
-        "Notification Permission Error",
-        error.message || "Failed to register notifications. Please try again.",
-        [
-          { text: "Try Again", style: "default" },
-          { text: "Skip for now", onPress: handleFinishOnboarding, style: "cancel" }
-        ]
-      );
+      // Check if error is related to invalid FCM token
+      const errMsg = error?.message || error?.error || (typeof error === 'string' ? error : '');
+      const isTokenError = errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('fcm') || errMsg.toLowerCase().includes('invalid');
+      if (isTokenError) {
+        showToast({ title: 'Invalid FCM Token', text: 'The device notification token is invalid or expired. Please try again.', type: 'error' });
+      } else {
+        showToast({ title: 'Notification Error', text: errMsg || 'Failed to register notifications. Please try again.', type: 'error' });
+      }
     } finally {
       setEnabling(false);
     }

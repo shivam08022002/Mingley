@@ -53,7 +53,7 @@ export const CustomInput = ({
               <>
                 <TouchableOpacity style={styles.countryCodeContainer} activeOpacity={0.7}>
                   <Image source={{ uri: 'https://flagcdn.com/w40/in.png' }} style={styles.flagImage} />
-                  <Text style={styles.countryCode}>(+91)</Text>
+                  <Text style={styles.countryCode}>+91</Text>
                   <Text style={styles.dropdownArrow}>▼</Text>
                 </TouchableOpacity>
                 <View style={styles.divider} />

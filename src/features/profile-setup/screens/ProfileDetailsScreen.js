@@ -60,10 +60,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
       Alert.alert('Validation Error', 'First name is required.');
       return;
     }
-    if (!profileDetails.lastName?.trim()) {
-      Alert.alert('Validation Error', 'Last name is required.');
-      return;
-    }
+    // If no last name provided, first name is used as full name (no block)
     if (!profileDetails.birthday) {
       Alert.alert('Validation Error', 'Please select your birthday.');
       return;

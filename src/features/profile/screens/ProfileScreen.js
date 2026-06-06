@@ -66,14 +66,12 @@ export const ProfileScreen = React.memo(() => {
     }
   }, [isFocused, fetchProfile, fetchStatus, fetchWalletBalance]);
 
-  // Only fetch coin packages if user is not female
+  // Fetch coin packages for all users
   useEffect(() => {
     if (isFocused && profileData.gender) {
-      if (!isFemale) {
-        fetchCoinPackages();
-      }
+      fetchCoinPackages();
     }
-  }, [isFocused, profileData.gender, isFemale]);
+  }, [isFocused, profileData.gender]);
 
   useEffect(() => {
     if (notifModalVisible) {
@@ -145,6 +143,9 @@ export const ProfileScreen = React.memo(() => {
     try {
       const isPrimary = avatarSelectionMode === 'avatar';
       await userService.uploadImage({ url, isPrimary });
+      if (isPrimary) {
+        await userService.updateMe({ avatar: url });
+      }
       await fetchProfile();
       setAvatarModalVisible(false);
     } catch (e) {
@@ -296,6 +297,14 @@ export const ProfileScreen = React.memo(() => {
                 <Icon name="chevron-forward" size={16} color="#CCC" />
               </TouchableOpacity>
 
+              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Settings', { openTravelMode: true })}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="airplane-outline" size={18} color="#E94057" style={{ transform: [{ rotate: '45deg' }] }} />
+                </View>
+                <Text style={styles.actionLabel}>Travel Mode</Text>
+                <Icon name="chevron-forward" size={16} color="#CCC" />
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Settings')}>
                 <View style={styles.actionIconWrap}>
                   <Icon name="settings-outline" size={18} color="#E94057" />
@@ -304,15 +313,13 @@ export const ProfileScreen = React.memo(() => {
                 <Icon name="chevron-forward" size={16} color="#CCC" />
               </TouchableOpacity>
 
-              {!isFemale && (
-                <TouchableOpacity style={styles.actionRow} onPress={() => setDepositModalVisible(true)}>
-                  <View style={styles.actionIconWrap}>
-                    <Icon name="wallet-outline" size={18} color="#E94057" />
-                  </View>
-                  <Text style={styles.actionLabel}>Coin Packages</Text>
-                  <Icon name="chevron-forward" size={16} color="#CCC" />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity style={styles.actionRow} onPress={() => setDepositModalVisible(true)}>
+                <View style={styles.actionIconWrap}>
+                  <Icon name="wallet-outline" size={18} color="#E94057" />
+                </View>
+                <Text style={styles.actionLabel}>Coin Packages</Text>
+                <Icon name="chevron-forward" size={16} color="#CCC" />
+              </TouchableOpacity>
 
               <TouchableOpacity style={[styles.actionRow, styles.lastActionRow]} onPress={handleSignOut}>
                 <View style={styles.actionIconWrap}>

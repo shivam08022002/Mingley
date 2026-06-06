@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { StyleSheet, View, Text, Dimensions, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -14,17 +14,36 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width, height } = Dimensions.get('window');
-const CARD_HEIGHT = height * 0.79; // Card takes ~79% of screen height
-const CARD_WIDTH = width - 32;     // Increased width (horizontal margin is 16 on each side)
-const SWIPE_THRESHOLD_X = width * 0.3;
-const SWIPE_THRESHOLD_UP = -height * 0.2;
+const SWIPE_THRESHOLD_X = Dimensions.get('window').width * 0.3;
+const SWIPE_THRESHOLD_UP = -Dimensions.get('window').height * 0.2;
+
+// Responsive card sizing based on available container height
+// availableHeight is passed in from DiscoverScreen via layout measurement
+const getCardDimensions = (screenWidth, availableHeight) => {
+  // availableHeight = space between header and action buttons
+  const isLongPhone = availableHeight >= 480; // tall phones get bigger cards
+  
+  if (isLongPhone) {
+    // Tall phone: fit height into available space with some margin, ensure width < height
+    const cardH = availableHeight - 16; // small margin top+bottom
+    const cardW = Math.min(screenWidth - 48, cardH * 0.70); // ~10:14 portrait ratio
+    return { cardW, cardH };
+  } else {
+    // Compact phone: narrower card to keep portrait ratio
+    const cardH = availableHeight - 8;
+    const cardW = Math.min(screenWidth - 56, cardH * 0.72); // slightly narrower
+    return { cardW, cardH };
+  }
+};
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
+
 export const SwipeCard = forwardRef(
-  ({ user, onSwipeLeft, onSwipeRight, onSwipeUp, isFirst, isSecond, onPress }, ref) => {
+  ({ user, onSwipeLeft, onSwipeRight, onSwipeUp, isFirst, isSecond, onPress, availableHeight }, ref) => {
+    const { width } = useWindowDimensions();
+    const { cardW: CARD_WIDTH, cardH: CARD_HEIGHT } = getCardDimensions(width, availableHeight || 480);
     const translateX = useSharedValue(0);
     const translateY = useSharedValue(0);
     const startX = useSharedValue(0);
@@ -59,7 +78,7 @@ export const SwipeCard = forwardRef(
       .onEnd((event) => {
         // Swipe UP → subscription
         if (translateY.value < SWIPE_THRESHOLD_UP && Math.abs(translateX.value) < SWIPE_THRESHOLD_X) {
-          translateY.value = withSpring(-height * 1.5, { velocity: event.velocityY }, (finished) => {
+          translateY.value = withSpring(-(CARD_HEIGHT + 400), { velocity: event.velocityY }, (finished) => {
             if (finished && onSwipeUp) runOnJS(onSwipeUp)();
           });
           return;
@@ -170,9 +189,9 @@ export const SwipeCard = forwardRef(
       >
         {isFirst ? (
           <GestureDetector gesture={panGesture}>
-            <Animated.View style={[styles.card, animatedCardStyle]}>
+            <Animated.View style={[styles.card, { width: CARD_WIDTH, height: CARD_HEIGHT }, animatedCardStyle]}>
               <CardContent user={user} onPress={onPress} />
-              
+
               {/* Center Swipe overlays */}
               <Animated.View style={[styles.overlayContainer, likeOverlayStyle]} pointerEvents="none">
                 <Icon name="heart" size={54} color="#E94057" />
@@ -183,7 +202,7 @@ export const SwipeCard = forwardRef(
             </Animated.View>
           </GestureDetector>
         ) : (
-          <Animated.View style={[styles.card, nextCardAnimatedStyle]}>
+          <Animated.View style={[styles.card, { width: CARD_WIDTH, height: CARD_HEIGHT }, nextCardAnimatedStyle]}>
             <CardContent user={user} />
           </Animated.View>
         )}
@@ -258,12 +277,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   card: {
-    width: CARD_WIDTH,
-    height: '91%', // dynamic height to perfectly fit between header and ActionButtons without overlapping
     borderRadius: 18,
     backgroundColor: '#000000',
     boxShadow: '0px 4px 8px rgba(0,0,0,0.12)',
     elevation: 4,
+    // width and height set dynamically via inline style
   },
   cardInner: {
     width: '100%',
@@ -281,8 +299,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     borderTopWidth: 1,
@@ -290,14 +308,14 @@ const styles = StyleSheet.create({
   },
   name: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     fontFamily: TITLE_MED,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   locationText: {
     color: '#D8D8D8',
-    fontSize: 15,
+    fontSize: 12,
     fontFamily: TITLE_FONT,
   },
   distanceBadge: {
@@ -408,7 +426,7 @@ const styles = StyleSheet.create({
   },
   matchScoreTextInline: {
     color: '#FFF',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontFamily: TITLE_FONT,
     textTransform: 'uppercase',
@@ -416,26 +434,26 @@ const styles = StyleSheet.create({
   cardRowInline: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
+    gap: 6,
+    marginTop: 5,
     flexWrap: 'wrap',
   },
   superlikeHintCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   superlikeHintText: {
     color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
     fontFamily: TITLE_FONT,
   },
 });

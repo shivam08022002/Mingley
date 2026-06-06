@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TextInput,
   TouchableOpacity, KeyboardAvoidingView, Platform,
   Dimensions, Modal, Alert, ActionSheetIOS, ActivityIndicator,
-  ScrollView
+  ScrollView, TouchableWithoutFeedback
 } from 'react-native';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -52,8 +52,10 @@ export const ChatScreen = ({ navigation, route }) => {
 
   const flatRef = useRef(null);
   const [inputText, setInputText] = useState('');
+  const [emojiPanelVisible, setEmojiPanelVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [sendingGift, setSendingGift] = useState(false);
+  const [sendingCoins, setSendingCoins] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
   // Modal visibility
@@ -61,6 +63,7 @@ export const ChatScreen = ({ navigation, route }) => {
   const [coinsModalVisible, setCoinsModalVisible] = useState(false);
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
 
   // Report inputs
   const [reportReason, setReportReason] = useState('');
@@ -131,7 +134,7 @@ export const ChatScreen = ({ navigation, route }) => {
 
 
   React.useEffect(() => {
-    // Update partner info and fetch messages if we have a chatId
+    // Fetch messages, mark read, and get quota only when chatId changes
     if (chatId) {
       const loadMessages = async () => {
         setLoadingMessages(true);
@@ -146,7 +149,12 @@ export const ChatScreen = ({ navigation, route }) => {
         }
       };
       loadMessages();
+    }
+  }, [chatId, fetchChatMessages, markChatAsRead, getChatQuota]);
 
+  React.useEffect(() => {
+    // Update partner info if chats list or active chatId changes
+    if (chatId) {
       const currentChat = chats.find(c => c.chatId === chatId);
       if (currentChat?.user) {
         setPartnerInfo({
@@ -157,7 +165,7 @@ export const ChatScreen = ({ navigation, route }) => {
         });
       }
     }
-  }, [chatId, fetchChatMessages, markChatAsRead, getChatQuota, chats]);
+  }, [chatId, chats]);
 
   const isMale = currentUser.gender === 'male';
   const isFemale = currentUser.gender === 'female';
@@ -187,6 +195,8 @@ export const ChatScreen = ({ navigation, route }) => {
       if (chatId) {
         await sendChatMessage(chatId, inputText.trim());
         setInputText('');
+        await fetchChatMessages(chatId);
+        scrollToEnd();
       } else {
         if (isMale) deductCoin();
         else if (isFemale) {
@@ -206,7 +216,7 @@ export const ChatScreen = ({ navigation, route }) => {
     setSendingGift(true);
     try {
       const cost = gift.coinCost || gift.price || gift.cost;
-      const ok = await sendGiftAction(userId, gift.id, chatId || '', `Sent a ${gift.name}`);
+      const ok = await sendGiftAction(userId, gift.id, chatId || '', '');
       if (ok) {
         setGiftModalVisible(false);
         pushMessage({
@@ -221,6 +231,10 @@ export const ChatScreen = ({ navigation, route }) => {
           createdAt: new Date().toISOString()
         });
         scrollToEnd();
+        if (chatId) {
+          await fetchChatMessages(chatId);
+          scrollToEnd();
+        }
       }
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to send gift');
@@ -241,6 +255,7 @@ export const ChatScreen = ({ navigation, route }) => {
       return;
     }
 
+    setSendingCoins(true);
     try {
       await sendCoinsInChat(chatId, amount, `Sent you ${amount} coins! 💰`);
       setCoinsModalVisible(false);
@@ -248,6 +263,8 @@ export const ChatScreen = ({ navigation, route }) => {
       scrollToEnd();
     } catch (error) {
       Alert.alert('Error', error.message || 'Failed to send coins');
+    } finally {
+      setSendingCoins(false);
     }
   };
 
@@ -388,17 +405,19 @@ export const ChatScreen = ({ navigation, route }) => {
         {/* Video Call Button */}
         <TouchableOpacity
           style={styles.iconBtn}
-          onPress={() => {
-            const videoCallEnabled = currentStatus?.plan?.videoCallEnabled || false;
-            if (!videoCallEnabled) {
-              Alert.alert(
-                '🔒 Premium Feature',
-                'Video calls are only available for Gold and Platinum members. Upgrade now to connect!',
-                [
-                  { text: 'Later', style: 'cancel' },
-                  { text: 'Upgrade', onPress: () => navigation.navigate('SubscriptionPlans') }
-                ]
-              );
+          onPress={async () => {
+            try {
+              await useSubscriptionStore.getState().fetchStatus();
+            } catch (e) {
+              console.error('Failed to update status from API:', e);
+            }
+            const status = useSubscriptionStore.getState().currentStatus;
+            const planName = (status?.isActive && status?.planName)
+              ? status.planName.toLowerCase()
+              : 'free';
+            const videoCallEnabled = planName === 'gold' || planName === 'platinum' || planName === 'vip' || status?.plan?.videoCallEnabled === true;
+            if (planName === 'free' || planName === 'silver' || !videoCallEnabled) {
+              setUpgradeModalVisible(true);
               return;
             }
             navigation.navigate('Calling', { user: partnerInfo, callType: 'video' });
@@ -408,7 +427,7 @@ export const ChatScreen = ({ navigation, route }) => {
         </TouchableOpacity>
 
         {/* Three-dot menu */}
-        <TouchableOpacity style={styles.iconBtn} onPress={() => setMenuModalVisible(true)}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => setMenuModalVisible(p => !p)}>
           <Icon name="ellipsis-vertical" size={20} color="#444" />
         </TouchableOpacity>
       </View>
@@ -506,32 +525,66 @@ export const ChatScreen = ({ navigation, route }) => {
             <Text style={styles.modalSubBold}>{wallet.coins} coins</Text>
           </View>
           <TextInput style={styles.amountInput} placeholder="Enter amount" placeholderTextColor="#A0A0A0" keyboardType="numeric" value={coinInputText} onChangeText={setCoinInputText} />
-          <TouchableOpacity style={[styles.modalActionBtn, !coinInputText && styles.modalActionBtnDisabled]} onPress={handleTransferCoins} disabled={!coinInputText}>
-            <Icon name="paper-plane-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-            <Text style={styles.modalActionBtnText}>Send to {partnerInfo.name}</Text>
+          <TouchableOpacity 
+            style={[styles.modalActionBtn, (!coinInputText || sendingCoins) && styles.modalActionBtnDisabled]} 
+            onPress={handleTransferCoins} 
+            disabled={!coinInputText || sendingCoins}
+          >
+            {sendingCoins ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Icon name="paper-plane-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.modalActionBtnText}>Send to {partnerInfo.name}</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </BottomSheetContainer>
     </Modal>
   );
 
-  // ── Three-dot menu modal ──────────────────────────────────────────────────
-  const renderMenuModal = () => (
-    <Modal visible={menuModalVisible} transparent animationType="fade" onRequestClose={() => setMenuModalVisible(false)}>
-      <BottomSheetContainer onClose={() => setMenuModalVisible(false)} height={320}>
-        <View style={{ flex: 1, width: '100%' }}>
-          <Text style={styles.menuTitle}>{partnerInfo.name}</Text>
+  // ── Three-dot menu dropdown overlay ───────────────────────────────────────
+  const renderMenuModal = () => {
+    if (!menuModalVisible) return null;
+    return (
+      <>
+        <TouchableWithoutFeedback onPress={() => setMenuModalVisible(false)}>
+          <View style={[StyleSheet.absoluteFillObject, { zIndex: 999, backgroundColor: 'transparent' }]} />
+        </TouchableWithoutFeedback>
+        <View style={styles.dropdownMenu}>
           {MENU_OPTIONS.map((opt, i) => (
-            <TouchableOpacity key={i} style={[styles.menuRow, opt.label === 'Block User' && styles.menuRowDanger, opt.label === 'Report' && styles.menuRowDanger]} onPress={opt.action} activeOpacity={0.7}>
-              <Icon name={opt.icon} size={20} color={opt.label === 'Block User' || opt.label === 'Report' ? '#DC2626' : '#333'} style={{ marginRight: 14 }} />
-              <Text style={[styles.menuRowText, (opt.label === 'Block User' || opt.label === 'Report') && styles.menuRowTextDanger]}>{opt.label}</Text>
-              <Icon name="chevron-forward" size={16} color="#CCC" style={{ marginLeft: 'auto' }} />
+            <TouchableOpacity
+              key={i}
+              style={[
+                styles.dropdownRow,
+                opt.label === 'Block User' && styles.dropdownRowDanger,
+                opt.label === 'Report' && styles.dropdownRowDanger,
+                i === MENU_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+              ]}
+              onPress={opt.action}
+              activeOpacity={0.7}
+            >
+              <Icon
+                name={opt.icon}
+                size={16}
+                color={opt.label === 'Block User' || opt.label === 'Report' ? '#DC2626' : '#555'}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={[
+                  styles.dropdownRowText,
+                  (opt.label === 'Block User' || opt.label === 'Report') && styles.dropdownRowTextDanger
+                ]}
+              >
+                {opt.label}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
-      </BottomSheetContainer>
-    </Modal>
-  );
+      </>
+    );
+  };
 
   // ── Report Modal ──────────────────────────────────────────────────────────
   const renderReportModal = () => (
@@ -562,6 +615,38 @@ export const ChatScreen = ({ navigation, route }) => {
     </Modal>
   );
 
+  // ── Upgrade Alert Modal ──────────────────────────────────────────────────
+  const renderUpgradeModal = () => (
+    <Modal visible={upgradeModalVisible} transparent animationType="fade" onRequestClose={() => setUpgradeModalVisible(false)}>
+      <View style={styles.centeredModalOverlay}>
+        <View style={styles.centeredModalContent}>
+          <Icon name="lock-closed-outline" size={40} color="#E94057" style={{ marginBottom: 12 }} />
+          <Text style={styles.centeredModalTitle}>Premium Feature</Text>
+          <Text style={styles.centeredModalSub}>
+            Video calls are only available for Gold and higher tier members. Upgrade now to connect!
+          </Text>
+          <View style={styles.centeredModalButtonRow}>
+            <TouchableOpacity 
+              style={[styles.centeredModalBtn, styles.centeredModalBtnCancel]} 
+              onPress={() => setUpgradeModalVisible(false)}
+            >
+              <Text style={styles.centeredModalBtnCancelText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.centeredModalBtn, styles.centeredModalBtnAction]} 
+              onPress={() => { 
+                setUpgradeModalVisible(false); 
+                navigation.navigate('SubscriptionPlans'); 
+              }}
+            >
+              <Text style={styles.centeredModalBtnActionText}>Upgrade</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <BottomSheetContainer height={SCREEN_HEIGHT * 0.90} onClose={() => navigation.goBack()} containerStyle={styles.containerStyle} contentStyle={styles.contentStyle}>
@@ -571,6 +656,7 @@ export const ChatScreen = ({ navigation, route }) => {
         {renderCoinsModal()}
         {renderMenuModal()}
         {renderReportModal()}
+        {renderUpgradeModal()}
 
         {loadingMessages ? (
           <View style={styles.loadingContainer}>
@@ -641,6 +727,24 @@ export const ChatScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Emoji Selector Panel */}
+        {emojiPanelVisible && (
+          <View style={styles.emojiPanel}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiScroll}>
+              {['❤️', '💖', '😂', '😍', '👍', '😊', '🔥', '😘', '😭', '👏', '🎉', '😉', '🤔', '😎', '✨', '🌹', '🙌', '🎈', '🎁', '🎂', '🥳', '🤩', '🥺', '🤣', '🤤', '😴', '💡', '💯', '👌', '⚡', '🌟', '🍿', '🍕', '🍓', '🥑', '🍷', '🥂', '✈️', '🏖️', '🎵', '🎮', '🧸', '🐱', '🐶', '🦄'].map((emoji) => (
+                <TouchableOpacity
+                  key={emoji}
+                  onPress={() => setInputText(prev => prev + emoji)}
+                  style={styles.emojiItem}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.emojiText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* ── Input row ── */}
         <View style={styles.inputContainer}>
           <View style={[styles.inputWrapper, !canSend && styles.inputWrapperDisabled]}>
@@ -652,19 +756,15 @@ export const ChatScreen = ({ navigation, route }) => {
               onChangeText={setInputText}
               editable={canSend}
             />
-            <TouchableOpacity style={styles.stickerIcon}>
-              <Icon name="happy-outline" size={24} color="#A0A0A0" />
+            <TouchableOpacity style={styles.stickerIcon} onPress={() => setEmojiPanelVisible(p => !p)}>
+              <Icon name="happy-outline" size={24} color={emojiPanelVisible ? '#E94057' : '#A0A0A0'} />
             </TouchableOpacity>
           </View>
           {inputText.trim() ? (
             <TouchableOpacity style={[styles.sendButton, !canSend && styles.sendButtonDisabled]} onPress={handleSend} disabled={!canSend}>
               <Icon name="send" size={20} color={canSend ? '#E94057' : '#C0C0C0'} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.microphoneButton}>
-              <Icon name="mic" size={24} color="#E94057" />
-            </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </BottomSheetContainer>
@@ -920,6 +1020,133 @@ const styles = StyleSheet.create({
   },
   categoryTabTextActive: {
     color: '#FFF',
+  },
+  emojiPanel: {
+    backgroundColor: '#F9FAFB',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  emojiScroll: {
+    gap: 12,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  emojiItem: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  emojiText: {
+    fontSize: 20,
+  },
+  dropdownOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 58,
+    right: 12,
+    width: 200,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  dropdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  dropdownRowText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  dropdownRowTextDanger: {
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  centeredModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centeredModalContent: {
+    width: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  centeredModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  centeredModalSub: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  centeredModalButtonRow: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  centeredModalBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centeredModalBtnCancel: {
+    backgroundColor: '#F3F4F6',
+  },
+  centeredModalBtnCancelText: {
+    color: '#4B5563',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  centeredModalBtnAction: {
+    backgroundColor: '#E94057',
+  },
+  centeredModalBtnActionText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 

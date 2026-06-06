@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Modal, Alert, KeyboardAvoidingView, Platform,
-  ActivityIndicator, ScrollView,
+  ActivityIndicator, ScrollView, Dimensions, Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../store/useChatStore';
 import { BottomSheetContainer } from './common/BottomSheetContainer';
-import { walletService } from '../services/apiServices';
+import { walletService, userService } from '../services/apiServices';
 import { useProfileStore } from '../features/profile/store/useProfileStore';
+import { useToastStore } from '../store/useToastStore';
 
 // Conditional Native import to prevent Web bundler crashes
 let RazorpayCheckout = null;
@@ -50,17 +51,15 @@ export const DepositModal = ({ visible, onClose }) => {
   const wallet = useChatStore((s) => s.wallet);
   const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
   const { profile } = useProfileStore();
-  const isFemale = profile?.gender?.toLowerCase() === 'female' || profile?.gender?.toLowerCase() === 'woman';
 
   useEffect(() => {
-    if (visible && !isFemale) {
+    if (visible) {
       fetchWalletBalance();
       loadPackages();
     }
-  }, [visible, isFemale]);
+  }, [visible]);
 
   const loadPackages = async () => {
-    if (isFemale) return;
     setLoadingPkgs(true);
     try {
       const res = await walletService.getPackages();
@@ -217,9 +216,12 @@ export const DepositModal = ({ visible, onClose }) => {
     pkg_5000: ['#059669', '#064E3B'],
   };
 
+  const screenHeight = Dimensions.get('window').height;
+  const modalHeight = screenHeight < 700 ? Math.min(screenHeight * 0.78, 560) : 700;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <BottomSheetContainer onClose={onClose} height={700}>
+      <BottomSheetContainer onClose={onClose} height={modalHeight}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ width: '100%', flex: 1 }}
@@ -384,22 +386,27 @@ export const CashoutModal = ({ visible, onClose }) => {
 
 // ─── Verify Modal ──────────────────────────────────────────────────────────────
 export const VerifyModal = ({ visible, onClose }) => {
-  const [idProofUrl, setIdProofUrl] = useState('');
+  const [selfieUrl, setSelfieUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
   const handleVerify = async () => {
-    if (!idProofUrl.trim()) { Alert.alert('Error', 'Please enter ID proof URL'); return; }
+    if (!selfieUrl) { Alert.alert('Error', 'Please take a selfie to verify your identity.'); return; }
     if (!agreed) { Alert.alert('Error', 'Please agree to the Terms of Service to proceed.'); return; }
     setIsLoading(true);
     try {
-      await walletService.verifyAccount({ idProofUrl });
+      await userService.verifyAccount({ idProofUrl: selfieUrl });
       Alert.alert('Success', 'Verification request submitted! A 50-coin bonus will be credited once approved.');
       onClose();
-      setIdProofUrl('');
+      setSelfieUrl(null);
       setAgreed(false);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Verification failed');
+      const rawMsg = error.message || 'Verification failed';
+      const cleanMsg = rawMsg
+        .replace(/[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u200d|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c[\udc04-\udc0f]|\ud83c[\udd10-\udd2f]|\ud83c[\udf00-\udfff]|\ud83d[\udc00-\ude4f]|\ud83d[\ude80-\udeff]|\ud83e[\udd00-\uddff]|\ufe0f|\xa0/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      useToastStore.getState().showToast(cleanMsg, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -407,7 +414,7 @@ export const VerifyModal = ({ visible, onClose }) => {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <BottomSheetContainer onClose={onClose} height={520}>
+      <BottomSheetContainer onClose={onClose} height={580}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : ''} style={{ width: '100%', flex: 1, paddingHorizontal: 20 }}>
           <View style={{ alignItems: 'center', marginVertical: 25 }}>
             <View style={s.verifyIconCircle}>
@@ -418,17 +425,52 @@ export const VerifyModal = ({ visible, onClose }) => {
               Get a 50-coin bonus credited to your account after successful verification!
             </Text>
           </View>
-          <View style={{ marginBottom: 20 }}>
-            <Text style={s.inputLabel}>ID Proof Document URL</Text>
-            <TextInput
-              style={s.amountInput}
-              placeholder="https://example.com/your-id.jpg"
-              placeholderTextColor="#A0A0A0"
-              value={idProofUrl}
-              onChangeText={setIdProofUrl}
-              autoCapitalize="none"
-            />
+          
+          <View style={{ alignItems: 'center', marginBottom: 20, width: '100%' }}>
+            <Text style={[s.inputLabel, { alignSelf: 'flex-start', marginBottom: 10 }]}>Selfie Verification</Text>
+            {selfieUrl ? (
+              <View style={{ alignItems: 'center' }}>
+                <Image
+                  source={{ uri: selfieUrl }}
+                  style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#E94057', marginBottom: 10 }}
+                />
+                <TouchableOpacity 
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: '#F3F4F6' }}
+                  onPress={() => setSelfieUrl(null)}
+                >
+                  <Icon name="camera-reverse-outline" size={14} color="#6B7280" />
+                  <Text style={{ color: '#6B7280', fontSize: 12, fontWeight: '600' }}>Retake Selfie</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  setIsLoading(true);
+                  // Mock camera capture timeout
+                  setTimeout(() => {
+                    setSelfieUrl('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+                    setIsLoading(false);
+                  }, 800);
+                }}
+                style={{
+                  width: '100%',
+                  height: 120,
+                  borderRadius: 18,
+                  borderWidth: 2,
+                  borderStyle: 'dashed',
+                  borderColor: '#D1D5DB',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#F9FAFB',
+                }}
+                activeOpacity={0.8}
+              >
+                <Icon name="camera" size={32} color="#9CA3AF" style={{ marginBottom: 6 }} />
+                <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>Tap to Take Selfie</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
           <TouchableOpacity style={s.checkboxContainer} onPress={() => setAgreed(!agreed)} activeOpacity={0.8}>
             <View style={[s.checkbox, agreed && s.checkboxActive]}>
               {agreed && <Icon name="checkmark" size={14} color="#FFF" />}
@@ -436,9 +478,9 @@ export const VerifyModal = ({ visible, onClose }) => {
             <Text style={s.verifyDisclaimer}>I agree to the Terms of Service regarding identity verification.</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.modalActionBtn, (!idProofUrl || !agreed || isLoading) && s.modalActionBtnDisabled]}
+            style={[s.modalActionBtn, (!selfieUrl || !agreed || isLoading) && s.modalActionBtnDisabled]}
             onPress={handleVerify}
-            disabled={!idProofUrl || !agreed || isLoading}
+            disabled={!selfieUrl || !agreed || isLoading}
           >
             {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.modalActionBtnText}>Submit for Verification</Text>}
           </TouchableOpacity>

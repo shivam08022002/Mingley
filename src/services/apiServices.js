@@ -483,7 +483,7 @@ export const userService = {
 
   uploadContacts: async (phoneNumbers) => {
     try {
-      const response = await api.post('/v1/users/contact', { phoneNumbers });
+      const response = await api.post('/v1/users/contacts', { phoneNumbers });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

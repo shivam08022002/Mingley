@@ -72,7 +72,13 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
             }
         } catch (error) {
           console.error('OTP Verification/Login error:', error);
-          Alert.alert('Verification Failed', error.message || 'The OTP entered is incorrect.');
+          // Extract a human-readable message from the API error response
+          const errMsg =
+            error?.message ||
+            error?.error ||
+            (typeof error === 'string' ? error : null) ||
+            'Invalid credentials. Please check your details and try again.';
+          Alert.alert('Login Failed', errMsg);
           isVerifying.current = false;
         } finally {
           setIsLoading(false);

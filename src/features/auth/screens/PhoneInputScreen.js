@@ -34,8 +34,9 @@ export const PhoneInputScreen = ({ navigation }) => {
   });
 
   const onSubmit = (data) => {
-    setAuthDetails({ ...data, email: '' }); // Clear email if continuing with phone
-    navigation.navigate('OTPVerification', { type: 'phone', value: data.phone });
+    const fullPhone = `+91${data.phone}`;
+    setAuthDetails({ ...data, phone: fullPhone, email: '' }); // Clear email if continuing with phone
+    navigation.navigate('OTPVerification', { type: 'phone', value: fullPhone });
   };
 
   return (

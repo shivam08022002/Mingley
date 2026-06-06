@@ -14,6 +14,7 @@ import { useChatStore } from '../../../store/useChatStore';
 import { authService, userService } from '../../../services/apiServices';
 import { decodeEmoji } from '../../../utils/stringUtils';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
+import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 
 const SECTIONS = [
   {
@@ -105,9 +106,10 @@ const NotificationItem = React.memo(({ item, onPress, FONT }) => {
 const TRAVEL_PRESETS = [
   { city: 'Delhi', country: 'India', lat: 28.6139, lng: 77.2090 },
   { city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
-  { city: 'London', country: 'UK', lat: 51.5074, lng: -0.1278 },
-  { city: 'New York', country: 'USA', lat: 40.7128, lng: -74.0060 },
-  { city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
+  { city: 'Bangalore', country: 'India', lat: 12.9716, lng: 77.5946 },
+  { city: 'Kolkata', country: 'India', lat: 22.5726, lng: 88.3639 },
+  { city: 'Chennai', country: 'India', lat: 13.0827, lng: 80.2707 },
+  { city: 'Hyderabad', country: 'India', lat: 17.3850, lng: 78.4867 },
 ];
 
 export const SettingsScreen = React.memo(() => {
@@ -116,6 +118,7 @@ export const SettingsScreen = React.memo(() => {
   const logoutAction = useAuthStore((s) => s.logout);
   const transactions = useChatStore((s) => s.transactions);
   const fetchTransactions = useChatStore((s) => s.fetchTransactions);
+  const currentStatus = useSubscriptionStore((s) => s.currentStatus);
   const [txModalVisible, setTxModalVisible] = useState(false);
   const [blockedModalVisible, setBlockedModalVisible] = useState(false);
   const [notifModalVisible, setNotifModalVisible] = useState(false);
@@ -160,6 +163,7 @@ export const SettingsScreen = React.memo(() => {
     try {
       const res = await userService.getMe();
       setUserData(res.data || res);
+      await useSubscriptionStore.getState().fetchStatus();
     } catch (e) {
       console.error('Fetch user data error:', e);
     }
@@ -170,6 +174,14 @@ export const SettingsScreen = React.memo(() => {
       fetchBlockedUsers();
     }
   }, [blockedModalVisible]);
+
+  useEffect(() => {
+    if (route.params?.openTravelMode) {
+      setLocationTab('travelMode');
+      setLocationModalVisible(true);
+      navigation.setParams({ openTravelMode: undefined });
+    }
+  }, [route.params?.openTravelMode]);
 
   useEffect(() => {
     if (notifModalVisible || (route?.params?.openNotifications && !notifModalVisible)) {
@@ -405,6 +417,12 @@ We reserve the right to terminate or suspend your account at our sole discretion
     setLoadingTravelMode(true);
     try {
       if (enabled && travelDetails) {
+        await userService.updateLocation({
+          lat: travelDetails.lat,
+          lng: travelDetails.lng,
+          city: travelDetails.city,
+          country: travelDetails.country || 'India',
+        });
         await userService.setTravelMode({
           enabled: true,
           city: travelDetails.city,
@@ -691,11 +709,8 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     <View style={[row.iconWrap, { width: 60, height: 60, borderRadius: 30, marginBottom: 16 }]}>
                       <Icon name="location" size={30} color="#E94057" />
                     </View>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111', marginBottom: 8 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111', marginBottom: 30 }}>
                       {userData?.location?.city || 'City'}, {userData?.location?.country || 'Country'}
-                    </Text>
-                    <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', paddingHorizontal: 40, marginBottom: 30 }}>
-                      Current Coordinates: {userData?.location?.lat ? Number(userData.location.lat).toFixed(4) : '0.0000'}, {userData?.location?.lng ? Number(userData.location.lng).toFixed(4) : '0.0000'}
                     </Text>
 
                     {loadingLocation ? (
@@ -720,135 +735,142 @@ We reserve the right to terminate or suspend your account at our sole discretion
                           <Text style={{ color: '#FFF', fontWeight: '700' }}>Detect via GPS</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                          onPress={() => {
-                            handleUpdateLocation({
-                              lat: 28.6139,
-                              lng: 77.2090,
-                              city: 'Delhi',
-                              country: 'India'
-                            });
-                          }}
-                          style={{
-                            backgroundColor: '#FAFAFA',
-                            borderWidth: 1.5,
-                            borderColor: '#F0F0F0',
-                            paddingHorizontal: 30,
-                            paddingVertical: 14,
-                            borderRadius: 100,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 10,
-                            width: '100%',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Icon name="refresh" size={18} color="#666" />
-                          <Text style={{ color: '#666', fontWeight: '700' }}>Mock to Delhi (Web/Testing)</Text>
-                        </TouchableOpacity>
+
                       </View>
                     )}
                   </View>
-                ) : (
-                  <ScrollView showsVerticalScrollIndicator={false} style={{ paddingHorizontal: 10, paddingVertical: 15 }} contentContainerStyle={{ paddingBottom: 40 }}>
-                    <Text style={{ fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 16 }}>
-                      Travel Mode lets you virtually change your city so you can find matches from other cities worldwide!
-                    </Text>
+                ) : (() => {
+                  const planName = (currentStatus?.isActive && currentStatus?.planName)
+                    ? currentStatus.planName.toLowerCase()
+                    : 'free';
+                  const isVIP = planName === 'vip';
 
-                    {/* Active Travel Mode Status Banner */}
-                    <View style={[s.travelStatusBanner, travelModeEnabled ? s.travelStatusBannerActive : s.travelStatusBannerInactive]}>
-                      <Icon
-                        name={travelModeEnabled ? 'navigate-circle' : 'airplane-outline'}
-                        size={20}
-                        color={travelModeEnabled ? '#2E7D32' : '#777'}
-                        style={!travelModeEnabled && { transform: [{ rotate: '45deg' }] }}
-                      />
-                      <Text style={[s.travelStatusText, travelModeEnabled ? { color: '#2E7D32' } : { color: '#666' }]}>
-                        {travelModeEnabled
-                          ? `Travelling in: ${userData?.location?.city || 'Selected City'}`
-                          : 'Travel Mode is currently Off'}
-                      </Text>
-                    </View>
-
-                    {/* Quick Pick presets */}
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Popular Destinations</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 10 }}>
-                      {TRAVEL_PRESETS.map((preset) => (
-                        <TouchableOpacity
-                          key={preset.city}
-                          onPress={() => {
-                            setTravelCityInput(preset.city);
-                            handleToggleTravelMode(true, preset);
-                          }}
-                          style={[
-                            s.travelPresetCard,
-                            userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && s.travelPresetCardActive
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <Text style={{ fontSize: 22, marginBottom: 2 }}>{preset.city === 'Delhi' || preset.city === 'Mumbai' ? '🇮🇳' : preset.city === 'London' ? '🇬🇧' : preset.city === 'New York' ? '🇺🇸' : '🇫🇷'}</Text>
-                          <Text style={[s.travelPresetName, userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && { color: '#E94057' }]}>{preset.city}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-
-                    {/* Manual City entry */}
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Custom City Destination</Text>
-                    <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-                      <TextInput
-                        style={[s.amountInput, { flex: 1, marginBottom: 0 }]}
-                        placeholder="Enter city name (e.g. Mumbai, Paris)"
-                        placeholderTextColor="#A0A0A0"
-                        value={travelCityInput}
-                        onChangeText={setTravelCityInput}
-                      />
-                      <TouchableOpacity
-                        onPress={() => {
-                          if (!travelCityInput.trim()) {
-                            Alert.alert('Error', 'Please enter a city name.');
-                            return;
-                          }
-                          const found = TRAVEL_PRESETS.find(p => p.city.toLowerCase() === travelCityInput.trim().toLowerCase());
-                          if (found) {
-                            handleToggleTravelMode(true, found);
-                          } else {
-                            // Custom geocode mockup
-                            handleToggleTravelMode(true, {
-                              city: travelCityInput.trim(),
-                              lat: 28.6139 + (Math.random() - 0.5) * 2,
-                              lng: 77.2090 + (Math.random() - 0.5) * 2,
-                            });
-                          }
-                        }}
-                        style={{
-                          backgroundColor: '#E94057',
-                          width: 52,
-                          height: 52,
-                          borderRadius: 14,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
+                  return (
+                    <View style={{ flex: 1, position: 'relative' }}>
+                      <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        style={{ paddingHorizontal: 10, paddingVertical: 15 }}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                        pointerEvents={isVIP ? 'auto' : 'none'}
                       >
-                        {loadingTravelMode ? (
-                          <ActivityIndicator color="#FFF" />
-                        ) : (
-                          <Icon name="search-outline" size={20} color="#FFF" />
+                        <Text style={{ fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 16 }}>
+                          Travel Mode lets you virtually change your city so you can find matches from other cities worldwide!
+                        </Text>
+
+                        {/* Active Travel Mode Status Banner */}
+                        <View style={[s.travelStatusBanner, travelModeEnabled ? s.travelStatusBannerActive : s.travelStatusBannerInactive]}>
+                          <Icon
+                            name={travelModeEnabled ? 'navigate-circle' : 'airplane-outline'}
+                            size={20}
+                            color={travelModeEnabled ? '#2E7D32' : '#777'}
+                            style={!travelModeEnabled && { transform: [{ rotate: '45deg' }] }}
+                          />
+                          <Text style={[s.travelStatusText, travelModeEnabled ? { color: '#2E7D32' } : { color: '#666' }]}>
+                            {travelModeEnabled
+                              ? `Travelling in: ${userData?.location?.city || 'Selected City'}`
+                              : 'Travel Mode is currently Off'}
+                          </Text>
+                        </View>
+
+                        {/* Quick Pick presets */}
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Popular Destinations</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 10 }}>
+                          {TRAVEL_PRESETS.map((preset) => (
+                            <TouchableOpacity
+                              key={preset.city}
+                              onPress={() => {
+                                setTravelCityInput(preset.city);
+                                handleToggleTravelMode(true, preset);
+                              }}
+                              style={[
+                                s.travelPresetCard,
+                                userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && s.travelPresetCardActive
+                              ]}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={{ fontSize: 22, marginBottom: 2 }}>🇮🇳</Text>
+                              <Text style={[s.travelPresetName, userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && { color: '#E94057' }]}>{preset.city}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+
+                        {/* Manual City entry */}
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Custom City Destination</Text>
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                          <TextInput
+                            style={[s.amountInput, { flex: 1, marginBottom: 0 }]}
+                            placeholder="Enter city name (e.g. Mumbai, Paris)"
+                            placeholderTextColor="#A0A0A0"
+                            value={travelCityInput}
+                            onChangeText={setTravelCityInput}
+                          />
+                          <TouchableOpacity
+                            onPress={() => {
+                              if (!travelCityInput.trim()) {
+                                Alert.alert('Error', 'Please enter a city name.');
+                                return;
+                              }
+                              const found = TRAVEL_PRESETS.find(p => p.city.toLowerCase() === travelCityInput.trim().toLowerCase());
+                              if (found) {
+                                handleToggleTravelMode(true, found);
+                              } else {
+                                // Custom geocode mockup
+                                handleToggleTravelMode(true, {
+                                  city: travelCityInput.trim(),
+                                  lat: 28.6139 + (Math.random() - 0.5) * 2,
+                                  lng: 77.2090 + (Math.random() - 0.5) * 2,
+                                });
+                              }
+                            }}
+                            style={{
+                              backgroundColor: '#E94057',
+                              width: 52,
+                              height: 52,
+                              borderRadius: 14,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {loadingTravelMode ? (
+                              <ActivityIndicator color="#FFF" />
+                            ) : (
+                              <Icon name="search-outline" size={20} color="#FFF" />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+
+                        {travelModeEnabled && (
+                          <TouchableOpacity
+                            onPress={() => handleToggleTravelMode(false)}
+                            style={s.turnOffTravelBtn}
+                            activeOpacity={0.8}
+                          >
+                            <Icon name="power" size={16} color="#E94057" style={{ marginRight: 6 }} />
+                            <Text style={{ color: '#E94057', fontWeight: '700' }}>Turn Off Travel Mode</Text>
+                          </TouchableOpacity>
                         )}
-                      </TouchableOpacity>
+                      </ScrollView>
+                      {!isVIP && (
+                        <View style={s.lockOverlay}>
+                          <Icon name="lock-closed-outline" size={44} color="#E94057" style={{ marginBottom: 12 }} />
+                          <Text style={s.lockTitle}>VIP Feature Only</Text>
+                          <Text style={s.lockDesc}>
+                            Travel Mode is an exclusive feature for VIP members. Upgrade now to change your virtual location globally!
+                          </Text>
+                          <TouchableOpacity
+                            style={s.lockBtn}
+                            onPress={() => {
+                              setLocationModalVisible(false);
+                              navigation.navigate('SubscriptionPlans', { selectPlanName: 'vip' });
+                            }}
+                          >
+                            <Text style={s.lockBtnText}>Upgrade to VIP</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </View>
-
-                    {travelModeEnabled && (
-                      <TouchableOpacity
-                        onPress={() => handleToggleTravelMode(false)}
-                        style={s.turnOffTravelBtn}
-                        activeOpacity={0.8}
-                      >
-                        <Icon name="power" size={16} color="#E94057" style={{ marginRight: 6 }} />
-                        <Text style={{ color: '#E94057', fontWeight: '700' }}>Turn Off Travel Mode</Text>
-                      </TouchableOpacity>
-                    )}
-                  </ScrollView>
-                )}
+                  );
+                })()}
               </View>
             </BottomSheetContainer>
           </Modal>
@@ -1298,6 +1320,45 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 10,
     width: '100%',
+  },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    borderRadius: 18,
+    zIndex: 10,
+  },
+  lockTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  lockDesc: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  lockBtn: {
+    backgroundColor: '#E94057',
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: 22,
+    shadowColor: '#E94057',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  lockBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 

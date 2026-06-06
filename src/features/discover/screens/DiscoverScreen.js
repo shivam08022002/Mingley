@@ -51,6 +51,7 @@ export const DiscoverScreen = React.memo(() => {
 
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [isSuperchatVisible, setSuperchatVisible] = useState(false);
+  const [cardsContainerHeight, setCardsContainerHeight] = useState(0);
   const swipeRef = useRef(null);
   const lastFiltersRef = useRef(null);
 
@@ -186,13 +187,14 @@ export const DiscoverScreen = React.memo(() => {
         user={user}
         isFirst={index === 0}
         isSecond={index === 1}
+        availableHeight={cardsContainerHeight}
         onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
         onSwipeUp={index === 0 ? handleSwipeUp : undefined}
         onPress={index === 0 ? () => navigation.navigate('UserProfile', { user }) : undefined}
       />
     ));
-  }, [profiles, isLoading, handleSwipeLeft, handleSwipeRight, handleSwipeUp, navigation]);
+  }, [profiles, isLoading, cardsContainerHeight, handleSwipeLeft, handleSwipeRight, handleSwipeUp, navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -221,7 +223,15 @@ export const DiscoverScreen = React.memo(() => {
       </View>
 
       {/* Cards */}
-      <View style={styles.cardsContainer}>{TopCards}</View>
+      <View
+        style={styles.cardsContainer}
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0 && h !== cardsContainerHeight) setCardsContainerHeight(h);
+        }}
+      >
+        {TopCards}
+      </View>
 
       {/* Action Buttons */}
       <ActionButtons

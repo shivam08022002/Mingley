@@ -39,7 +39,7 @@ const FEATURE_METADATA = {
   'Early features': { icon: 'time-outline', desc: 'Try new features before anyone else' }
 };
 
-export const SubscriptionPlansScreen = ({ navigation }) => {
+export const SubscriptionPlansScreen = ({ navigation, route }) => {
   const { 
     plans, fetchPlans, isLoading, setSelectedPlan, subscribe, 
     fetchStatus, currentStatus, cancelSubscription 
@@ -120,13 +120,23 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
   useEffect(() => {
     if (mappedPlans.length > 0 && !selected) {
       let initialPlanId = null;
-      if (isSubscriptionActive && currentActivePlanId) {
-        initialPlanId = currentActivePlanId;
-      } else {
-        const defaultPlan = mappedPlans.find(p => p.badge?.includes('POPULAR') || p.name?.toLowerCase().includes('gold'))
-          || mappedPlans.find(p => !p.isFree)
-          || mappedPlans[0];
-        initialPlanId = defaultPlan.id;
+      const selectPlanName = route?.params?.selectPlanName;
+      if (selectPlanName) {
+        const found = mappedPlans.find(p => p.name?.toLowerCase().includes(selectPlanName.toLowerCase()));
+        if (found) {
+          initialPlanId = found.id;
+        }
+      }
+
+      if (!initialPlanId) {
+        if (isSubscriptionActive && currentActivePlanId) {
+          initialPlanId = currentActivePlanId;
+        } else {
+          const defaultPlan = mappedPlans.find(p => p.badge?.includes('POPULAR') || p.name?.toLowerCase().includes('gold'))
+            || mappedPlans.find(p => !p.isFree)
+            || mappedPlans[0];
+          initialPlanId = defaultPlan.id;
+        }
       }
 
       if (initialPlanId) {
@@ -139,19 +149,9 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
         }
       }
     }
-  }, [plans, selected, currentStatus, isSubscriptionActive, currentActivePlanId, mappedPlans]);
+  }, [plans, selected, currentStatus, isSubscriptionActive, currentActivePlanId, mappedPlans, route?.params?.selectPlanName]);
 
   const handleSelectPlan = (planId) => {
-    if (isSubscriptionActive && planId !== currentActivePlanId) {
-      const expiry = currentStatus?.expiresAt || currentStatus?.endDate;
-      const formattedDate = expiry ? new Date(expiry).toLocaleDateString([], { dateStyle: 'medium' }) : 'expiry';
-      useToastStore.getState().showToast(
-        `Active plan exists. You can switch after it expires on ${formattedDate}.`,
-        'info',
-        3000
-      );
-      return;
-    }
     setSelected(planId);
     const index = mappedPlans.findIndex(p => p.id === planId);
     if (index !== -1 && carouselRef.current) {
@@ -171,16 +171,6 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
   };
 
   const handleDotPress = (index, planId) => {
-    if (isSubscriptionActive && planId !== currentActivePlanId) {
-      const expiry = currentStatus?.expiresAt || currentStatus?.endDate;
-      const formattedDate = expiry ? new Date(expiry).toLocaleDateString([], { dateStyle: 'medium' }) : 'expiry';
-      useToastStore.getState().showToast(
-        `Active plan exists. You can switch after it expires on ${formattedDate}.`,
-        'info',
-        3000
-      );
-      return;
-    }
     setSelected(planId);
     if (carouselRef.current) {
       carouselRef.current.scrollTo({ x: index * (width - 32), animated: true });
@@ -190,6 +180,26 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
   const handleContinue = async () => {
     const selectedMappedPlan = mappedPlans.find((plan) => plan.id === selected);
     if (selectedMappedPlan) {
+      const PLAN_RANKS = {
+        'free': 0,
+        'silver': 1,
+        'gold': 2,
+        'platinum': 3,
+        'vip': 4
+      };
+      const currentPlanName = (typeof currentStatus === 'string'
+        ? currentStatus
+        : currentStatus?.planName || currentStatus?.plan?.name || 'free').toLowerCase();
+      const currentRank = PLAN_RANKS[currentPlanName] ?? 0;
+
+      const selectedPlanName = (selectedMappedPlan?.name || '').toLowerCase();
+      const selectedRank = PLAN_RANKS[selectedPlanName] ?? 0;
+
+      if (currentRank > 0 && selectedRank <= currentRank && selected !== currentActivePlanId) {
+        Alert.alert('Upgrade Restriction', 'You can only upgrade to a higher tier plan.');
+        return;
+      }
+
       if (selectedMappedPlan.isFree) {
         try {
           await subscribe({
@@ -435,9 +445,29 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
         const selectedMappedPlan = mappedPlans.find((plan) => plan.id === selected);
         const isFreeSelected = selectedMappedPlan?.isFree;
 
+        const PLAN_RANKS = {
+          'free': 0,
+          'silver': 1,
+          'gold': 2,
+          'platinum': 3,
+          'vip': 4
+        };
+
+        const currentPlanName = (typeof currentStatus === 'string'
+          ? currentStatus
+          : currentStatus?.planName || currentStatus?.plan?.name || 'free').toLowerCase();
+        const currentRank = PLAN_RANKS[currentPlanName] ?? 0;
+
+        const selectedPlanName = (selectedMappedPlan?.name || '').toLowerCase();
+        const selectedRank = PLAN_RANKS[selectedPlanName] ?? 0;
+
+        const isDowngrade = currentRank > 0 && selectedRank <= currentRank && selected !== currentActivePlanId;
+
         let buttonLabel = '';
         if (isCurrentActiveSelected) {
           buttonLabel = 'Cancel Active Subscription';
+        } else if (isDowngrade) {
+          buttonLabel = 'Upgrade Only (Higher Tier)';
         } else if (isFreeSelected) {
           buttonLabel = 'Your Current Plan';
         } else {
@@ -461,6 +491,13 @@ export const SubscriptionPlansScreen = ({ navigation }) => {
                   <Icon name="close-circle-outline" size={18} color="#fff" />
                 </LinearGradient>
               </TouchableOpacity>
+            ) : isDowngrade ? (
+              <View style={[s.ctaWrap, { opacity: 0.6 }]}>
+                <View style={[s.ctaBtn, { backgroundColor: '#94A3B8' }]}>
+                  <Text style={[s.ctaText, { color: '#FFF' }]}>{buttonLabel}</Text>
+                  <Icon name="lock-closed-outline" size={18} color="#FFF" />
+                </View>
+              </View>
             ) : isFreeSelected ? (
               <View style={[s.ctaWrap, { opacity: 0.8 }]}>
                 <View style={[s.ctaBtn, { backgroundColor: '#64748B' }]}>
