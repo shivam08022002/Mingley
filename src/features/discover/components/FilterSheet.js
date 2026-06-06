@@ -21,6 +21,8 @@ import { useFilterStore } from '../store/useFilterStore';
 import { useChatStore } from '../../../store/useChatStore';
 import { userService, subscriptionService } from '../../../services/apiServices';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
+import * as Location from 'expo-location';
+import { useProfileStore } from '../../profile/store/useProfileStore';
 
 const { height, width } = Dimensions.get('window');
 
@@ -29,22 +31,37 @@ const SingleSlider = React.memo(({ value, min, max, onChange }) => {
   const [trackWidth, setTrackWidth] = useState(300);
   const dragStartValue = useRef(value);
 
+  const valueRef = useRef(value);
+  const minRef = useRef(min);
+  const maxRef = useRef(max);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    valueRef.current = value;
+    minRef.current = min;
+    maxRef.current = max;
+    onChangeRef.current = onChange;
+  });
+
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        dragStartValue.current = value;
+        dragStartValue.current = Math.max(minRef.current, Math.min(maxRef.current, valueRef.current));
       },
       onPanResponderMove: (_, gs) => {
-        const deltaVal = (gs.dx / trackWidth) * (max - min);
-        const newVal = Math.max(min, Math.min(max, Math.round(dragStartValue.current + deltaVal)));
-        onChange(newVal);
+        if (trackWidth <= 0) return;
+        const deltaVal = (gs.dx / trackWidth) * (maxRef.current - minRef.current);
+        const newVal = Math.max(minRef.current, Math.min(maxRef.current, Math.round(dragStartValue.current + deltaVal)));
+        onChangeRef.current(newVal);
       },
     })
   ).current;
 
-  const pos = ((value - min) / (max - min)) * trackWidth;
+  const clampedValue = Math.max(min, Math.min(max, value));
+  const denom = max - min > 0 ? max - min : 1;
+  const pos = ((clampedValue - min) / denom) * trackWidth;
 
   return (
     <View
@@ -52,7 +69,7 @@ const SingleSlider = React.memo(({ value, min, max, onChange }) => {
       onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width || 300)}
     >
       <View style={sl.track} />
-      <View style={[sl.fill, { width: pos }]} />
+      <View style={[sl.fill, { left: 0, width: pos }]} />
       <View {...pan.panHandlers} style={[sl.thumb, { left: pos - 12 }]} />
     </View>
   );
@@ -64,17 +81,34 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
   const dragStartLow = useRef(low);
   const dragStartHigh = useRef(high);
 
+  const lowRef = useRef(low);
+  const highRef = useRef(high);
+  const minRef = useRef(min);
+  const maxRef = useRef(max);
+  const onChangeLowRef = useRef(onChangeLow);
+  const onChangeHighRef = useRef(onChangeHigh);
+
+  useEffect(() => {
+    lowRef.current = low;
+    highRef.current = high;
+    minRef.current = min;
+    maxRef.current = max;
+    onChangeLowRef.current = onChangeLow;
+    onChangeHighRef.current = onChangeHigh;
+  });
+
   const panLow = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        dragStartLow.current = low;
+        dragStartLow.current = Math.max(minRef.current, Math.min(maxRef.current, lowRef.current));
       },
       onPanResponderMove: (_, gs) => {
-        const deltaVal = (gs.dx / trackWidth) * (max - min);
-        const newVal = Math.max(min, Math.min(high - 2, Math.round(dragStartLow.current + deltaVal)));
-        onChangeLow(newVal);
+        if (trackWidth <= 0) return;
+        const deltaVal = (gs.dx / trackWidth) * (maxRef.current - minRef.current);
+        const newVal = Math.max(minRef.current, Math.min(highRef.current - 2, Math.round(dragStartLow.current + deltaVal)));
+        onChangeLowRef.current(newVal);
       },
     })
   ).current;
@@ -84,18 +118,22 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        dragStartHigh.current = high;
+        dragStartHigh.current = Math.max(minRef.current, Math.min(maxRef.current, highRef.current));
       },
       onPanResponderMove: (_, gs) => {
-        const deltaVal = (gs.dx / trackWidth) * (max - min);
-        const newVal = Math.max(low + 2, Math.min(max, Math.round(dragStartHigh.current + deltaVal)));
-        onChangeHigh(newVal);
+        if (trackWidth <= 0) return;
+        const deltaVal = (gs.dx / trackWidth) * (maxRef.current - minRef.current);
+        const newVal = Math.max(lowRef.current + 2, Math.min(maxRef.current, Math.round(dragStartHigh.current + deltaVal)));
+        onChangeHighRef.current(newVal);
       },
     })
   ).current;
 
-  const lowPos = ((low - min) / (max - min)) * trackWidth;
-  const highPos = ((high - min) / (max - min)) * trackWidth;
+  const clampedLow = Math.max(min, Math.min(max, low));
+  const clampedHigh = Math.max(min, Math.min(max, high));
+  const denom = max - min > 0 ? max - min : 1;
+  const lowPos = ((clampedLow - min) / denom) * trackWidth;
+  const highPos = ((clampedHigh - min) / denom) * trackWidth;
 
   return (
     <View
@@ -112,6 +150,39 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
 
 
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
+
+const FALLBACK_INTERESTS = [
+  { id: '1', name: 'Photography', icon: 'camera-outline' },
+  { id: '2', name: 'Shopping', icon: 'bag-handle-outline' },
+  { id: '3', name: 'Karaoke', icon: 'mic-outline' },
+  { id: '4', name: 'Yoga', icon: 'body-outline' },
+  { id: '5', name: 'Cooking', icon: 'restaurant-outline' },
+  { id: '6', name: 'Tennis', icon: 'tennisball-outline' },
+  { id: '7', name: 'Run', icon: 'walk-outline' },
+  { id: '8', name: 'Swimming', icon: 'water-outline' },
+  { id: '9', name: 'Art', icon: 'color-palette-outline' },
+  { id: '10', name: 'Traveling', icon: 'airplane-outline' },
+  { id: '11', name: 'Extreme', icon: 'bicycle-outline' },
+  { id: '12', name: 'Music', icon: 'musical-notes-outline' },
+  { id: '13', name: 'Drink', icon: 'wine-outline' },
+  { id: '14', name: 'Video games', icon: 'game-controller-outline' },
+  { id: '15', name: 'Movies', icon: 'film-outline' },
+  { id: '16', name: 'Reading', icon: 'book-outline' },
+  { id: '17', name: 'Gym', icon: 'barbell-outline' },
+  { id: '18', name: 'Coffee', icon: 'cafe-outline' },
+  { id: '19', name: 'Hiking', icon: 'compass-outline' },
+  { id: '20', name: 'Coding', icon: 'code-slash-outline' },
+  { id: '21', name: 'Pets', icon: 'paw-outline' },
+  { id: '22', name: 'Foodie', icon: 'pizza-outline' },
+];
+
+const debounce = (fn, delay) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+};
 
 // ─── Main FilterSheet ───────────────────────────────────────────────────────
 export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
@@ -130,6 +201,34 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 
   const [allInterests, setAllInterests] = useState([]);
   const [loadingInterests, setLoadingInterests] = useState(false);
+  const [userLocation, setUserLocation] = useState('');
+  const [isTravelMode, setIsTravelMode] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+
+  const [localDistance, setLocalDistance] = useState(distance);
+  const [localAgeRange, setLocalAgeRange] = useState(ageRange);
+
+  useEffect(() => {
+    setLocalDistance(distance);
+  }, [distance]);
+
+  useEffect(() => {
+    setLocalAgeRange(ageRange);
+  }, [ageRange]);
+
+  const debouncedSetDistance = useCallback(
+    debounce((val) => {
+      setDistance(val);
+    }, 200),
+    [setDistance]
+  );
+
+  const debouncedSetAgeRange = useCallback(
+    debounce((val) => {
+      setAgeRange(val);
+    }, 200),
+    [setAgeRange]
+  );
 
   useEffect(() => {
     const fetchInterestsAndPreferences = async () => {
@@ -140,7 +239,14 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           userService.getMe()
         ]);
 
-        setAllInterests(intRes.data?.interests || []);
+        const apiInterests = intRes.data?.interests || intRes.interests;
+        setAllInterests(apiInterests && apiInterests.length > 0 ? apiInterests : FALLBACK_INTERESTS);
+
+        const user = meRes.data || meRes;
+        if (user?.location) {
+          setUserLocation(user.location.city ? `${user.location.city}, ${user.location.country || ''}` : '');
+        }
+        setIsTravelMode(user?.isTravelMode || false);
 
         // Fetch subscription status to enforce limits
         let userIsActive = false;
@@ -251,13 +357,79 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
   }, [onClose, onApply]);
   const handleClear = useCallback(() => reset(), [reset]);
 
+  const detectGPSLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to detect your location.');
+        setLoadingLocation(false);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      if (geo) {
+        const city = geo.city || geo.subregion || geo.district || 'Unknown City';
+        const country = geo.country || 'India';
+        await updateManualLocation(city, country, loc.coords.latitude, loc.coords.longitude);
+      } else {
+        Alert.alert('Error', 'Could not resolve location coordinates.');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Failed to detect current location.');
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const updateManualLocation = async (city, country, lat, lng) => {
+    try {
+      await userService.updateLocation({ lat, lng, city, country });
+      setUserLocation(`${city}, ${country}`);
+      await useProfileStore.getState().fetchProfile();
+      setLocation(`${city}, ${country}`);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to update location.');
+    }
+  };
+
+
+  const handleTravelModePress = async () => {
+    if (isTravelMode) {
+      try {
+        await userService.setTravelMode({ enabled: false });
+        setIsTravelMode(false);
+        const meRes = await userService.getMe();
+        const user = meRes.data || meRes;
+        if (user?.location) {
+          setUserLocation(user.location.city ? `${user.location.city}, ${user.location.country || ''}` : '');
+          setLocation(user.location.city ? `${user.location.city}, ${user.location.country || ''}` : '');
+        }
+        await useProfileStore.getState().fetchProfile();
+        Alert.alert('Travel Mode Off', 'Back to your home location.');
+      } catch (err) {
+        Alert.alert('Error', 'Failed to disable Travel Mode');
+      }
+    } else {
+      // Close filter sheet then open the full Travel Mode modal in Settings
+      onClose();
+      navigation.navigate('Settings', { openTravelMode: true });
+    }
+  };
+
   const pickLocation = () => {
-    Alert.alert('Choose Location', '', [
-      { text: 'Mumbai, India', onPress: () => setLocation('Mumbai, India') },
-      { text: 'Delhi, India', onPress: () => setLocation('Delhi, India') },
-      { text: 'Bangalore, India', onPress: () => setLocation('Bangalore, India') },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    Alert.alert(
+      'Update Location',
+      'How would you like to update your current location?',
+      [
+        { text: 'Detect GPS Location', onPress: () => detectGPSLocation() },
+        { text: 'Select Mumbai', onPress: () => updateManualLocation('Mumbai', 'India', 19.0760, 72.8777) },
+        { text: 'Select Delhi', onPress: () => updateManualLocation('Delhi', 'India', 28.7041, 77.1025) },
+        { text: 'Select Bangalore', onPress: () => updateManualLocation('Bangalore', 'India', 12.9716, 77.5946) },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
   };
 
   return (
@@ -274,7 +446,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
         contentStyle={s.contentStyle}
       >
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 45 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={s.headerRow}>
             <Text style={s.title}>Filters</Text>
@@ -302,29 +474,72 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 
           {/* ─ Location ─ */}
           <Section label="Location">
-            <TouchableOpacity style={s.locationRow} onPress={pickLocation}>
-              <Icon name="location-outline" size={18} color="#E94057" />
-              <Text style={s.locationText}>{location}</Text>
-              <Icon name="chevron-forward" size={18} color="#CCC" />
-            </TouchableOpacity>
+            <View style={s.locationContainer}>
+              <TouchableOpacity style={s.locationRow} onPress={pickLocation} disabled={loadingLocation}>
+                {loadingLocation ? (
+                  <ActivityIndicator size="small" color="#E94057" style={{ marginRight: 6 }} />
+                ) : (
+                  <Icon name={isTravelMode ? "airplane-outline" : "location-outline"} size={18} color="#E94057" />
+                )}
+                <Text style={[s.locationText, !userLocation && s.placeholderText]}>
+                  {userLocation || 'Select Location'}
+                </Text>
+                {isTravelMode && (
+                  <View style={s.travelBadge}>
+                    <Text style={s.travelBadgeText}>Travel Mode</Text>
+                  </View>
+                )}
+                <Icon name="chevron-forward" size={18} color="#CCC" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[s.travelModeBtn, isTravelMode && s.travelModeBtnActive]} 
+                onPress={handleTravelModePress}
+              >
+                <Icon 
+                  name="airplane" 
+                  size={16} 
+                  color={isTravelMode ? '#FFF' : '#E94057'} 
+                  style={!isTravelMode && { transform: [{ rotate: '45deg' }] }} 
+                />
+                <Text style={[s.travelModeBtnText, isTravelMode && s.travelModeBtnTextActive]}>
+                  {isTravelMode ? 'Disable Travel Mode' : 'Enable Travel Mode'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </Section>
 
           {/* ─ Distance ─ */}
-          <Section label={`Distance  •  ${distance} km`}>
-            <SingleSlider value={distance} min={1} max={150} onChange={setDistance} />
+          <Section label={`Distance  •  ${localDistance} km`}>
+            <SingleSlider 
+              value={localDistance} 
+              min={1} max={200} 
+              onChange={(val) => {
+                setLocalDistance(val);
+                debouncedSetDistance(val);
+              }} 
+            />
             <View style={s.sliderLabels}>
               <Text style={s.sliderHint}>1 km</Text>
-              <Text style={s.sliderHint}>150 km</Text>
+              <Text style={s.sliderHint}>200 km</Text>
             </View>
           </Section>
 
           {/* ─ Age Range ─ */}
-          <Section label={`Age Range  •  ${ageRange[0]}–${ageRange[1]}`}>
+          <Section label={`Age Range  •  ${localAgeRange[0]}–${localAgeRange[1]}`}>
             <RangeSlider
               min={18} max={60}
-              low={ageRange[0]} high={ageRange[1]}
-              onChangeLow={(v) => setAgeRange([v, ageRange[1]])}
-              onChangeHigh={(v) => setAgeRange([ageRange[0], v])}
+              low={localAgeRange[0]} high={localAgeRange[1]}
+              onChangeLow={(v) => {
+                const newRange = [v, localAgeRange[1]];
+                setLocalAgeRange(newRange);
+                debouncedSetAgeRange(newRange);
+              }}
+              onChangeHigh={(v) => {
+                const newRange = [localAgeRange[0], v];
+                setLocalAgeRange(newRange);
+                debouncedSetAgeRange(newRange);
+              }}
             />
             <View style={s.sliderLabels}>
               <Text style={s.sliderHint}>18</Text>
@@ -497,8 +712,8 @@ const Section = ({ label, children }) => (
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const PINK = '#E94057';
-const FONT = Platform.OS === 'ios' ? 'System' : 'sans-serif';
-const FONT_MED = Platform.OS === 'ios' ? 'System' : 'sans-serif-medium';
+const FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
+const FONT_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
 const s = StyleSheet.create({
   containerStyle: {
@@ -550,6 +765,9 @@ const s = StyleSheet.create({
   segTextActive: { color: PINK, fontWeight: '700' },
 
   // Location
+  locationContainer: {
+    gap: 12,
+  },
   locationRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#FAFAFA', borderRadius: 12,
@@ -557,6 +775,43 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: '#F0F0F0',
   },
   locationText: { flex: 1, fontSize: 15, color: '#222', fontFamily: FONT },
+  placeholderText: { color: '#AAA' },
+  travelBadge: {
+    backgroundColor: '#E94057',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  travelBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: FONT_MED,
+  },
+  travelModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E94057',
+    backgroundColor: 'transparent',
+    gap: 6,
+  },
+  travelModeBtnActive: {
+    backgroundColor: '#E94057',
+  },
+  travelModeBtnText: {
+    fontSize: 14,
+    color: '#E94057',
+    fontWeight: '700',
+    fontFamily: FONT_MED,
+  },
+  travelModeBtnTextActive: {
+    color: '#FFF',
+  },
 
   // Slider labels
   sliderLabels: {
@@ -671,7 +926,8 @@ const sl = StyleSheet.create({
   },
   fill: {
     position: 'absolute', height: 6,
-    backgroundColor: PINK, borderRadius: 3, left: 0,
+    backgroundColor: PINK, borderRadius: 3,
+    top: 15,
   },
   thumb: {
     position: 'absolute', width: 24, height: 24, borderRadius: 12,

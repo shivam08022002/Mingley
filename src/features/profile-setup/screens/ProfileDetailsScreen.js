@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -23,12 +23,18 @@ const DismissKeyboard = ({ children }) => {
 };
 
 const avatarChoices = [
-  { gender: 'boy', label: 'Classic Boy', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80' },
-  { gender: 'boy', label: 'Casual Boy', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80' },
-  { gender: 'boy', label: 'Modern Boy', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80' },
-  { gender: 'girl', label: 'Classic Girl', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80' },
-  { gender: 'girl', label: 'Casual Girl', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80' },
-  { gender: 'girl', label: 'Modern Girl', url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Classic Boy', url: 'https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Casual Boy', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Modern Boy', url: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Stylish Boy', url: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Trendy Boy', url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'boy', label: 'Cool Boy', url: 'https://images.unsplash.com/photo-1489980508314-941910ded1f4?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Classic Girl', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Casual Girl', url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Modern Girl', url: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Stylish Girl', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Trendy Girl', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80' },
+  { gender: 'girl', label: 'Cool Girl', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80' },
 ];
 
 export const ProfileDetailsScreen = ({ navigation }) => {
@@ -155,40 +161,52 @@ export const ProfileDetailsScreen = ({ navigation }) => {
 
             {/* Boy Avatars */}
             <Text style={styles.genderSectionHeader}>Boy Avatars 🙋‍♂️</Text>
-            <View style={styles.avatarSelectionRow}>
-              {avatarChoices.filter(c => c.gender === 'boy').map((choice) => (
-                <TouchableOpacity
-                  key={choice.url}
-                  style={styles.avatarSelectionCard}
-                  onPress={() => {
-                    setProfileDetails({ avatar: choice.url });
-                    setAvatarModalVisible(false);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
-                  <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.avatarSectionBackground}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerStyle={styles.avatarScrollContainer}
+              >
+                {avatarChoices.filter(c => c.gender === 'boy').map((choice) => (
+                  <TouchableOpacity
+                    key={choice.url}
+                    style={styles.avatarSelectionCardScroll}
+                    onPress={() => {
+                      setProfileDetails({ avatar: choice.url });
+                      setAvatarModalVisible(false);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
+                    <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
 
             {/* Girl Avatars */}
             <Text style={styles.genderSectionHeader}>Girl Avatars 🙋‍♀️</Text>
-            <View style={styles.avatarSelectionRow}>
-              {avatarChoices.filter(c => c.gender === 'girl').map((choice) => (
-                <TouchableOpacity
-                  key={choice.url}
-                  style={styles.avatarSelectionCard}
-                  onPress={() => {
-                    setProfileDetails({ avatar: choice.url });
-                    setAvatarModalVisible(false);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
-                  <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.avatarSectionBackground}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerStyle={styles.avatarScrollContainer}
+              >
+                {avatarChoices.filter(c => c.gender === 'girl').map((choice) => (
+                  <TouchableOpacity
+                    key={choice.url}
+                    style={styles.avatarSelectionCardScroll}
+                    onPress={() => {
+                      setProfileDetails({ avatar: choice.url });
+                      setAvatarModalVisible(false);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
+                    <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </View>
         </BottomSheetContainer>
@@ -340,16 +358,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 10,
   },
-  avatarSelectionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    gap: 16,
-    marginBottom: 24,
+  avatarSectionBackground: {
+    backgroundColor: '#FFF5F6',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#FFE3E7',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    marginBottom: 20,
     width: '100%',
   },
-  avatarSelectionCard: {
+  avatarScrollContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: 16,
+    paddingHorizontal: 4,
+  },
+  avatarSelectionCardScroll: {
+    alignItems: 'center',
+    width: 80,
   },
   avatarSelectionImage: {
     width: 80,
