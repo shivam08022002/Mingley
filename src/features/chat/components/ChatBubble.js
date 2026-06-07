@@ -88,7 +88,7 @@ export const ChatBubble = React.memo(({ item }) => {
           styles.giftBubble, 
           isMine 
             ? [styles.giftBubbleMine, { backgroundColor: theme.primary, borderColor: theme.primary }] 
-            : [styles.giftBubbleTheirs, { backgroundColor: isDark ? '#222126' : '#F3F4F6', borderColor: theme.actionButtonBorder }]
+            : [styles.giftBubbleTheirs, { backgroundColor: isDark ? theme.surface : '#F3F4F6', borderColor: theme.actionButtonBorder }]
         ]}>
           <View style={styles.giftIconWrap}>
             <Icon name={iconName} size={28} color={isMine ? '#FFFFFF' : theme.primary} />
@@ -127,7 +127,7 @@ export const ChatBubble = React.memo(({ item }) => {
           styles.coinsBubble, 
           isMine 
             ? [styles.coinsBubbleMine, { backgroundColor: theme.primary, borderColor: theme.primary }] 
-            : [styles.coinsBubbleTheirs, { backgroundColor: isDark ? '#222126' : '#F3F4F6', borderColor: theme.actionButtonBorder }]
+            : [styles.coinsBubbleTheirs, { backgroundColor: isDark ? theme.surface : '#F3F4F6', borderColor: theme.actionButtonBorder }]
         ]}>
           <View style={{ marginRight: 12 }}>
             <Icon name="logo-bitcoin" size={24} color={isMine ? '#FFF' : '#FFD700'} />
@@ -136,7 +136,7 @@ export const ChatBubble = React.memo(({ item }) => {
             <Text style={[styles.coinsAmount, isMine ? styles.coinsAmountMine : styles.coinsAmountTheirs]}>
               {item.amount} coins
             </Text>
-            <Text style={[styles.coinsSub, isMine ? styles.coinsSubMine : styles.coinsSubTheirs]}>
+            <Text style={[styles.coinsSub, isMine ? styles.coinsSubMine : [styles.coinsSubTheirs, { color: theme.textSecondary }]]}>
               {isMine ? 'Coins sent' : 'Coins received'}
             </Text>
           </View>
@@ -167,7 +167,7 @@ export const ChatBubble = React.memo(({ item }) => {
     >
       <View style={[
         styles.bubble, 
-        isMine ? [styles.bubbleMine, { backgroundColor: theme.primary }] : [styles.bubbleTheirs, { backgroundColor: isDark ? '#222126' : '#F3F4F6' }],
+        isMine ? [styles.bubbleMine, { backgroundColor: theme.primary }] : [styles.bubbleTheirs, { backgroundColor: isDark ? theme.surface : '#F3F4F6' }],
         emojiOnly && { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 4 }
       ]}>
         {item.imageUrl && item.imageUrl !== '' ? (

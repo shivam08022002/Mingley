@@ -361,8 +361,8 @@ export const ProfileScreen = React.memo(() => {
       <Modal visible={notifModalVisible} transparent animationType="fade" onRequestClose={() => setNotifModalVisible(false)}>
         <BottomSheetContainer onClose={() => setNotifModalVisible(false)} height={height * 0.85}>
           <View style={styles.modalContent}>
-            <View style={styles.notifHeader}>
-              <Text style={styles.notifHeaderTitle}>Notifications</Text>
+            <View style={[styles.notifHeader, { borderBottomColor: theme.sectionDivider }]}>
+              <Text style={[styles.notifHeaderTitle, { color: theme.textPrimary }]}>Notifications</Text>
               <TouchableOpacity onPress={handleMarkAllRead}>
                 <Icon name="checkmark-done-outline" size={22} color="#E94057" />
               </TouchableOpacity>
@@ -378,11 +378,15 @@ export const ProfileScreen = React.memo(() => {
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={[styles.notifItem, !item.isRead && styles.notifItemUnread]}
+                    style={[
+                      styles.notifItem,
+                      { borderBottomColor: theme.sectionDivider },
+                      !item.isRead && [styles.notifItemUnread, theme.isDark && { backgroundColor: theme.surface }]
+                    ]}
                     onPress={() => !item.isRead && handleMarkOneRead(item.id)}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.notifIconWrap, { backgroundColor: item.type === 'MATCH' ? '#FFF0F3' : item.type === 'SUPERCHAT' ? '#F3E8FF' : '#F0F9FF' }]}>
+                    <View style={[styles.notifIconWrap, { backgroundColor: theme.isDark ? theme.background : (item.type === 'MATCH' ? '#FFF0F3' : item.type === 'SUPERCHAT' ? '#F3E8FF' : '#F0F9FF') }]}>
                       <Icon
                         name={item.type === 'MATCH' ? 'heart-circle' : item.type === 'SUPERCHAT' ? 'flash' : 'megaphone-outline'}
                         size={22}
@@ -390,8 +394,8 @@ export const ProfileScreen = React.memo(() => {
                       />
                     </View>
                     <View style={styles.notifTextWrap}>
-                      <Text style={styles.notifTitle}>{item.title}</Text>
-                      <Text style={styles.notifBody}>{item.body}</Text>
+                      <Text style={[styles.notifTitle, { color: theme.textPrimary }]}>{item.title}</Text>
+                      <Text style={[styles.notifBody, { color: theme.textSecondary }]}>{item.body}</Text>
                       <Text style={styles.notifTime}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                     </View>
                     {!item.isRead && <View style={styles.unreadDot} />}
@@ -399,8 +403,8 @@ export const ProfileScreen = React.memo(() => {
                 )}
                 ListEmptyComponent={
                   <View style={styles.emptyState}>
-                    <Icon name="notifications-off-outline" size={48} color="#DDD" />
-                    <Text style={styles.emptyStateText}>No notifications yet</Text>
+                    <Icon name="notifications-off-outline" size={48} color={theme.textSecondary} />
+                    <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No notifications yet</Text>
                   </View>
                 }
               />
