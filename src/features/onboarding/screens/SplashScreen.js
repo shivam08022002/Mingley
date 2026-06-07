@@ -20,11 +20,11 @@ export const SplashScreen = ({ navigation }) => {
   return (
     <View style={styles.splashContainer}>
       <LinearGradient
-        colors={isDark ? ['#0A0A0A', '#1A1A1A'] : [COLORS.gradientStart, COLORS.gradientEnd]}
+        colors={isDark ? ['#000000', '#000000'] : [COLORS.gradientStart, COLORS.gradientEnd]}
         style={styles.gradient}
       >
         <FastImage
-          source={require('../../../assets/app-logo.png')}
+          source={isDark ? require('../../../assets/app-logo2.png') : require('../../../assets/app-logo.png')}
           style={styles.logo}
           contentFit="contain"
         />

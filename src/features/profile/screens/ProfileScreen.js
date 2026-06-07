@@ -215,14 +215,6 @@ export const ProfileScreen = React.memo(() => {
   ];
 
 
-  if (!profile && loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E94057" />
-      </View>
-    );
-  }
-
   const handleSetPrimary = async (imageId) => {
     try {
       await userService.setPrimaryImage(imageId);
@@ -240,6 +232,14 @@ export const ProfileScreen = React.memo(() => {
       Alert.alert('Error', 'Failed to delete photo');
     }
   }, [fetchProfile]);
+
+  if (!profile && loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E94057" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
