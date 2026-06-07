@@ -2,8 +2,10 @@ import React, { useRef, useState } from 'react';
 import { View, TextInput, StyleSheet, Keyboard, Platform} from 'react-native';
 import { Controller } from 'react-hook-form';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const OTPInput = ({ control, name }) => {
+  const { theme } = useTheme();
   const [code, setCode] = useState(['', '', '', '']);
   const inputs = useRef([]);
 
@@ -45,15 +47,22 @@ export const OTPInput = ({ control, name }) => {
                   key={index.toString()}
                   style={[
                     styles.inputContainer,
-                    isFilled ? styles.inputFilled : styles.inputEmpty,
-                    isFocused && !isFilled ? styles.inputFocused : null,
+                    isFilled 
+                      ? [styles.inputFilled, { backgroundColor: theme.isDark ? theme.accent : theme.primary }] 
+                      : [styles.inputEmpty, { backgroundColor: theme.cardBackground, borderColor: theme.border }],
+                    isFocused && !isFilled 
+                      ? [styles.inputFocused, { borderColor: theme.isDark ? theme.accent : theme.primary }] 
+                      : null,
                   ]}
                 >
                   <TextInput
                     ref={(ref) => (inputs.current[index] = ref)}
                     style={[
                       styles.input,
-                      isFilled ? styles.textFilled : styles.textEmpty,
+                      isFilled 
+                        ? [styles.textFilled, { color: theme.isDark ? '#0A0A0A' : '#FFFFFF' }] 
+                        : [styles.textEmpty, { color: theme.isDark ? theme.accent : theme.primary }],
+                      Platform.OS === 'web' ? { outlineStyle: 'none' } : {}
                     ]}
                     keyboardType="number-pad"
                     maxLength={1}

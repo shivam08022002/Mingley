@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Navigation } from './src/navigation';
 import { Toast } from './src/components/common/Toast';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 // Inject global CSS fixes for web platform
 if (Platform.OS === 'web') {
@@ -45,6 +46,10 @@ if (Platform.OS === 'web') {
       padding: 0;
       background-color: #0F0F14 !important;
     }
+    /* Dark mode body background for web */
+    @media (prefers-color-scheme: dark) {
+      body { background-color: #0A0A0A !important; }
+    }
     /* Constrain app to maximum 480px and center horizontally */
     #root {
       max-width: 450px;
@@ -66,7 +71,10 @@ if (Platform.OS === 'web') {
 import { useAuthStore } from './src/store/useAuthStore';
 import { signalRService } from './src/services/signalRService';
 
-function App() {
+// Inner app component that can consume the theme
+function AppContent() {
+  const { theme } = useTheme();
+
   useEffect(() => {
     // Listen to changes in auth state to build / terminate live websockets
     const unsubscribe = useAuthStore.subscribe((state) => {
@@ -98,7 +106,7 @@ function App() {
   if (Platform.OS === 'web') {
     return (
       <View style={styles.webWrapper}>
-        <View style={styles.webContainer}>
+        <View style={[styles.webContainer, { backgroundColor: theme.background }]}>
           {content}
         </View>
       </View>
@@ -106,6 +114,14 @@ function App() {
   }
 
   return content;
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
 }
 
 const styles = StyleSheet.create({

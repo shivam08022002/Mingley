@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../theme/ThemeContext';
 
 export const Button = ({
   title,
@@ -12,27 +13,41 @@ export const Button = ({
   style,
   textStyle,
 }) => {
+  const { theme, isDark } = useTheme();
   const isPrimary = variant === 'primary';
   const isFilled = variant === 'primary' || variant === 'solid';
 
-  const Content = () => (
-    <>
-      {loading ? (
-        <ActivityIndicator color={isFilled ? COLORS.white : COLORS.primary} />
-      ) : (
-        <Text
-          style={[
-            styles.text,
-            !isPrimary && styles.textOutline,
-            disabled && styles.textDisabled,
-            textStyle,
-          ]}
-        >
-          {title}
-        </Text>
-      )}
-    </>
-  );
+  const Content = () => {
+    let textColor = COLORS.white;
+    if (isDark) {
+      textColor = isFilled ? '#0A0A0A' : theme.accent;
+    } else {
+      if (!isPrimary) {
+        textColor = COLORS.primary;
+      }
+    }
+    if (disabled) {
+      textColor = isDark ? '#666666' : COLORS.textSecondary;
+    }
+
+    return (
+      <>
+        {loading ? (
+          <ActivityIndicator color={textColor} />
+        ) : (
+          <Text
+            style={[
+              styles.text,
+              { color: textColor },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
+        )}
+      </>
+    );
+  };
 
   if (isPrimary && !disabled) {
     return (
@@ -43,7 +58,7 @@ export const Button = ({
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+          colors={isDark ? ['#F6DCA0', '#D4AF37'] : [COLORS.gradientStart, COLORS.gradientEnd]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradient}
@@ -54,15 +69,21 @@ export const Button = ({
     );
   }
 
+  const containerBg = isDark 
+    ? (isFilled ? theme.accent : 'transparent')
+    : (isFilled ? COLORS.primary : 'transparent');
+
+  const containerBorderColor = isDark ? theme.accent : COLORS.primary;
+
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
       style={[
         styles.container,
-        styles.solidBackground,
-        !isPrimary && styles.outlineContainer,
-        disabled && styles.disabledContainer,
+        { backgroundColor: containerBg },
+        !isPrimary && { borderWidth: 2, borderColor: containerBorderColor },
+        disabled && (isDark ? { backgroundColor: '#1A1A1A', borderColor: '#333' } : styles.disabledContainer),
         style,
       ]}
       activeOpacity={0.8}
@@ -79,9 +100,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
     marginVertical: SPACING.s,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gradient: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -7,6 +7,7 @@ import { Chip } from '../components/Chip';
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 import { useToastStore } from '../../../store/useToastStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // Mock datastore for interests
 const INTERESTS = [
@@ -39,6 +40,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { safeStorage } from '../../../services/api';
 
 export const InterestsSelectionScreen = ({ navigation }) => {
+  const { theme, isDark } = useTheme();
   const { interests, toggleInterest, authDetails, profileDetails, gender, clearProfileSetup } = useProfileSetupStore();
   const login = useAuthStore(state => state.login);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -113,22 +115,22 @@ export const InterestsSelectionScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[styles.backButton, { borderColor: theme.actionButtonBorder }]}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="chevron-back" size={24} color="#E94057" />
+          <Icon name="chevron-back" size={24} color={theme.accent} />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, { color: theme.accent }]}>Skip</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Your interests</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Your interests</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Select a few of your interests and let everyone know what you're passionate about.
         </Text>
         
@@ -149,14 +151,14 @@ export const InterestsSelectionScreen = ({ navigation }) => {
           onPress={handleRegister}
           style={styles.continueButton}
           textStyle={styles.buttonText}
-          variant="solid"
+          variant="primary"
           loading={isLoading}
         />
       </View>
 
       {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#E94057" />
+        <View style={[styles.loadingOverlay, { backgroundColor: isDark ? 'rgba(10,10,10,0.7)' : 'rgba(255, 255, 255, 0.7)' }]}>
+          <ActivityIndicator size="large" color={theme.accent} />
         </View>
       )}
     </SafeAreaView>
@@ -166,7 +168,6 @@ export const InterestsSelectionScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -180,14 +181,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   skipText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
@@ -198,13 +197,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#5b5b5b',
     lineHeight: 20,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
     marginBottom: 30,
@@ -219,20 +216,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999,
   },
 });
+
 

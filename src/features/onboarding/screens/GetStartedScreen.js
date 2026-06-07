@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -16,8 +17,10 @@ const IMAGE_SIZE = width * 1.2;
 const LOGO_SIZE = IMAGE_SIZE * 0.30;
 
 export const GetStartedScreen = ({ navigation }) => {
+  const { isDark, theme } = useTheme();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#000000' : theme.background }]}>
 
       {/* ── Centred illustration + logo block ── */}
       <View style={styles.centreBlock}>
@@ -25,7 +28,7 @@ export const GetStartedScreen = ({ navigation }) => {
 
           {/* Started.png ring illustration — behind */}
           <FastImage
-            source={require('../../../assets/Started.png')}
+            source={isDark ? require('../../../assets/StartedDark.webp') : require('../../../assets/Started.png')}
             style={styles.startedImage}
             contentFit="contain"
           />
@@ -37,7 +40,7 @@ export const GetStartedScreen = ({ navigation }) => {
               style={styles.logo}
               contentFit="contain"
             />
-            <Text style={styles.subtitle}>Online Dating App</Text>
+            <Text style={[styles.subtitle, { color: theme.accent }]}>Online Dating App</Text>
           </View>
 
         </View>
@@ -50,9 +53,9 @@ export const GetStartedScreen = ({ navigation }) => {
         activeOpacity={0.7}
       >
         <View style={styles.getStartedRow}>
-          <Text style={styles.getStartedText}>Get Started</Text>
+          <Text style={[styles.getStartedText, { color: theme.accent }]}>Get Started</Text>
           <Text style={styles.getStartedSpace}>  </Text>
-          <Text style={styles.getStartedArrow}>→</Text>
+          <Text style={[styles.getStartedArrow, { color: theme.accent }]}>→</Text>
         </View>
       </TouchableOpacity>
 

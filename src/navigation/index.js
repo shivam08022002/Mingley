@@ -1,7 +1,6 @@
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { AppNavigator } from './AppNavigator';
-
-export const navigationRef = createNavigationContainerRef();
+import { navigationRef } from './navigationRef';
 
 export const Navigation = () => {
   return (

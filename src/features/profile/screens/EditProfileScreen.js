@@ -12,6 +12,7 @@ import { useProfileStore } from '../store/useProfileStore';
 import { decodeEmoji } from '../../../utils/stringUtils';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { BottomSheetDatePicker } from '../../profile-setup/components/BottomSheetDatePicker';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const EditProfileScreen = () => {
   const navigation = useNavigation();
@@ -79,30 +80,32 @@ export const EditProfileScreen = () => {
     }
   };
 
+  const { theme } = useTheme();
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E94057" />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.background, borderBottomColor: theme.isDark ? theme.cardBorder : '#F0F0F0' }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#333" />
+          <Icon name="chevron-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Edit Profile</Text>
         <TouchableOpacity 
           style={styles.saveBtn} 
           onPress={handleSave}
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator size="small" color="#E94057" />
+            <ActivityIndicator size="small" color={theme.accent} />
           ) : (
-            <Text style={styles.saveBtnText}>Save</Text>
+            <Text style={[styles.saveBtnText, { color: theme.isDark ? theme.accent : '#E94057' }]}>Save</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -111,23 +114,23 @@ export const EditProfileScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, { backgroundColor: theme.background }]}>
           {/* Avatar Section */}
           <View style={styles.avatarSection}>
             <View style={styles.avatarWrapper}>
               <FastImage
                 source={{ uri: formData.avatar || 'https://via.placeholder.com/150' }}
-                style={styles.avatar}
+                style={[styles.avatar, theme.isDark && { backgroundColor: theme.cardBackground }]}
               />
-              <TouchableOpacity style={styles.cameraIcon}>
+              <TouchableOpacity style={[styles.cameraIcon, { backgroundColor: theme.isDark ? theme.accent : '#E94057', borderColor: theme.isDark ? theme.background : '#FFF' }]}>
                 <Icon name="camera" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.avatarHint}>Change Profile Picture</Text>
+            <Text style={[styles.avatarHint, { color: theme.textSecondary }]}>Change Profile Picture</Text>
             {isVerified && (
-              <View style={styles.verifiedBadge}>
-                <Icon name="checkmark-circle" size={14} color="#4CAF50" />
-                <Text style={styles.verifiedText}>Verified Profile</Text>
+              <View style={[styles.verifiedBadge, theme.isDark && { backgroundColor: 'rgba(5, 150, 105, 0.15)', borderColor: '#059669' }]}>
+                <Icon name="checkmark-circle" size={14} color={theme.isDark ? '#059669' : '#4CAF50'} />
+                <Text style={[styles.verifiedText, theme.isDark && { color: '#059669' }]}>Verified Profile</Text>
               </View>
             )}
           </View>
@@ -135,42 +138,48 @@ export const EditProfileScreen = () => {
           {/* Form Fields */}
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Full Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.cardBackground, borderColor: theme.isDark ? theme.cardBorder : '#EEE', color: theme.textPrimary }]}
                 value={formData.fullName}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, fullName: text }))}
                 placeholder="Enter your full name"
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Bio</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Bio</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { backgroundColor: theme.cardBackground, borderColor: theme.isDark ? theme.cardBorder : '#EEE', color: theme.textPrimary }]}
                 value={formData.bio}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, bio: text }))}
                 placeholder="Tell us about yourself"
+                placeholderTextColor={theme.textSecondary}
                 multiline
                 numberOfLines={4}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Gender</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Gender</Text>
               <View style={styles.genderRow}>
                 {['male', 'female', 'other'].map(g => (
                   <TouchableOpacity
                     key={g}
                     style={[
                       styles.genderBtn,
-                      formData.gender === g && styles.genderBtnActive
+                      { backgroundColor: theme.cardBackground, borderColor: theme.isDark ? theme.cardBorder : '#EEE' },
+                      formData.gender === g && (theme.isDark 
+                        ? { borderColor: theme.accent, backgroundColor: 'rgba(201, 150, 63, 0.12)' } 
+                        : styles.genderBtnActive)
                     ]}
                     onPress={() => setFormData(prev => ({ ...prev, gender: g }))}
                   >
                     <Text style={[
                       styles.genderText,
-                      formData.gender === g && styles.genderTextActive
+                      { color: theme.textSecondary },
+                      formData.gender === g && (theme.isDark ? { color: theme.accent, fontWeight: '700' } : styles.genderTextActive)
                     ]}>
                       {g.charAt(0).toUpperCase() + g.slice(1)}
                     </Text>
@@ -180,13 +189,13 @@ export const EditProfileScreen = () => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Birthday</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Birthday</Text>
               <TouchableOpacity 
-                style={styles.dateBtn}
+                style={[styles.dateBtn, { backgroundColor: theme.cardBackground, borderColor: theme.isDark ? theme.cardBorder : '#EEE' }]}
                 onPress={() => setDatePickerVisible(true)}
               >
-                <Icon name="calendar-outline" size={20} color="#E94057" />
-                <Text style={styles.dateText}>
+                <Icon name="calendar-outline" size={20} color={theme.isDark ? theme.accent : '#E94057'} />
+                <Text style={[styles.dateText, { color: theme.textPrimary }]}>
                   {formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : 'Select Birthday'}
                 </Text>
               </TouchableOpacity>

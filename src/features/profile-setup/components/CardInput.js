@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, Platform} from 'react-native';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const CardInput = ({ label, value, onChangeText, placeholder }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const { theme, isDark } = useTheme();
 
   return (
     <View style={styles.container}>
-      <View style={[styles.inputWrapper, isFocused && styles.inputFocused]}>
-        <View style={styles.labelContainer}>
+      <View style={[
+        styles.inputWrapper,
+        {
+          backgroundColor: theme.cardBackground,
+          borderColor: isFocused
+            ? theme.accent
+            : (isDark ? theme.cardBorder : '#E8E8E8')
+        }
+      ]}>
+        <View style={[styles.labelContainer, { backgroundColor: theme.cardBackground }]}>
           <Text style={styles.label}>{label}</Text>
         </View>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: theme.textPrimary }]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

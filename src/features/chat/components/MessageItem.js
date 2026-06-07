@@ -4,17 +4,34 @@ import { Image as FastImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { decodeEmoji } from '../../../utils/stringUtils';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const MessageItem = ({ item, onPress }) => {
+  const { isDark, theme } = useTheme();
+
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity 
+      style={[
+        styles.container, 
+        isDark && { 
+          borderBottomColor: theme.sectionDivider, 
+          borderTopColor: theme.sectionDivider,
+          borderTopWidth: 1 
+        }
+      ]} 
+      onPress={onPress}
+    >
       {/* Dynamic wrapper testing if you need story rings */}
       <View style={styles.avatarContainer}>
           <LinearGradient
             colors={item.hasActivity ? ['#E94057', '#8A2387'] : ['transparent', 'transparent']} // Active map vs simple
             style={styles.gradientRing}
           >
-            <View style={[styles.imageWrapper, !item.hasActivity && { borderWidth: 0, padding: 0 }]}>
+            <View style={[
+              styles.imageWrapper, 
+              !item.hasActivity && { borderWidth: 0, padding: 0 },
+              isDark && { backgroundColor: theme.background, borderColor: theme.background }
+            ]}>
                <FastImage source={{ uri: item.image }} style={styles.image} />
             </View>
           </LinearGradient>
@@ -22,13 +39,17 @@ export const MessageItem = ({ item, onPress }) => {
 
       <View style={styles.contentContainer}>
         <View style={styles.topRow}>
-          <Text style={styles.name}>{decodeEmoji(item.name)}</Text>
+          <Text style={[styles.name, isDark && { color: '#FFFFFF' }]}>{decodeEmoji(item.name)}</Text>
           <Text style={styles.time}>{item.time}</Text>
         </View>
 
         <View style={styles.bottomRow}>
           <Text 
-            style={[styles.messagePreview, item.unread && styles.unreadMessagePreview]} 
+            style={[
+              styles.messagePreview, 
+              item.unread && styles.unreadMessagePreview,
+              isDark && item.unread && { color: '#FFFFFF' }
+            ]} 
             numberOfLines={1}
           >
             {item.isTyping ? 'Typing..' : decodeEmoji(item.lastMessage)}

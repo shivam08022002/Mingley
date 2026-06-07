@@ -6,13 +6,14 @@ import {
 import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { userService } from '../../../services/apiServices';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const COLS = 4;
 const GAP = 8;
 const THUMB = (width - 24 - GAP * (COLS - 1)) / COLS;
 
-const PhotoItem = ({ photo, onPress, onDelete, onSetPrimary }) => {
+const PhotoItem = ({ photo, onPress, onDelete, onSetPrimary, theme }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const photoId = photo.id || photo._id || photo;
   const photoUrl = photo.url || photo;
@@ -28,15 +29,15 @@ const PhotoItem = ({ photo, onPress, onDelete, onSetPrimary }) => {
       >
         <FastImage source={{ uri: photoUrl }} style={st.img} />
         {isPrimary && (
-          <View style={st.primaryBadge}>
+          <View style={[st.primaryBadge, { backgroundColor: theme.primary }]}>
             <Icon name="star" size={10} color="#FFF" />
           </View>
         )}
         <TouchableOpacity 
-          style={st.editIconBtn} 
+          style={[st.editIconBtn, { backgroundColor: theme.isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.9)' }]} 
           onPress={() => setMenuVisible(true)}
         >
-          <Icon name="ellipsis-horizontal" size={16} color="#333" />
+          <Icon name="ellipsis-horizontal" size={16} color={theme.isDark ? '#FFF' : '#333'} />
         </TouchableOpacity>
       </TouchableOpacity>
 
@@ -44,16 +45,16 @@ const PhotoItem = ({ photo, onPress, onDelete, onSetPrimary }) => {
         <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
           <View style={st.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={st.menuBox}>
-                <Text style={st.menuTitle}>Photo Options</Text>
+              <View style={[st.menuBox, { backgroundColor: theme.cardBackground }]}>
+                <Text style={[st.menuTitle, { color: theme.textPrimary }]}>Photo Options</Text>
                 
                 {!isPrimary && (
                   <TouchableOpacity 
                     style={st.menuItem} 
                     onPress={() => { setMenuVisible(false); onSetPrimary?.(photoId); }}
                   >
-                    <Icon name="star-outline" size={20} color="#333" />
-                    <Text style={st.menuText}>Set as Primary</Text>
+                    <Icon name="star-outline" size={20} color={theme.textPrimary} />
+                    <Text style={[st.menuText, { color: theme.textPrimary }]}>Set as Primary</Text>
                   </TouchableOpacity>
                 )}
 
@@ -65,14 +66,14 @@ const PhotoItem = ({ photo, onPress, onDelete, onSetPrimary }) => {
                   <Text style={[st.menuText, { color: '#FF4D67' }]}>Delete Photo</Text>
                 </TouchableOpacity>
 
-                <View style={st.menuDivider} />
+                <View style={[st.menuDivider, { backgroundColor: theme.sectionDivider }]} />
 
                 <TouchableOpacity 
                   style={st.menuItem} 
                   onPress={() => setMenuVisible(false)}
                 >
-                  <Icon name="close" size={20} color="#888" />
-                  <Text style={[st.menuText, { color: '#888' }]}>Cancel</Text>
+                  <Icon name="close" size={20} color={theme.textSecondary} />
+                  <Text style={[st.menuText, { color: theme.textSecondary }]}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
@@ -83,29 +84,34 @@ const PhotoItem = ({ photo, onPress, onDelete, onSetPrimary }) => {
   );
 };
 
-const AddButton = ({ onPress }) => (
-  <TouchableOpacity style={[st.thumb, st.addBtn]} onPress={onPress} activeOpacity={0.8}>
-    <Icon name="add" size={28} color="#E94057" />
+const AddButton = ({ onPress, theme }) => (
+  <TouchableOpacity style={[
+    st.thumb, 
+    st.addBtn, 
+    { backgroundColor: theme.isDark ? theme.iconWrapBackground : '#FFF0F3', borderColor: theme.isDark ? theme.accent : '#F0D0D6' }
+  ]} onPress={onPress} activeOpacity={0.8}>
+    <Icon name="add" size={28} color={theme.accent} />
   </TouchableOpacity>
 );
 
 export const PhotoGrid = React.memo(({ photos, onAdd, onPressPhoto, onDelete, onSetPrimary, onEditLabel }) => {
+  const { theme } = useTheme();
   const data = [...photos, '__add__'];
 
   return (
-    <View style={st.container}>
+    <View style={[st.container, { backgroundColor: theme.background }]}>
       <View style={st.header}>
-        <Text style={st.title}>My Photos</Text>
+        <Text style={[st.title, { color: theme.textPrimary }]}>My Photos</Text>
         {photos.length > 0 && (
           <TouchableOpacity onPress={onEditLabel}>
-            <Text style={st.edit}>View All</Text>
+            <Text style={[st.edit, { color: theme.accent }]}>View All</Text>
           </TouchableOpacity>
         )}
       </View>
       <View style={st.grid}>
         {data.map((item, idx) =>
           item === '__add__' ? (
-            <AddButton key="add" onPress={onAdd} />
+            <AddButton key="add" onPress={onAdd} theme={theme} />
           ) : (
             <PhotoItem 
               key={item.id || `${item}-${idx}`} 
@@ -113,6 +119,7 @@ export const PhotoGrid = React.memo(({ photos, onAdd, onPressPhoto, onDelete, on
               onPress={() => onPressPhoto?.(idx)} 
               onDelete={onDelete}
               onSetPrimary={onSetPrimary}
+              theme={theme}
             />
           )
         )}

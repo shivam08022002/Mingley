@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { useToastStore } from '../../../store/useToastStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const DEFAULT_ICONS = ['star-outline', 'trophy-outline', 'rocket-outline', 'flash-outline'];
 
@@ -45,6 +46,7 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
     fetchStatus, currentStatus, cancelSubscription 
   } = useSubscriptionStore();
   const [selected, setSelected] = useState(null);
+  const { isDark, theme } = useTheme();
 
   useEffect(() => {
     fetchPlans();
@@ -68,30 +70,30 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
 
   const mappedPlans = plans.map((p, idx) => {
     const name = p.name?.toLowerCase() || '';
-    let colors = ['#F8FAFC', '#F1F5F9']; // Default light grey
-    let accentColor = '#64748B';
-    let textColor = '#0F172A';
+    let colors = isDark ? ['#222126', '#2A2833'] : ['#F8FAFC', '#F1F5F9'];
+    let accentColor = isDark ? '#94A3B8' : '#64748B';
+    let textColor = isDark ? '#FFFFFF' : '#0F172A';
 
     if (name.includes('vip')) {
-      colors = ['#FFFDF5', '#FDF5D6']; // Premium Soft Luxury Gold
-      accentColor = '#D97706';
-      textColor = '#0F172A';
+      colors = isDark ? ['#3B1F3D', '#502049'] : ['#FFFDF5', '#FDF5D6'];
+      accentColor = isDark ? '#E8B4F8' : '#D97706';
+      textColor = isDark ? '#FFFFFF' : '#0F172A';
     } else if (name.includes('gold')) {
-      colors = ['#FFFDF5', '#FEF9E7'];
-      accentColor = '#ECC844';
-      textColor = '#0F172A';
+      colors = isDark ? ['#332512', '#4D3815'] : ['#FFFDF5', '#FEF9E7'];
+      accentColor = isDark ? '#F6DCA0' : '#ECC844';
+      textColor = isDark ? '#FFFFFF' : '#0F172A';
     } else if (name.includes('silver')) {
-      colors = ['#F8FAFC', '#F1F5F9'];
-      accentColor = '#475569';
-      textColor = '#0F172A';
+      colors = isDark ? ['#1E293B', '#334155'] : ['#F8FAFC', '#F1F5F9'];
+      accentColor = isDark ? '#CBD5E1' : '#475569';
+      textColor = isDark ? '#FFFFFF' : '#0F172A';
     } else if (name.includes('platinum')) {
-      colors = ['#ECFEFF', '#CFFAFE'];
-      accentColor = '#06B6D4';
-      textColor = '#0F172A';
+      colors = isDark ? ['#164E63', '#083344'] : ['#ECFEFF', '#CFFAFE'];
+      accentColor = isDark ? '#67E8F9' : '#06B6D4';
+      textColor = isDark ? '#FFFFFF' : '#0F172A';
     } else if (name.includes('free')) {
-      colors = ['#F8FAFC', '#F1F5F9'];
-      accentColor = '#E94057';
-      textColor = '#0F172A';
+      colors = isDark ? ['#2A1215', '#3D151B'] : ['#F8FAFC', '#F1F5F9'];
+      accentColor = isDark ? '#FCA5A5' : '#E94057';
+      textColor = isDark ? '#FFFFFF' : '#0F172A';
     }
 
     return {
@@ -262,19 +264,21 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
   const planFeatures = activePlan?.features || [];
 
   return (
-    <SafeAreaView style={s.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" />
-      <LinearGradient
-        colors={['#FFF5F6', '#F8FAFC', '#F1F5F9']}
-        style={StyleSheet.absoluteFill}
-      />
+    <SafeAreaView style={[s.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      {!isDark && (
+        <LinearGradient
+          colors={['#FFF5F6', '#F8FAFC', '#F1F5F9']}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
 
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="close" size={24} color="#0F172A" />
+        <TouchableOpacity style={[s.backBtn, { backgroundColor: theme.cardBackground }]} onPress={() => navigation.goBack()}>
+          <Icon name="close" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Upgrade Membership</Text>
+        <Text style={[s.headerTitle, { color: theme.textPrimary }]}>Upgrade Membership</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -293,7 +297,7 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
           >
             {mappedPlans.map((plan) => (
               <View key={plan.id} style={s.bannerCardContainer}>
-                <View style={s.bannerCard}>
+                <View style={[s.bannerCard, { backgroundColor: isDark ? theme.surface : '#FFF', borderColor: isDark ? theme.border : '#E2E8F0' }]}>
                   {!plan.isFree && (
                     <View style={s.discountBadge}>
                       <Text style={s.discountText}>20% OFF</Text>
@@ -302,8 +306,8 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
                   <View style={s.bannerInfo}>
                     <Icon name={plan.icon || 'sparkles'} size={32} color={plan.accentColor || '#E94057'} />
                     <View>
-                      <Text style={s.bannerTitle}>Mingley {plan.name || 'Premium'}</Text>
-                      <Text style={s.bannerSubtitle}>
+                      <Text style={[s.bannerTitle, { color: theme.textPrimary }]}>Mingley {plan.name || 'Premium'}</Text>
+                      <Text style={[s.bannerSubtitle, { color: theme.textSecondary }]}>
                         {plan.isFree ? 'Explore basic features with standard limits' : 'Unlock full matching power & global search'}
                       </Text>
                     </View>
@@ -322,7 +326,9 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
                 activeOpacity={0.7}
                 style={[
                   s.pagerDot, 
-                  selected === p.id ? [s.pagerDotActive, { backgroundColor: p.accentColor }] : s.pagerDotInactive
+                  selected === p.id 
+                    ? [s.pagerDotActive, { backgroundColor: p.accentColor }] 
+                    : [s.pagerDotInactive, { backgroundColor: isDark ? theme.border : '#E2E8F0' }]
                 ]} 
               />
             ))}
@@ -345,6 +351,7 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
                 activeOpacity={0.9}
                 style={[
                   s.planCard,
+                  { backgroundColor: isDark ? theme.cardBackground : '#FFFFFF', borderColor: isDark ? theme.border : '#E2E8F0' },
                   active && [s.planCardActive, { borderColor: plan.accentColor }]
                 ]}
               >
@@ -361,13 +368,7 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
                     <Text 
                       style={[
                         s.badgeText, 
-                        { 
-                          color: (plan.name?.toLowerCase().includes('gold') || 
-                                  plan.name?.toLowerCase().includes('vip') || 
-                                  plan.name?.toLowerCase().includes('platinum')) 
-                            ? '#0F172A' 
-                            : '#FFF' 
-                        }
+                        { color: (plan.name?.toLowerCase().includes('gold') || plan.name?.toLowerCase().includes('vip') || plan.name?.toLowerCase().includes('platinum')) && !isDark ? '#0F172A' : (isDark ? '#111' : '#FFF') }
                       ]}
                     >
                       {plan.badge}
@@ -376,19 +377,19 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
                 )}
 
                 <View style={s.cardPlanHeader}>
-                  <Text style={s.planName}>{plan.name}</Text>
-                  <Icon name={plan.icon} size={18} color={active ? plan.accentColor : '#64748B'} />
+                  <Text style={[s.planName, { color: active ? plan.textColor : theme.textPrimary }]}>{plan.name}</Text>
+                  <Icon name={plan.icon} size={18} color={active ? plan.accentColor : theme.textSecondary} />
                 </View>
 
                 <View style={s.priceContainer}>
-                  <Text style={s.priceText}>{plan.price}</Text>
-                  <Text style={s.durationText}>/ {plan.duration}</Text>
+                  <Text style={[s.priceText, { color: active ? plan.textColor : theme.textPrimary }]}>{plan.price}</Text>
+                  <Text style={[s.durationText, { color: active ? plan.textColor : theme.textSecondary }]}>/ {plan.duration}</Text>
                 </View>
 
                 {plan.perMonth ? (
-                  <Text style={s.perMonthText}>{plan.perMonth}</Text>
+                  <Text style={[s.perMonthText, { color: active ? plan.textColor : theme.textSecondary }]}>{plan.perMonth}</Text>
                 ) : (
-                  <Text style={s.perMonthText}>One-time entry</Text>
+                  <Text style={[s.perMonthText, { color: active ? plan.textColor : theme.textSecondary }]}>One-time entry</Text>
                 )}
 
                 {isSubscriptionActive && plan.id === currentActivePlanId && (
@@ -403,11 +404,11 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
 
         {/* Plan comparison section */}
         <View style={s.comparisonDivider}>
-          <View style={s.dividerLine} />
-          <Text style={s.comparisonTitle}>
+          <View style={[s.dividerLine, { backgroundColor: theme.border }]} />
+          <Text style={[s.comparisonTitle, { color: theme.textSecondary }]}>
             {activePlan ? `${activePlan.name} Features` : 'Plan Features'}
           </Text>
-          <View style={s.dividerLine} />
+          <View style={[s.dividerLine, { backgroundColor: theme.border }]} />
         </View>
 
         {/* Features Checklist */}
@@ -416,25 +417,25 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
             planFeatures.map((f, i) => {
               const meta = FEATURE_METADATA[f] || { icon: 'checkmark-circle-outline', desc: 'Premium exclusive feature' };
               return (
-                <View key={i} style={s.featureItem}>
-                  <View style={[s.featureIconBg, { backgroundColor: '#F8FAFC' }]}>
-                    <Icon name={meta.icon} size={18} color={activePlan?.accentColor || '#E94057'} />
+                <View key={i} style={[s.featureItem, { backgroundColor: isDark ? theme.surface : '#FFFFFF', borderColor: isDark ? theme.border : '#E2E8F0' }]}>
+                  <View style={[s.featureIconBg, { backgroundColor: isDark ? theme.cardBackground : '#F8FAFC' }]}>
+                    <Icon name={meta.icon} size={18} color={activePlan?.accentColor || theme.primary} />
                   </View>
                   <View style={s.featureTextWrap}>
                     <View style={s.featureHeaderRow}>
-                      <Text style={s.featureTitle}>{f}</Text>
-                      <Icon name="information-circle-outline" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+                      <Text style={[s.featureTitle, { color: theme.textPrimary }]}>{f}</Text>
+                      <Icon name="information-circle-outline" size={12} color={theme.textSecondary} style={{ marginLeft: 4 }} />
                     </View>
-                    <Text style={s.featureDesc}>{meta.desc}</Text>
+                    <Text style={[s.featureDesc, { color: theme.textSecondary }]}>{meta.desc}</Text>
                   </View>
-                  <View style={[s.checkmarkCircle, { backgroundColor: activePlan?.accentColor || '#E94057' }]}>
+                  <View style={[s.checkmarkCircle, { backgroundColor: activePlan?.accentColor || theme.primary }]}>
                     <Icon name="checkmark" size={12} color="#FFF" />
                   </View>
                 </View>
               );
             })
           ) : (
-            <Text style={s.noFeaturesText}>No special features listed.</Text>
+            <Text style={[s.noFeaturesText, { color: theme.textSecondary }]}>No special features listed.</Text>
           )}
         </View>
       </ScrollView>
@@ -475,7 +476,7 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
         }
 
         return (
-          <View style={s.footer}>
+          <View style={[s.footer, { backgroundColor: theme.background }]}>
             {isCurrentActiveSelected ? (
               <TouchableOpacity
                 style={s.ctaWrap}
@@ -493,14 +494,14 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             ) : isDowngrade ? (
               <View style={[s.ctaWrap, { opacity: 0.6 }]}>
-                <View style={[s.ctaBtn, { backgroundColor: '#94A3B8' }]}>
+                <View style={[s.ctaBtn, { backgroundColor: isDark ? theme.border : '#94A3B8' }]}>
                   <Text style={[s.ctaText, { color: '#FFF' }]}>{buttonLabel}</Text>
                   <Icon name="lock-closed-outline" size={18} color="#FFF" />
                 </View>
               </View>
             ) : isFreeSelected ? (
               <View style={[s.ctaWrap, { opacity: 0.8 }]}>
-                <View style={[s.ctaBtn, { backgroundColor: '#64748B' }]}>
+                <View style={[s.ctaBtn, { backgroundColor: isDark ? theme.cardBackground : '#64748B' }]}>
                   <Text style={[s.ctaText, { color: '#FFF' }]}>{buttonLabel}</Text>
                   <Icon name="checkmark-circle-outline" size={18} color="#FFF" />
                 </View>
@@ -521,7 +522,7 @@ export const SubscriptionPlansScreen = ({ navigation, route }) => {
                 </LinearGradient>
               </TouchableOpacity>
             )}
-            <Text style={s.footerNote}>Cancel anytime • Secure SSL encrypted payment</Text>
+            <Text style={[s.footerNote, { color: theme.textSecondary }]}>Cancel anytime • Secure SSL encrypted payment</Text>
           </View>
         );
       })()}

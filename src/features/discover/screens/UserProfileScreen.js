@@ -12,6 +12,7 @@ import { useSubscriptionStore } from '../../subscription/store/useSubscriptionSt
 import { SuperchatModal } from '../components/SuperchatModal';
 import { userService, discoverService } from '../../../services/apiServices';
 import { decodeEmoji } from '../../../utils/stringUtils';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,6 +25,7 @@ const IMAGE_HEIGHT = height * 0.40;
 export const UserProfileScreen = ({ navigation, route }) => {
   const { user, isFromMatches, isFromLikes } = route.params || {};
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const [liked, setLiked] = useState(false);
   const [rejected, setRejected] = useState(false);
@@ -130,14 +132,14 @@ export const UserProfileScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         bounces
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* ── Hero Image Carousel ── */}
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { backgroundColor: isDark ? theme.surface : '#E0E0E0' }]}>
           <Animated.ScrollView
             horizontal
             pagingEnabled
@@ -211,12 +213,12 @@ export const UserProfileScreen = ({ navigation, route }) => {
         </View>
 
         {/* ── Content ── */}
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: theme.background }]}>
           {/* ── Floating Action Buttons Row inside content ── */}
           {!(isFromMatches || isFromLikes) && (
             <View style={styles.actionButtonsRowInside}>
               <TouchableOpacity
-                style={[styles.actionBtn, styles.smallActionBtn, rejected && styles.btnPressed]}
+                style={[styles.actionBtn, styles.smallActionBtn, rejected && styles.btnPressed, { backgroundColor: theme.cardBackground, shadowColor: isDark ? 'transparent' : '#000' }]}
                 onPress={handleReject}
                 activeOpacity={0.8}
               >
@@ -232,11 +234,11 @@ export const UserProfileScreen = ({ navigation, route }) => {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.actionBtn, styles.smallActionBtn]}
+                style={[styles.actionBtn, styles.smallActionBtn, { backgroundColor: theme.cardBackground, shadowColor: isDark ? 'transparent' : '#000' }]}
                 onPress={handleSuperchat}
                 activeOpacity={0.8}
               >
-                <Icon name="flash" size={24} color="#7C3AED" />
+                <Icon name="flash" size={24} color={isDark ? theme.accent : '#7C3AED'} />
               </TouchableOpacity>
             </View>
           )}
@@ -244,10 +246,10 @@ export const UserProfileScreen = ({ navigation, route }) => {
           <View style={styles.nameRow}>
             <View style={{ flex: 1 }}>
               <View style={styles.nameAgeRow}>
-                <Text style={styles.name}>
+                <Text style={[styles.name, { color: theme.textPrimary }]}>
                   {decodeEmoji(user.fullName || user.name)}
                 </Text>
-                {!!user.age && <Text style={styles.age}>, {user.age}</Text>}
+                {!!user.age && <Text style={[styles.age, { color: theme.textSecondary }]}>, {user.age}</Text>}
                 {(user.gender?.toLowerCase() === 'female' || user.gender?.toLowerCase() === 'woman') && (
                   <Icon name="female" size={20} color="#E94057" style={{ marginLeft: 8, alignSelf: 'center' }} />
                 )}
@@ -285,14 +287,14 @@ export const UserProfileScreen = ({ navigation, route }) => {
             </View>
             {isFromMatches && (
               <View style={styles.headerButtons}>
-                <TouchableOpacity style={styles.headerActionBtn} onPress={handleVoiceCall}>
-                  <Icon name="call-outline" size={20} color="#E94057" />
+                <TouchableOpacity style={[styles.headerActionBtn, { backgroundColor: theme.cardBackground, borderColor: isDark ? theme.actionButtonBorder : '#F0F0F0', shadowColor: isDark ? 'transparent' : '#000' }]} onPress={handleVoiceCall}>
+                  <Icon name="call-outline" size={20} color={theme.accent} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.headerActionBtn} onPress={handleVideoCall}>
-                  <Icon name="videocam-outline" size={20} color="#E94057" />
+                <TouchableOpacity style={[styles.headerActionBtn, { backgroundColor: theme.cardBackground, borderColor: isDark ? theme.actionButtonBorder : '#F0F0F0', shadowColor: isDark ? 'transparent' : '#000' }]} onPress={handleVideoCall}>
+                  <Icon name="videocam-outline" size={20} color={theme.accent} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.headerActionBtn} onPress={handleMessage}>
-                  <Icon name="paper-plane-outline" size={20} color="#E94057" />
+                <TouchableOpacity style={[styles.headerActionBtn, { backgroundColor: theme.cardBackground, borderColor: isDark ? theme.actionButtonBorder : '#F0F0F0', shadowColor: isDark ? 'transparent' : '#000' }]} onPress={handleMessage}>
+                  <Icon name="paper-plane-outline" size={20} color={theme.accent} />
                 </TouchableOpacity>
               </View>
             )}
@@ -301,23 +303,23 @@ export const UserProfileScreen = ({ navigation, route }) => {
           {/* Location Card */}
           <View style={styles.locationCard}>
             <View style={styles.locationLeft}>
-              <Text style={styles.locationTitle}>Location</Text>
+              <Text style={[styles.locationTitle, { color: theme.textPrimary }]}>Location</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                <Text style={styles.locationCity}>{locationText}</Text>
-                <Icon name="location-sharp" size={14} color="#E94057" style={{ marginLeft: 6 }} />
+                <Text style={[styles.locationCity, { color: theme.textSecondary }]}>{locationText}</Text>
+                <Icon name="location-sharp" size={14} color={theme.accent} style={{ marginLeft: 6 }} />
               </View>
             </View>
-            <View style={styles.distanceBadgeRight}>
-              <Text style={styles.distanceBadgeText}>{user.distance != null ? Math.max(1, Math.round(user.distance)) : 0} km</Text>
+            <View style={[styles.distanceBadgeRight, { backgroundColor: isDark ? theme.iconWrapBackground : '#FFF0F3' }]}>
+              <Text style={[styles.distanceBadgeText, { color: theme.accent }]}>{user.distance != null ? Math.max(1, Math.round(user.distance)) : 0} km</Text>
             </View>
           </View>
 
           {/* Occupation / Bio line */}
           {user.occupation ? (
-            <View style={styles.infoCard}>
+            <View style={[styles.infoCard, { backgroundColor: theme.cardBackground, shadowColor: isDark ? 'transparent' : '#000' }]}>
               <View style={styles.infoRow}>
-                <Icon name="briefcase-outline" size={16} color="#E94057" />
-                <Text style={styles.infoRowText}>{decodeEmoji(user.occupation)}</Text>
+                <Icon name="briefcase-outline" size={16} color={theme.accent} />
+                <Text style={[styles.infoRowText, { color: theme.textSecondary }]}>{decodeEmoji(user.occupation)}</Text>
               </View>
             </View>
           ) : null}
@@ -325,10 +327,10 @@ export const UserProfileScreen = ({ navigation, route }) => {
           {/* About */}
           <View style={styles.section}>
             <View style={styles.sectionTitleRow}>
-              <Icon name="person-outline" size={18} color="#E94057" style={{ marginRight: 8 }} />
-              <Text style={styles.sectionLabel}>About</Text>
+              <Icon name="person-outline" size={18} color={theme.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.sectionLabel, { color: theme.textPrimary }]}>About</Text>
             </View>
-            <Text style={styles.bodyTextBio}>
+            <Text style={[styles.bodyTextBio, { color: theme.textSecondary }]}>
               {decodeEmoji(user.bio || user.about || 'No bio available.')}
             </Text>
           </View>
@@ -337,8 +339,8 @@ export const UserProfileScreen = ({ navigation, route }) => {
           {(user.interests || []).length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
-                <Icon name="heart-outline" size={18} color="#E94057" style={{ marginRight: 8 }} />
-                <Text style={styles.sectionLabel}>Interests</Text>
+                <Icon name="heart-outline" size={18} color={theme.accent} style={{ marginRight: 8 }} />
+                <Text style={[styles.sectionLabel, { color: theme.textPrimary }]}>Interests</Text>
               </View>
               <View style={styles.chipsWrap}>
                 {(user.interests || []).map((interest, idx) => {
@@ -348,14 +350,18 @@ export const UserProfileScreen = ({ navigation, route }) => {
                   return (
                     <View
                       key={idx}
-                      style={[styles.chip, isHighlighted && styles.chipActive]}
+                      style={[
+                        styles.chip, 
+                        { backgroundColor: theme.cardBackground, borderColor: isDark ? theme.actionButtonBorder : '#E8E6EA' },
+                        isHighlighted && { backgroundColor: isDark ? theme.iconWrapBackground : '#FFF0F3', borderColor: theme.accent }
+                      ]}
                     >
                       {interestObj?.icon ? (
-                        <Icon name={interestObj.icon} size={14} color={isHighlighted ? '#E94057' : '#777'} style={{ marginRight: 6 }} />
+                        <Icon name={interestObj.icon} size={14} color={isHighlighted ? theme.accent : theme.textSecondary} style={{ marginRight: 6 }} />
                       ) : isHighlighted ? (
-                        <Icon name="sparkles" size={13} color="#E94057" style={{ marginRight: 5 }} />
+                        <Icon name="sparkles" size={13} color={theme.accent} style={{ marginRight: 5 }} />
                       ) : null}
-                      <Text style={[styles.chipText, isHighlighted && styles.chipTextActive]}>
+                      <Text style={[styles.chipText, { color: theme.textSecondary }, isHighlighted && { color: theme.accent, fontWeight: '600' }]}>
                         {interestName}
                       </Text>
                     </View>
@@ -372,12 +378,12 @@ export const UserProfileScreen = ({ navigation, route }) => {
             return (
               <View style={styles.section}>
                 <View style={styles.sectionTitleRow}>
-                  <Icon name="images-outline" size={18} color="#E94057" style={{ marginRight: 8 }} />
-                  <Text style={[styles.sectionLabel, { flex: 1 }]}>Gallery</Text>
+                  <Icon name="images-outline" size={18} color={theme.accent} style={{ marginRight: 8 }} />
+                  <Text style={[styles.sectionLabel, { flex: 1, color: theme.textPrimary }]}>Gallery</Text>
                   <TouchableOpacity
                     onPress={() => navigation.navigate('Gallery', { images: galleryImages, initialIndex: 0 })}
                   >
-                    <Text style={styles.seeAll}>See all</Text>
+                    <Text style={[styles.seeAll, { color: theme.accent }]}>See all</Text>
                   </TouchableOpacity>
                 </View>
                 {(() => {
@@ -412,15 +418,15 @@ export const UserProfileScreen = ({ navigation, route }) => {
           {/* Superchat Text Banner (non-match) */}
           {!(isFromMatches || isFromLikes) && (
             <TouchableOpacity
-              style={styles.superchatBanner}
+              style={[styles.superchatBanner, { backgroundColor: isDark ? theme.iconWrapBackground : '#FFF0F3' }]}
               onPress={handleSuperchat}
               activeOpacity={0.7}
             >
               <Icon name="flash" size={18} color="#7C3AED" />
-              <Text style={styles.superchatBannerText}>
+              <Text style={[styles.superchatBannerText, { color: theme.accent }]}>
                 Send a Superchat to stand out! 💬
               </Text>
-              <Icon name="chevron-forward" size={16} color="#E94057" />
+              <Icon name="chevron-forward" size={16} color={theme.accent} />
             </TouchableOpacity>
           )}
 
@@ -432,7 +438,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['#E94057', '#8A2387']}
+                colors={isDark ? ['#F6DCA0', '#8A6A2F'] : ['#E94057', '#8A2387']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.ctaGradient}
               >

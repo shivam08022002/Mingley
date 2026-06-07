@@ -3,7 +3,7 @@ import { safeStorage } from './api';
 import { useChatStore } from '../store/useChatStore';
 import { useMatchesStore } from '../features/matches/store/useMatchesStore';
 import { useToastStore } from '../store/useToastStore';
-import { navigationRef } from '../navigation';
+import { navigationRef } from '../navigation/navigationRef';
 
 class SignalRService {
   connection = null;

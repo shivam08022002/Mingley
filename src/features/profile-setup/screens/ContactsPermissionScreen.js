@@ -6,8 +6,10 @@ import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { userService } from '../../../services/apiServices';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const ContactsPermissionScreen = ({ navigation, route }) => {
+  const { theme, isDark } = useTheme();
   const { userData } = route?.params || {};
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const [loading, setLoading] = useState(false);
@@ -37,10 +39,10 @@ export const ContactsPermissionScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, { color: theme.accent }]}>Skip</Text>
         </TouchableOpacity>
       </View>
 
@@ -53,8 +55,8 @@ export const ContactsPermissionScreen = ({ navigation, route }) => {
           />
         </View>
 
-        <Text style={styles.title}>Search friend's</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Search friend's</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           You can find friends from your contact lists to connected
         </Text>
 
@@ -64,7 +66,7 @@ export const ContactsPermissionScreen = ({ navigation, route }) => {
           loading={loading}
           style={styles.actionButton}
           textStyle={styles.buttonText}
-          variant="solid"
+          variant="primary"
         />
       </View>
     </SafeAreaView>
@@ -74,7 +76,6 @@ export const ContactsPermissionScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'flex-end',
@@ -84,7 +85,6 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
@@ -107,14 +107,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 10,
     textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
     fontSize: 16,
-    color: '#5b5b5b',
     lineHeight: 24,
     textAlign: 'center',
     maxWidth: '80%',
@@ -125,10 +123,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     width: '100%',
     height: 52,
-    backgroundColor: '#E94057',
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',

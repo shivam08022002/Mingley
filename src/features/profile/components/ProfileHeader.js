@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { decodeEmoji } from '../../../utils/stringUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const COVER_H = 240;
@@ -15,6 +16,7 @@ const FONT_BOLD = Platform.OS === 'ios' ? 'AvenirNext-Bold' : 'sans-serif-medium
 
 export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCover, onSettings, onPressNotifications, hasNotifications }) => {
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useTheme();
   const {
     fullName,
     avatar,
@@ -40,7 +42,7 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
   const coverUri = coverPhoto || avatar || defaultCover;
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { backgroundColor: theme.background, boxShadow: isDark ? 'none' : '0px 4px 10px rgba(0,0,0,0.06)' }]}>
       {/* ── Cover with overlay & white text ON it ── */}
       <View style={s.coverWrap}>
         <TouchableOpacity 
@@ -73,8 +75,8 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
 
         {/* Verified Top Badge – adjacent to Gear icon */}
         {showVerified && (
-          <View style={[s.verifiedBadgeTop, { top: topOffset + 6 }]}>
-            <Icon name="checkmark-circle" size={12} color="#4CAF50" />
+          <View style={[s.verifiedBadgeTop, { top: topOffset + 6, borderColor: theme.verifiedBorder || 'rgba(76, 175, 79, 0.05)' }]}>
+            <Icon name="checkmark-circle" size={12} color={isDark ? theme.accent : '#4CAF50'} />
             <Text style={s.verifiedBadgeText}>Verified</Text>
           </View>
         )}
@@ -89,10 +91,10 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
           <View style={s.nameRow}>
             <Text style={s.coverName}>{`${decodeEmoji(fullName) || 'New User'}${age ? `, ${age}` : ''}`}</Text>
             {(gender?.toLowerCase() === 'female' || gender?.toLowerCase() === 'woman') && (
-              <Icon name="female" size={20} color="#E94057" style={{ marginLeft: 4 }} />
+              <Icon name="female" size={20} color={isDark ? theme.accent : '#E94057'} style={{ marginLeft: 4 }} />
             )}
             {(gender?.toLowerCase() === 'male' || gender?.toLowerCase() === 'man') && (
-              <Icon name="male" size={20} color="#3B82F6" style={{ marginLeft: 4 }} />
+              <Icon name="male" size={20} color={isDark ? '#F6DCA0' : '#3B82F6'} style={{ marginLeft: 4 }} />
             )}
           </View>
         </View>
@@ -103,36 +105,36 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
         {/* Shadow wrapper - no overflow:hidden */}
         <View style={s.avatarShadowWrap}>
           {/* Clip wrapper - overflow:hidden makes it round */}
-          <View style={s.avatarClip}>
+          <View style={[s.avatarClip, { borderColor: theme.background }]}>
             <Image source={{ uri: avatar || 'https://via.placeholder.com/300x300' }} style={s.avatar} />
           </View>
-          {showOnline && <View style={s.onlineDot} />}
-          <TouchableOpacity style={s.cameraBtn} onPress={onEditAvatar}>
-            <Icon name="camera" size={14} color="#fff" />
+          {showOnline && <View style={[s.onlineDot, { borderColor: theme.background }]} />}
+          <TouchableOpacity style={[s.cameraBtn, { backgroundColor: theme.accent, borderColor: theme.background }]} onPress={onEditAvatar}>
+            <Icon name="camera" size={14} color={isDark ? '#0A0A0A' : '#fff'} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* ── Bio & Location ── */}
-      <View style={s.bioLocContainer}>
+      <View style={[s.bioLocContainer, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder, borderWidth: isDark ? 1 : 0, boxShadow: isDark ? 'none' : '0px 4px 16px rgba(0,0,0,0.08)' }]}>
         <View style={s.headerRow}>
           <View style={{ flex: 1 }}>
             <View style={s.locRow}>
-              <Icon name="location" size={16} color="#E94057" />
-              <Text style={s.locText}>{location?.city || 'Location not set'}{location?.country ? `, ${location.country}` : ''}</Text>
+              <Icon name="location" size={16} color={theme.accent} />
+              <Text style={[s.locText, { color: theme.textSecondary }]}>{location?.city || 'Location not set'}{location?.country ? `, ${location.country}` : ''}</Text>
             </View>
 
-            <Text style={s.bioText} numberOfLines={3}>{decodeEmoji(bio) || 'Add a bio to your profile'}</Text>
+            <Text style={[s.bioText, { color: theme.textPrimary }]} numberOfLines={3}>{decodeEmoji(bio) || 'Add a bio to your profile'}</Text>
           </View>
 
           {/* Notification Icon inside bio card */}
           <TouchableOpacity
-            style={s.notifIcon}
+            style={[s.notifIcon, { backgroundColor: theme.iconWrapBackground }]}
             onPress={onPressNotifications}
             activeOpacity={0.7}
           >
-            <Icon name="notifications-outline" size={24} color="#E94057" />
-            {hasNotifications && <View style={s.notifDot} />}
+            <Icon name="notifications-outline" size={24} color={theme.accent} />
+            {hasNotifications && <View style={[s.notifDot, { backgroundColor: theme.accent, borderColor: theme.cardBackground }]} />}
           </TouchableOpacity>
         </View>
       </View>
@@ -141,22 +143,22 @@ export const ProfileHeader = React.memo(({ profile = {}, onEditAvatar, onEditCov
       <View style={s.completionCard}>
         <View style={s.completionInfoRow}>
           <View style={s.completionTitleRow}>
-            <Icon name="sparkles" size={14} color="#E94057" style={{ marginRight: 6 }} />
-            <Text style={s.completionLabel}>Profile completion</Text>
+            <Icon name="sparkles" size={14} color={theme.accent} style={{ marginRight: 6 }} />
+            <Text style={[s.completionLabel, { color: isDark ? theme.accent : '#8E1D2C' }]}>Profile completion</Text>
           </View>
-          <View style={s.completionBadge}>
-            <Text style={s.completionBadgeText}>{profileCompletion}%</Text>
+          <View style={[s.completionBadge, { backgroundColor: theme.accent }]}>
+            <Text style={[s.completionBadgeText, { color: isDark ? '#0A0A0A' : '#FFF' }]}>{profileCompletion}%</Text>
           </View>
         </View>
-        <View style={s.progressBarBackground}>
+        <View style={[s.progressBarBackground, { backgroundColor: isDark ? '#2A2A2A' : '#FFE3E7' }]}>
           <LinearGradient
-            colors={['#FF6B6B', '#E94057', '#8A2387']}
+            colors={isDark ? ['#F6DCA0', '#D4AF37'] : ['#FF6B6B', '#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={[s.progressBarFill, { width: `${profileCompletion}%` }]}
           />
         </View>
         {profileCompletion < 100 && (
-          <Text style={s.completionTipText}>
+          <Text style={[s.completionTipText, { color: theme.accent }]}>
             ✨ Complete your profile to get 3x more matches!
           </Text>
         )}
@@ -233,9 +235,7 @@ const s = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     fontFamily: FONT_MED,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
   },
   // Avatar overlapping cover
   avatarRow: {

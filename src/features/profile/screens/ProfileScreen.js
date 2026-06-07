@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, RefreshControl, Dimensions, Modal, FlatList, ActivityIndicator, Image, Platform
+  Alert, RefreshControl, Dimensions, Modal, FlatList, ActivityIndicator, Image, Platform, Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -17,12 +17,14 @@ import { useChatStore } from '../../../store/useChatStore';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 import { CashoutModal, VerifyModal } from '../../../components/SharedFinanceModals';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { height } = Dimensions.get('window');
 
 export const ProfileScreen = React.memo(() => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const { theme, isDark, toggleTheme } = useTheme();
   const { profile, loading, fetchProfile } = useProfileStore();
   const fetchStatus = useSubscriptionStore((state) => state.fetchStatus);
   const setDepositModalVisible = useChatStore((s) => s.setDepositModalVisible);
@@ -145,6 +147,7 @@ export const ProfileScreen = React.memo(() => {
       await userService.uploadImage({ url, isPrimary });
       if (isPrimary) {
         await userService.updateMe({ avatar: url });
+        useProfileStore.setState((s) => ({ profile: { ...s.profile, avatar: url } }));
       }
       await fetchProfile();
       setAvatarModalVisible(false);
@@ -179,6 +182,7 @@ export const ProfileScreen = React.memo(() => {
     setUpdatingCover(true);
     try {
       await userService.deleteCoverPhoto();
+      useProfileStore.setState((s) => ({ profile: { ...s.profile, coverPhoto: null } }));
       await fetchProfile();
       setCoverModalVisible(false);
     } catch (e) {
@@ -193,6 +197,7 @@ export const ProfileScreen = React.memo(() => {
     setUpdatingCover(true);
     try {
       await userService.updateCoverPhoto(url);
+      useProfileStore.setState((s) => ({ profile: { ...s.profile, coverPhoto: url } }));
       await fetchProfile();
       setCoverModalVisible(false);
     } catch (e) {
@@ -237,10 +242,10 @@ export const ProfileScreen = React.memo(() => {
   }, [fetchProfile]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#E94057" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
       >
         <ProfileHeader
           profile={profileData}
@@ -252,7 +257,7 @@ export const ProfileScreen = React.memo(() => {
         />
 
         <View style={styles.content}>
-          <View style={styles.section}>
+          <View style={[styles.section, { borderTopWidth: 1, borderBottomWidth: 1, borderColor: theme.sectionDivider, paddingVertical: 12, marginBottom: 0 }]}>
             <PhotoGrid
               photos={profileData.images || []}
               onAdd={handleAddGalleryPhoto}
@@ -266,7 +271,7 @@ export const ProfileScreen = React.memo(() => {
             />
           </View>
 
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomWidth: 1, borderColor: theme.sectionDivider, paddingBottom: 12, marginBottom: 8 }]}>
             <InterestChips interests={profileData.interests || []} onSave={fetchProfile} />
           </View>
 
@@ -276,59 +281,73 @@ export const ProfileScreen = React.memo(() => {
             onManage={handleManageSubscription}
           />
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account Options</Text>
-            <View style={styles.actionCard}>
-              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('EditProfile')}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="person-outline" size={18} color="#E94057" />
+          <View style={[styles.section, { marginBottom: 16 }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Account Options</Text>
+            <View style={[styles.actionCard, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
+              <View style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name={isDark ? "moon-outline" : "sunny-outline"} size={18} color={theme.accent} />
                 </View>
-                <Text style={styles.actionLabel}>Edit Profile</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Dark Theme</Text>
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: '#E0E0E0', true: theme.accent }}
+                  thumbColor={'#FFF'}
+                  style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+                />
+              </View>
+
+              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => navigation.navigate('EditProfile')}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name="person-outline" size={18} color={theme.accent} />
+                </View>
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Edit Profile</Text>
+                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionRow} onPress={() => setVerifyModalVisible(true)}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="shield-checkmark-outline" size={18} color="#E94057" />
+              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => setVerifyModalVisible(true)}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name="shield-checkmark-outline" size={18} color={theme.accent} />
                 </View>
-                <Text style={styles.actionLabel}>Verify Identity</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Verify Identity</Text>
+                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Filter')}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="options-outline" size={18} color="#E94057" />
+              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => navigation.navigate('Filter')}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name="options-outline" size={18} color={theme.accent} />
                 </View>
-                <Text style={styles.actionLabel}>Match Filters</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Match Filters</Text>
+                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Settings', { openTravelMode: true })}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="airplane-outline" size={18} color="#E94057" style={{ transform: [{ rotate: '45deg' }] }} />
+              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => navigation.navigate('Settings', { openTravelMode: true })}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name="airplane-outline" size={18} color={theme.accent} style={{ transform: [{ rotate: '45deg' }] }} />
                 </View>
-                <Text style={styles.actionLabel}>Travel Mode</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Travel Mode</Text>
+                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Settings')}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="settings-outline" size={18} color="#E94057" />
+              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => navigation.navigate('Settings')}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name="settings-outline" size={18} color={theme.accent} />
                 </View>
-                <Text style={styles.actionLabel}>Account Settings</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Account Settings</Text>
+                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionRow} onPress={() => setDepositModalVisible(true)}>
-                <View style={styles.actionIconWrap}>
-                  <Icon name="wallet-outline" size={18} color="#E94057" />
+              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => setDepositModalVisible(true)}>
+                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                  <Icon name="wallet-outline" size={18} color={theme.accent} />
                 </View>
-                <Text style={styles.actionLabel}>Coin Packages</Text>
-                <Icon name="chevron-forward" size={16} color="#CCC" />
+                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Coin Packages</Text>
+                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity style={[styles.actionRow, styles.lastActionRow]} onPress={handleSignOut}>
-                <View style={styles.actionIconWrap}>
+                <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(233,64,87,0.12)' }]}>
                   <Icon name="log-out-outline" size={18} color="#E94057" />
                 </View>
                 <Text style={[styles.actionLabel, { color: '#E94057', fontWeight: '700' }]}>Sign Out</Text>
@@ -401,10 +420,10 @@ export const ProfileScreen = React.memo(() => {
 
       {/* ── Premium Visual Cover Photo Modal ── */}
       <Modal visible={coverModalVisible} transparent animationType="fade" onRequestClose={() => setCoverModalVisible(false)}>
-        <BottomSheetContainer onClose={() => setCoverModalVisible(false)} height={480}>
+        <BottomSheetContainer onClose={() => setCoverModalVisible(false)} height={560}>
           <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={styles.modalTitle}>Choose Cover Photo</Text>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Choose Cover Photo</Text>
               {updatingCover && <ActivityIndicator color="#E94057" />}
             </View>
             <Text style={styles.modalSubtitleText}>Select from 4 premium curated styles to set your background theme</Text>
@@ -472,7 +491,7 @@ export const ProfileScreen = React.memo(() => {
         <BottomSheetContainer onClose={() => setAvatarModalVisible(false)} height={540}>
           <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={styles.modalTitle}>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
                 {avatarSelectionMode === 'avatar' ? 'Choose Profile Picture' : 'Add Photo to Gallery'}
               </Text>
               {updatingAvatar && <ActivityIndicator color="#E94057" />}
@@ -539,7 +558,7 @@ export const ProfileScreen = React.memo(() => {
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
+  container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 },
   section: { marginBottom: 12 },
@@ -547,17 +566,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
     paddingLeft: 4,
   },
   actionCard: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.03,
@@ -570,7 +586,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
   },
   lastActionRow: {
     borderBottomWidth: 0,
@@ -579,7 +594,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#FFF0F3',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -588,7 +602,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
   },
   membershipIcon: { marginLeft: 20 },
   modalContent: { flex: 1, width: '100%' },

@@ -3,13 +3,17 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const SignupOptionsScreen = ({ navigation }) => {
+  const { theme, isDark } = useTheme();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Icon name="chevron-back" size={24} color="#000" />
+        <Icon name="chevron-back" size={24} color={theme.textPrimary} />
       </TouchableOpacity>
       
       <View style={styles.content}>
@@ -21,51 +25,68 @@ export const SignupOptionsScreen = ({ navigation }) => {
           />
         </View>
 
-        <Text style={styles.title}>Sign up to continue</Text>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Sign up to continue</Text>
 
         <View style={styles.buttonsContainer}>
           <TouchableOpacity 
-            style={styles.primaryButton}
             onPress={() => navigation.navigate('EmailInput')}
             activeOpacity={0.8}
+            style={{ width: '100%', marginBottom: 16 }}
           >
-            <Text style={styles.primaryButtonText}>Continue with email</Text>
+            {isDark ? (
+              <LinearGradient
+                colors={['#F6DCA0', '#D4AF37']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.primaryButton}
+              >
+                <Text style={[styles.primaryButtonText, { color: '#0A0A0A' }]}>Continue with email</Text>
+              </LinearGradient>
+            ) : (
+              <View style={styles.primaryButton}>
+                <Text style={styles.primaryButtonText}>Continue with email</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.secondaryButton}
+            style={[styles.secondaryButton, { 
+              backgroundColor: isDark ? 'transparent' : '#FFFFFF', 
+              borderColor: isDark ? theme.accent : '#F0F0F0',
+              borderWidth: 1.5
+            }]}
             onPress={() => navigation.navigate('PhoneInput')}
             activeOpacity={0.8}
           >
-            <Text style={styles.secondaryButtonText}>Use phone number</Text>
+            <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>Use phone number</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.orContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.orText}>or sign up with</Text>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.sectionDivider }]} />
+          <Text style={[styles.orText, { color: theme.textSecondary }]}>or sign up with</Text>
+          <View style={[styles.divider, { backgroundColor: theme.sectionDivider }]} />
         </View>
 
         <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-google" size={24} color="#000" />
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
+             <Icon name="logo-google" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-apple" size={24} color="#000" />
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
+             <Icon name="logo-apple" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-             <Icon name="logo-instagram" size={24} color="#000" />
+          <TouchableOpacity style={[styles.socialButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
+             <Icon name="logo-instagram" size={24} color={theme.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.footer}>
         <TouchableOpacity>
-          <Text style={styles.footerLink}>Terms of use</Text>
+          <Text style={[styles.footerLink, { color: theme.accent }]}>Terms of use</Text>
         </TouchableOpacity>
         <TouchableOpacity>
-          <Text style={styles.footerLink}>Privacy Policy</Text>
+          <Text style={[styles.footerLink, { color: theme.accent }]}>Privacy Policy</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -113,7 +134,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
   primaryButtonText: {
     fontSize: 18,

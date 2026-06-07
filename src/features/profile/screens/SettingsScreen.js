@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import * as Location from 'expo-location';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator, TextInput, Platform, Alert, Modal, FlatList, Dimensions
+  TouchableOpacity, ActivityIndicator, TextInput, Platform, Alert, Modal, FlatList, Dimensions, Switch
 } from 'react-native';
 
 const { height } = Dimensions.get('window');
@@ -15,6 +15,7 @@ import { authService, userService } from '../../../services/apiServices';
 import { decodeEmoji } from '../../../utils/stringUtils';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const SECTIONS = [
   {
@@ -51,21 +52,29 @@ const SECTIONS = [
   },
 ];
 
-const SettingsRow = React.memo(({ icon, label, onPress, isLast }) => (
-  <TouchableOpacity
-    style={[row.container, !isLast && row.border]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <View style={row.iconWrap}>
-      <Icon name={icon} size={18} color="#E94057" />
-    </View>
-    <Text style={row.label}>{label}</Text>
-    <Icon name="chevron-forward" size={18} color="#CCC" />
-  </TouchableOpacity>
-));
+const SettingsRow = React.memo(({ icon, label, onPress, isLast, theme }) => {
+  const iconColor = theme?.accent || '#E94057';
+  const labelColor = theme?.textPrimary || '#222';
+  const borderColor = theme?.sectionDivider || '#F5F5F5';
+  const iconBg = theme?.iconWrapBackground || '#FFF0F3';
+  const chevronColor = theme?.textSecondary || '#CCC';
+  return (
+    <TouchableOpacity
+      style={[row.container, !isLast && { ...row.border, borderBottomColor: borderColor }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[row.iconWrap, { backgroundColor: iconBg }]}>
+        <Icon name={icon} size={18} color={iconColor} />
+      </View>
+      <Text style={[row.label, { color: labelColor }]}>{label}</Text>
+      <Icon name="chevron-forward" size={18} color={chevronColor} />
+    </TouchableOpacity>
+  );
+});
 
 const NotificationItem = React.memo(({ item, onPress, FONT }) => {
+  const { theme, isDark } = useTheme();
   const handlePress = () => {
     if (!item.isRead && onPress) {
       onPress(item.id || item._id);
@@ -73,31 +82,35 @@ const NotificationItem = React.memo(({ item, onPress, FONT }) => {
   };
 
   let iconName = 'notifications-outline';
-  let iconColor = '#999';
+  let iconColor = isDark ? '#A0A0A0' : '#999';
 
   if (item.type === 'match') {
     iconName = 'heart';
-    iconColor = '#E94057';
+    iconColor = theme.accent;
   } else if (item.type === 'coins') {
     iconName = 'planet';
-    iconColor = '#E94057';
+    iconColor = theme.accent;
   }
 
   return (
     <TouchableOpacity
-      style={[s.notifItem, !item.isRead && s.notifUnread]}
+      style={[
+        s.notifItem,
+        !item.isRead && { backgroundColor: theme.iconWrapBackground },
+        { borderBottomColor: theme.sectionDivider }
+      ]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
-      <View style={[s.notifIconWrap, { backgroundColor: item.isRead ? '#F5F5F5' : '#FFF' }]}>
+      <View style={[s.notifIconWrap, { backgroundColor: item.isRead ? (isDark ? theme.cardBackground : '#F5F5F5') : (isDark ? theme.background : '#FFF') }]}>
         <Icon name={iconName} size={20} color={iconColor} />
       </View>
       <View style={s.notifContent}>
-        <Text style={[s.notifTitle, !item.isRead && { fontWeight: '800' }]}>
+        <Text style={[s.notifTitle, !item.isRead && { fontWeight: '800' }, { color: theme.textPrimary }]}>
           {decodeEmoji(item.title)}
         </Text>
-        <Text style={s.notifBody}>{decodeEmoji(item.body || item.message)}</Text>
-        <Text style={s.notifTime}>{new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</Text>
+        <Text style={[s.notifBody, { color: theme.textSecondary }]}>{decodeEmoji(item.body || item.message)}</Text>
+        <Text style={[s.notifTime, { color: theme.textSecondary }]}>{new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -115,6 +128,7 @@ const TRAVEL_PRESETS = [
 export const SettingsScreen = React.memo(() => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { theme, isDark, toggleTheme } = useTheme();
   const logoutAction = useAuthStore((s) => s.logout);
   const transactions = useChatStore((s) => s.transactions);
   const fetchTransactions = useChatStore((s) => s.fetchTransactions);
@@ -481,21 +495,41 @@ We reserve the right to terminate or suspend your account at our sole discretion
   }, [logoutAction]);
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, { backgroundColor: theme.cardBackground }]}>
       {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={22} color="#333" />
+      <View style={[s.header, { backgroundColor: theme.background, borderBottomColor: theme.actionButtonBorder }]}>
+        <TouchableOpacity style={[s.backBtn, { backgroundColor: theme.cardBackground }]} onPress={() => navigation.goBack()}>
+          <Icon name="chevron-back" size={22} color={theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Settings</Text>
+        <Text style={[s.headerTitle, { color: theme.textPrimary }]}>Settings</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
+
+        {/* ── Appearance Section (Dark Mode Toggle) ── */}
+        <View style={s.section}>
+          <Text style={[s.sectionTitle, { color: theme.textSecondary }]}>Appearance</Text>
+          <View style={[s.card, { backgroundColor: theme.background, borderColor: theme.cardBorder, borderWidth: isDark ? 1 : 0 }]}>
+            <View style={[row.container, { borderBottomWidth: 0 }]}>
+              <View style={[row.iconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                <Icon name={isDark ? 'moon' : 'sunny-outline'} size={18} color={theme.accent} />
+              </View>
+              <Text style={[row.label, { color: theme.textPrimary }]}>Dark Mode</Text>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#767577', true: theme.accent }}
+                thumbColor={isDark ? theme.accent : '#f4f3f4'}
+              />
+            </View>
+          </View>
+        </View>
+
         {SECTIONS.map((section) => (
           <View key={section.title} style={s.section}>
-            <Text style={s.sectionTitle}>{section.title}</Text>
-            <View style={s.card}>
+            <Text style={[s.sectionTitle, { color: theme.textSecondary }]}>{section.title}</Text>
+            <View style={[s.card, { backgroundColor: theme.background, borderColor: theme.cardBorder, borderWidth: isDark ? 1 : 0 }]}>
               {section.items.map((item, idx) => {
                 let label = item.label;
                 if (item.key === 'location' && userData?.location?.city) {
@@ -513,6 +547,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     label={label}
                     isLast={idx === section.items.length - 1}
                     onPress={() => handleItem(item.key)}
+                    theme={theme}
                   />
                 );
               })}
@@ -526,12 +561,12 @@ We reserve the right to terminate or suspend your account at our sole discretion
           <Modal visible={blockedModalVisible} transparent animationType="fade" onRequestClose={() => setBlockedModalVisible(false)}>
             <BottomSheetContainer onClose={() => setBlockedModalVisible(false)} height={height * 0.8}>
               <View style={{ flex: 1, width: '100%' }}>
-                <View style={s.modalHeader}>
-                  <Text style={s.modalHeaderTitle}>Blocked Accounts</Text>
+                <View style={[s.modalHeader, { borderBottomColor: theme.sectionDivider }]}>
+                  <Text style={[s.modalHeaderTitle, { color: theme.textPrimary }]}>Blocked Accounts</Text>
                 </View>
 
                 {loadingBlocked ? (
-                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                  <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : (
                   <FlatList
                     data={blockedUsers}
@@ -539,23 +574,30 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     contentContainerStyle={{ paddingVertical: 10 }}
                     showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
-                        <View style={row.iconWrap}>
-                          <Icon name="person-circle-outline" size={24} color="#999" />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.sectionDivider }}>
+                        <View style={[row.iconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                          <Icon name="person-circle-outline" size={24} color={theme.textSecondary} />
                         </View>
-                        <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#111', marginLeft: 12 }}>{item.fullName || item.name || 'User'}</Text>
+                        <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: theme.textPrimary, marginLeft: 12 }}>{item.fullName || item.name || 'User'}</Text>
                         <TouchableOpacity
                           onPress={() => handleUnblock(item.id || item._id)}
-                          style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: '#FFF0F3', borderWidth: 1, borderColor: '#F2D0D6' }}
+                          style={{
+                            paddingHorizontal: 16,
+                            paddingVertical: 8,
+                            borderRadius: 10,
+                            backgroundColor: theme.iconWrapBackground,
+                            borderWidth: 1,
+                            borderColor: isDark ? theme.accent : '#F2D0D6'
+                          }}
                         >
-                          <Text style={{ color: '#E94057', fontWeight: '700' }}>Unblock</Text>
+                          <Text style={{ color: theme.accent, fontWeight: '700' }}>Unblock</Text>
                         </TouchableOpacity>
                       </View>
                     )}
                     ListEmptyComponent={
                       <View style={{ padding: 60, alignItems: 'center' }}>
-                        <Icon name="ban-outline" size={48} color="#EEE" />
-                        <Text style={{ color: '#AAA', marginTop: 12, fontFamily: FONT }}>No blocked users</Text>
+                        <Icon name="ban-outline" size={48} color={theme.textSecondary} />
+                        <Text style={{ color: theme.textSecondary, marginTop: 12, fontFamily: FONT }}>No blocked users</Text>
                       </View>
                     }
                   />
@@ -568,17 +610,17 @@ We reserve the right to terminate or suspend your account at our sole discretion
           <Modal visible={notifModalVisible} transparent animationType="fade" onRequestClose={() => setNotifModalVisible(false)}>
             <BottomSheetContainer onClose={() => setNotifModalVisible(false)} height={height * 0.85}>
               <View style={{ flex: 1, width: '100%' }}>
-                <View style={s.notifHeader}>
-                  <Text style={s.notifHeaderTitle}>Notifications</Text>
+                <View style={[s.notifHeader, { borderBottomColor: theme.sectionDivider }]}>
+                  <Text style={[s.notifHeaderTitle, { color: theme.textPrimary }]}>Notifications</Text>
                   <View style={{ flexDirection: 'row', gap: 15 }}>
                     <TouchableOpacity onPress={handleMarkAllRead}>
-                      <Icon name="checkmark-done-outline" size={22} color="#E94057" />
+                      <Icon name="checkmark-done-outline" size={22} color={theme.accent} />
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {loadingNotifs ? (
-                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                  <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : (
                   <FlatList
                     data={notifications}
@@ -594,7 +636,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     )}
                     ListEmptyComponent={
                       <View style={{ padding: 40, alignItems: 'center' }}>
-                        <Text style={{ color: '#AAA', fontFamily: FONT }}>No notifications yet.</Text>
+                        <Text style={{ color: theme.textSecondary, fontFamily: FONT }}>No notifications yet.</Text>
                       </View>
                     }
                   />
@@ -607,20 +649,20 @@ We reserve the right to terminate or suspend your account at our sole discretion
           <Modal visible={privacyModalVisible} transparent animationType="fade" onRequestClose={() => setPrivacyModalVisible(false)}>
             <BottomSheetContainer onClose={() => setPrivacyModalVisible(false)} height={height * 0.85}>
               <View style={{ flex: 1, width: '100%' }}>
-                <View style={s.modalHeader}>
-                  <Text style={s.modalHeaderTitle}>{privacyData.title || 'Privacy Policy'}</Text>
+                <View style={[s.modalHeader, { borderBottomColor: theme.sectionDivider }]}>
+                  <Text style={[s.modalHeaderTitle, { color: theme.textPrimary }]}>{privacyData.title || 'Privacy Policy'}</Text>
                 </View>
                 {loadingPrivacy ? (
-                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                  <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : (
                   <View style={{ flex: 1 }}>
                     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
                       {privacyData.lastUpdated && (
-                        <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
+                        <Text style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 16, fontFamily: FONT }}>
                           Last Updated: {privacyData.lastUpdated}
                         </Text>
                       )}
-                      <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
+                      <Text style={{ fontSize: 15, color: theme.textPrimary, lineHeight: 24, fontFamily: FONT }}>
                         {privacyData.content}
                       </Text>
                       <View style={{ height: 20 }} />
@@ -629,19 +671,19 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     <TouchableOpacity
                       onPress={handleAcceptPrivacyPolicy}
                       style={{
-                        backgroundColor: '#E94057',
+                        backgroundColor: theme.accent,
                         paddingVertical: 14,
                         borderRadius: 12,
                         alignItems: 'center',
                         marginBottom: 10,
-                        shadowColor: '#E94057',
+                        shadowColor: theme.accent,
                         shadowOffset: { width: 0, height: 4 },
                         shadowOpacity: 0.2,
                         shadowRadius: 5,
                         elevation: 3,
                       }}
                     >
-                      <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15, fontFamily: FONT_MED }}>Accept Privacy Policy</Text>
+                      <Text style={{ color: isDark ? '#0A0A0A' : '#FFF', fontWeight: '700', fontSize: 15, fontFamily: FONT_MED }}>Accept Privacy Policy</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -653,19 +695,19 @@ We reserve the right to terminate or suspend your account at our sole discretion
           <Modal visible={tosModalVisible} transparent animationType="fade" onRequestClose={() => setTosModalVisible(false)}>
             <BottomSheetContainer onClose={() => setTosModalVisible(false)} height={height * 0.85}>
               <View style={{ flex: 1, width: '100%' }}>
-                <View style={s.modalHeader}>
-                  <Text style={s.modalHeaderTitle}>{tosData.title || 'Terms of Service'}</Text>
+                <View style={[s.modalHeader, { borderBottomColor: theme.sectionDivider }]}>
+                  <Text style={[s.modalHeaderTitle, { color: theme.textPrimary }]}>{tosData.title || 'Terms of Service'}</Text>
                 </View>
                 {loadingTos ? (
-                  <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
+                  <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : (
                   <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
                     {tosData.lastUpdated && (
-                      <Text style={{ fontSize: 12, color: '#999', marginBottom: 16, fontFamily: FONT }}>
+                      <Text style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 16, fontFamily: FONT }}>
                         Last Updated: {tosData.lastUpdated}
                       </Text>
                     )}
-                    <Text style={{ fontSize: 15, color: '#333', lineHeight: 24, fontFamily: FONT }}>
+                    <Text style={{ fontSize: 15, color: theme.textPrimary, lineHeight: 24, fontFamily: FONT }}>
                       {tosData.content}
                     </Text>
                     <View style={{ height: 40 }} />
@@ -679,48 +721,48 @@ We reserve the right to terminate or suspend your account at our sole discretion
           <Modal visible={locationModalVisible} transparent animationType="fade" onRequestClose={() => setLocationModalVisible(false)}>
             <BottomSheetContainer onClose={() => setLocationModalVisible(false)} height={height * 0.73}>
               <View style={{ flex: 1, width: '100%' }}>
-                <View style={s.modalHeader}>
-                  <Text style={s.modalHeaderTitle}>Discovery Location</Text>
+                <View style={[s.modalHeader, { borderBottomColor: theme.sectionDivider }]}>
+                  <Text style={[s.modalHeaderTitle, { color: theme.textPrimary }]}>Discovery Location</Text>
                 </View>
 
                 {/* Custom Segmented Tab Bar */}
-                <View style={s.modalTabBar}>
+                <View style={[s.modalTabBar, { borderBottomColor: theme.sectionDivider }]}>
                   <TouchableOpacity
-                    style={[s.modalTabItem, locationTab === 'myLocation' && s.modalTabItemActive]}
+                    style={[s.modalTabItem, locationTab === 'myLocation' && [s.modalTabItemActive, { borderBottomColor: theme.accent }]]}
                     onPress={() => setLocationTab('myLocation')}
                     activeOpacity={0.8}
                   >
-                    <Icon name="location-outline" size={18} color={locationTab === 'myLocation' ? '#E94057' : '#666'} />
-                    <Text style={[s.modalTabItemText, locationTab === 'myLocation' && s.modalTabItemTextActive]}>My Location</Text>
+                    <Icon name="location-outline" size={18} color={locationTab === 'myLocation' ? theme.accent : theme.textSecondary} />
+                    <Text style={[s.modalTabItemText, { color: locationTab === 'myLocation' ? theme.accent : theme.textSecondary }, locationTab === 'myLocation' && s.modalTabItemTextActive]}>My Location</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[s.modalTabItem, locationTab === 'travelMode' && s.modalTabItemActive]}
+                    style={[s.modalTabItem, locationTab === 'travelMode' && [s.modalTabItemActive, { borderBottomColor: theme.accent }]]}
                     onPress={() => setLocationTab('travelMode')}
                     activeOpacity={0.8}
                   >
-                    <Icon name="airplane-outline" size={18} color={locationTab === 'travelMode' ? '#E94057' : '#666'} style={{ transform: [{ rotate: '45deg' }] }} />
-                    <Text style={[s.modalTabItemText, locationTab === 'travelMode' && s.modalTabItemTextActive]}>Travel Mode</Text>
+                    <Icon name="airplane-outline" size={18} color={locationTab === 'travelMode' ? theme.accent : theme.textSecondary} style={{ transform: [{ rotate: '45deg' }] }} />
+                    <Text style={[s.modalTabItemText, { color: locationTab === 'travelMode' ? theme.accent : theme.textSecondary }, locationTab === 'travelMode' && s.modalTabItemTextActive]}>Travel Mode</Text>
                   </TouchableOpacity>
                 </View>
 
                 {locationTab === 'myLocation' ? (
                   <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                    <View style={[row.iconWrap, { width: 60, height: 60, borderRadius: 30, marginBottom: 16 }]}>
-                      <Icon name="location" size={30} color="#E94057" />
+                    <View style={[row.iconWrap, { backgroundColor: theme.iconWrapBackground, width: 60, height: 60, borderRadius: 30, marginBottom: 16 }]}>
+                      <Icon name="location" size={30} color={theme.accent} />
                     </View>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111', marginBottom: 30 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 30 }}>
                       {userData?.location?.city || 'City'}, {userData?.location?.country || 'Country'}
                     </Text>
 
                     {loadingLocation ? (
-                      <ActivityIndicator color="#E94057" />
+                      <ActivityIndicator color={theme.accent} />
                     ) : (
                       <View style={{ flexDirection: 'column', gap: 12, width: '80%', alignItems: 'center' }}>
                         <TouchableOpacity
                           onPress={() => handleUpdateLocation()}
                           style={{
-                            backgroundColor: '#E94057',
+                            backgroundColor: theme.accent,
                             paddingHorizontal: 30,
                             paddingVertical: 14,
                             borderRadius: 100,
@@ -731,11 +773,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
                             justifyContent: 'center'
                           }}
                         >
-                          <Icon name="locate" size={18} color="#FFF" />
-                          <Text style={{ color: '#FFF', fontWeight: '700' }}>Detect via GPS</Text>
+                          <Icon name="locate" size={18} color={isDark ? '#0A0A0A' : '#FFF'} />
+                          <Text style={{ color: isDark ? '#0A0A0A' : '#FFF', fontWeight: '700' }}>Detect via GPS</Text>
                         </TouchableOpacity>
-
-
                       </View>
                     )}
                   </View>
@@ -753,19 +793,24 @@ We reserve the right to terminate or suspend your account at our sole discretion
                         contentContainerStyle={{ paddingBottom: 40 }}
                         pointerEvents={isVIP ? 'auto' : 'none'}
                       >
-                        <Text style={{ fontSize: 13, color: '#666', lineHeight: 18, marginBottom: 16 }}>
+                        <Text style={{ fontSize: 13, color: theme.textSecondary, lineHeight: 18, marginBottom: 16 }}>
                           Travel Mode lets you virtually change your city so you can find matches from other cities worldwide!
                         </Text>
 
                         {/* Active Travel Mode Status Banner */}
-                        <View style={[s.travelStatusBanner, travelModeEnabled ? s.travelStatusBannerActive : s.travelStatusBannerInactive]}>
+                        <View style={[
+                          s.travelStatusBanner,
+                          travelModeEnabled 
+                            ? [s.travelStatusBannerActive, isDark && { backgroundColor: 'rgba(46, 125, 50, 0.15)', borderColor: 'rgba(46, 125, 50, 0.3)' }] 
+                            : [s.travelStatusBannerInactive, isDark && { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]
+                        ]}>
                           <Icon
                             name={travelModeEnabled ? 'navigate-circle' : 'airplane-outline'}
                             size={20}
-                            color={travelModeEnabled ? '#2E7D32' : '#777'}
+                            color={travelModeEnabled ? (isDark ? '#4CAF50' : '#2E7D32') : theme.textSecondary}
                             style={!travelModeEnabled && { transform: [{ rotate: '45deg' }] }}
                           />
-                          <Text style={[s.travelStatusText, travelModeEnabled ? { color: '#2E7D32' } : { color: '#666' }]}>
+                          <Text style={[s.travelStatusText, travelModeEnabled ? { color: isDark ? '#4CAF50' : '#2E7D32' } : { color: theme.textSecondary }]}>
                             {travelModeEnabled
                               ? `Travelling in: ${userData?.location?.city || 'Selected City'}`
                               : 'Travel Mode is currently Off'}
@@ -773,32 +818,36 @@ We reserve the right to terminate or suspend your account at our sole discretion
                         </View>
 
                         {/* Quick Pick presets */}
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Popular Destinations</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.textPrimary, marginTop: 16, marginBottom: 10 }}>Popular Destinations</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 10 }}>
-                          {TRAVEL_PRESETS.map((preset) => (
-                            <TouchableOpacity
-                              key={preset.city}
-                              onPress={() => {
-                                setTravelCityInput(preset.city);
-                                handleToggleTravelMode(true, preset);
-                              }}
-                              style={[
-                                s.travelPresetCard,
-                                userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && s.travelPresetCardActive
-                              ]}
-                              activeOpacity={0.8}
-                            >
-                              <Text style={{ fontSize: 22, marginBottom: 2 }}>🇮🇳</Text>
-                              <Text style={[s.travelPresetName, userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled && { color: '#E94057' }]}>{preset.city}</Text>
-                            </TouchableOpacity>
-                          ))}
+                          {TRAVEL_PRESETS.map((preset) => {
+                            const isActivePreset = userData?.location?.city?.toLowerCase() === preset.city.toLowerCase() && travelModeEnabled;
+                            return (
+                              <TouchableOpacity
+                                key={preset.city}
+                                onPress={() => {
+                                  setTravelCityInput(preset.city);
+                                  handleToggleTravelMode(true, preset);
+                                }}
+                                style={[
+                                  s.travelPresetCard,
+                                  { backgroundColor: theme.background, borderColor: theme.actionButtonBorder },
+                                  isActivePreset && [s.travelPresetCardActive, { borderColor: theme.accent, backgroundColor: theme.iconWrapBackground }]
+                                ]}
+                                activeOpacity={0.8}
+                              >
+                                <Text style={{ fontSize: 22, marginBottom: 2 }}>🇮🇳</Text>
+                                <Text style={[s.travelPresetName, { color: theme.textPrimary }, isActivePreset && { color: theme.accent }]}>{preset.city}</Text>
+                              </TouchableOpacity>
+                            );
+                          })}
                         </ScrollView>
 
                         {/* Manual City entry */}
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#111', marginTop: 16, marginBottom: 10 }}>Custom City Destination</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: theme.textPrimary, marginTop: 16, marginBottom: 10 }}>Custom City Destination</Text>
                         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
                           <TextInput
-                            style={[s.amountInput, { flex: 1, marginBottom: 0 }]}
+                            style={[s.amountInput, { flex: 1, marginBottom: 0, backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
                             placeholder="Enter city name (e.g. Mumbai, Paris)"
                             placeholderTextColor="#A0A0A0"
                             value={travelCityInput}
@@ -814,7 +863,6 @@ We reserve the right to terminate or suspend your account at our sole discretion
                               if (found) {
                                 handleToggleTravelMode(true, found);
                               } else {
-                                // Custom geocode mockup
                                 handleToggleTravelMode(true, {
                                   city: travelCityInput.trim(),
                                   lat: 28.6139 + (Math.random() - 0.5) * 2,
@@ -823,7 +871,7 @@ We reserve the right to terminate or suspend your account at our sole discretion
                               }
                             }}
                             style={{
-                              backgroundColor: '#E94057',
+                              backgroundColor: theme.accent,
                               width: 52,
                               height: 52,
                               borderRadius: 14,
@@ -832,9 +880,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
                             }}
                           >
                             {loadingTravelMode ? (
-                              <ActivityIndicator color="#FFF" />
+                              <ActivityIndicator color={isDark ? '#0A0A0A' : '#FFF'} />
                             ) : (
-                              <Icon name="search-outline" size={20} color="#FFF" />
+                              <Icon name="search-outline" size={20} color={isDark ? '#0A0A0A' : '#FFF'} />
                             )}
                           </TouchableOpacity>
                         </View>
@@ -842,29 +890,29 @@ We reserve the right to terminate or suspend your account at our sole discretion
                         {travelModeEnabled && (
                           <TouchableOpacity
                             onPress={() => handleToggleTravelMode(false)}
-                            style={s.turnOffTravelBtn}
+                            style={[s.turnOffTravelBtn, { backgroundColor: theme.iconWrapBackground, borderColor: isDark ? theme.accent : '#FFD6DE' }]}
                             activeOpacity={0.8}
                           >
-                            <Icon name="power" size={16} color="#E94057" style={{ marginRight: 6 }} />
-                            <Text style={{ color: '#E94057', fontWeight: '700' }}>Turn Off Travel Mode</Text>
+                            <Icon name="power" size={16} color={theme.accent} style={{ marginRight: 6 }} />
+                            <Text style={{ color: theme.accent, fontWeight: '700' }}>Turn Off Travel Mode</Text>
                           </TouchableOpacity>
                         )}
                       </ScrollView>
                       {!isVIP && (
-                        <View style={s.lockOverlay}>
-                          <Icon name="lock-closed-outline" size={44} color="#E94057" style={{ marginBottom: 12 }} />
-                          <Text style={s.lockTitle}>VIP Feature Only</Text>
-                          <Text style={s.lockDesc}>
+                        <View style={[s.lockOverlay, { backgroundColor: isDark ? 'rgba(10,10,10,0.92)' : 'rgba(255, 255, 255, 0.90)' }]}>
+                          <Icon name="lock-closed-outline" size={44} color={theme.accent} style={{ marginBottom: 12 }} />
+                          <Text style={[s.lockTitle, { color: theme.textPrimary }]}>VIP Feature Only</Text>
+                          <Text style={[s.lockDesc, { color: theme.textSecondary }]}>
                             Travel Mode is an exclusive feature for VIP members. Upgrade now to change your virtual location globally!
                           </Text>
                           <TouchableOpacity
-                            style={s.lockBtn}
+                            style={[s.lockBtn, { backgroundColor: theme.accent }]}
                             onPress={() => {
                               setLocationModalVisible(false);
                               navigation.navigate('SubscriptionPlans', { selectPlanName: 'vip' });
                             }}
                           >
-                            <Text style={s.lockBtnText}>Upgrade to VIP</Text>
+                            <Text style={[s.lockBtnText, { color: isDark ? '#0A0A0A' : '#FFF' }]}>Upgrade to VIP</Text>
                           </TouchableOpacity>
                         </View>
                       )}
@@ -879,14 +927,14 @@ We reserve the right to terminate or suspend your account at our sole discretion
           <Modal visible={changePwdModalVisible} transparent animationType="fade" onRequestClose={() => setChangePwdModalVisible(false)}>
             <BottomSheetContainer onClose={() => setChangePwdModalVisible(false)} height={height * 0.6}>
               <View style={{ flex: 1, width: '100%' }}>
-                <View style={s.modalHeader}>
-                  <Text style={s.modalHeaderTitle}>Change Password</Text>
+                <View style={[s.modalHeader, { borderBottomColor: theme.sectionDivider }]}>
+                  <Text style={[s.modalHeaderTitle, { color: theme.textPrimary }]}>Change Password</Text>
                 </View>
 
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 20 }}>
-                  <Text style={s.inputLabel}>Current Password</Text>
+                  <Text style={[s.inputLabel, { color: theme.textSecondary }]}>Current Password</Text>
                   <TextInput
-                    style={s.amountInput}
+                    style={[s.amountInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
                     placeholder="Enter current password"
                     placeholderTextColor="#A0A0A0"
                     secureTextEntry
@@ -894,9 +942,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     onChangeText={setCurrentPassword}
                   />
 
-                  <Text style={s.inputLabel}>New Password</Text>
+                  <Text style={[s.inputLabel, { color: theme.textSecondary }]}>New Password</Text>
                   <TextInput
-                    style={s.amountInput}
+                    style={[s.amountInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
                     placeholder="Enter new password"
                     placeholderTextColor="#A0A0A0"
                     secureTextEntry
@@ -904,9 +952,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
                     onChangeText={setNewPassword}
                   />
 
-                  <Text style={s.inputLabel}>Confirm New Password</Text>
+                  <Text style={[s.inputLabel, { color: theme.textSecondary }]}>Confirm New Password</Text>
                   <TextInput
-                    style={s.amountInput}
+                    style={[s.amountInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
                     placeholder="Confirm new password"
                     placeholderTextColor="#A0A0A0"
                     secureTextEntry
@@ -915,13 +963,13 @@ We reserve the right to terminate or suspend your account at our sole discretion
                   />
 
                   {loadingChangePwd ? (
-                    <ActivityIndicator color="#E94057" style={{ marginTop: 10 }} />
+                    <ActivityIndicator color={theme.accent} style={{ marginTop: 10 }} />
                   ) : (
                     <TouchableOpacity
                       onPress={handleChangePassword}
-                      style={s.submitBtn}
+                      style={[s.submitBtn, { backgroundColor: theme.accent }]}
                     >
-                      <Text style={s.submitBtnText}>Change Password</Text>
+                      <Text style={[s.submitBtnText, { color: isDark ? '#0A0A0A' : '#FFF' }]}>Change Password</Text>
                     </TouchableOpacity>
                   )}
                 </ScrollView>
@@ -929,9 +977,9 @@ We reserve the right to terminate or suspend your account at our sole discretion
             </BottomSheetContainer>
           </Modal>
 
-          <TouchableOpacity style={s.signOutBtn} onPress={handleSignOut}>
-            <Icon name="log-out-outline" size={18} color="#E94057" />
-            <Text style={s.signOutText}>Sign Out</Text>
+          <TouchableOpacity style={[s.signOutBtn, { backgroundColor: theme.background, borderColor: isDark ? theme.accent : '#F2D0D6' }]} onPress={handleSignOut}>
+            <Icon name="log-out-outline" size={18} color={theme.accent} />
+            <Text style={[s.signOutText, { color: theme.accent }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -940,33 +988,33 @@ We reserve the right to terminate or suspend your account at our sole discretion
       <Modal visible={txModalVisible} transparent animationType="fade" onRequestClose={() => setTxModalVisible(false)}>
         <BottomSheetContainer onClose={() => setTxModalVisible(false)} height={600}>
           <View style={{ flex: 1, width: '100%' }}>
-            <View style={s.txHeader}>
-              <Text style={s.txHeaderTitle}>Transaction History</Text>
+            <View style={[s.txHeader, { borderBottomColor: theme.sectionDivider }]}>
+              <Text style={[s.txHeaderTitle, { color: theme.textPrimary }]}>Transaction History</Text>
             </View>
             <FlatList
               data={transactions}
               keyExtractor={(item) => item.id}
               contentContainerStyle={s.txList}
               showsVerticalScrollIndicator={false}
-              ListEmptyComponent={<Text style={s.txEmpty}>No transactions yet.</Text>}
+              ListEmptyComponent={<Text style={[s.txEmpty, { color: theme.textSecondary }]}>No transactions yet.</Text>}
               renderItem={({ item }) => {
                 const isCredit = item.direction === 'credit' || item.type === 'credit';
                 return (
-                  <View style={s.txItem}>
-                    <View style={row.iconWrap}>
+                  <View style={[s.txItem, { borderBottomColor: theme.sectionDivider }]}>
+                    <View style={[row.iconWrap, { backgroundColor: theme.iconWrapBackground }]}>
                       <Icon
                         name={isCredit ? 'arrow-down-outline' : 'arrow-up-outline'}
                         size={18}
-                        color={isCredit ? '#059669' : '#E94057'}
+                        color={isCredit ? '#059669' : theme.likeButton}
                       />
                     </View>
                     <View style={s.txLeft}>
-                      <Text style={s.txTitle}>{item.description || item.title}</Text>
-                      <Text style={s.txDate}>
+                      <Text style={[s.txTitle, { color: theme.textPrimary }]}>{item.description || item.title}</Text>
+                      <Text style={[s.txDate, { color: theme.textSecondary }]}>
                         {new Date(item.createdAt || item.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                       </Text>
                     </View>
-                    <Text style={[s.txAmount, isCredit ? s.txCredit : s.txDebit]}>
+                    <Text style={[s.txAmount, isCredit ? s.txCredit : { color: theme.likeButton }]}>
                       {isCredit ? '+' : '-'}{item.coins || item.amount} coins
                     </Text>
                   </View>
@@ -980,16 +1028,16 @@ We reserve the right to terminate or suspend your account at our sole discretion
       {/* Delete Account Warning Modal */}
       <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
         <View style={s.alertOverlay}>
-          <View style={s.alertBox}>
-            <View style={s.alertIconWrap}>
-              <Icon name="warning-outline" size={32} color="#E94057" />
+          <View style={[s.alertBox, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder, borderWidth: isDark ? 1 : 0 }]}>
+            <View style={[s.alertIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+              <Icon name="warning-outline" size={32} color={theme.likeButton} />
             </View>
-            <Text style={s.alertTitle}>Delete Account</Text>
-            <Text style={s.alertDescription}>
+            <Text style={[s.alertTitle, { color: theme.textPrimary }]}>Delete Account</Text>
+            <Text style={[s.alertDescription, { color: theme.textSecondary }]}>
               Are you sure you want to permanently delete your account? This action cannot be undone and you will lose all your data. Please enter your password to confirm.
             </Text>
             <TextInput
-              style={s.alertPasswordInput}
+              style={[s.alertPasswordInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
               placeholder="Enter your password"
               placeholderTextColor="#A0A0A0"
               secureTextEntry
@@ -998,14 +1046,19 @@ We reserve the right to terminate or suspend your account at our sole discretion
             />
             <View style={s.alertActionRow}>
               <TouchableOpacity
-                style={[s.alertBtn, s.alertBtnCancel]}
+                style={[s.alertBtn, s.alertBtnCancel, { backgroundColor: isDark ? '#333' : '#F5F5F5' }]}
                 onPress={() => setDeleteModalVisible(false)}
                 activeOpacity={0.8}
               >
-                <Text style={s.alertBtnCancelText}>Cancel</Text>
+                <Text style={[s.alertBtnCancelText, { color: theme.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[s.alertBtn, s.alertBtnDelete, !deletePassword.trim() && s.alertBtnDeleteDisabled]}
+                style={[
+                  s.alertBtn,
+                  s.alertBtnDelete,
+                  { backgroundColor: theme.likeButton },
+                  !deletePassword.trim() && (isDark ? { backgroundColor: '#55222A', opacity: 0.5 } : s.alertBtnDeleteDisabled)
+                ]}
                 onPress={() => {
                   if (!deletePassword.trim()) {
                     Alert.alert('Error', 'Please enter your password to proceed.');
@@ -1032,16 +1085,14 @@ const FONT_MED = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium';
 const PINK = '#E94057';
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F7F7F7' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
+    borderBottomWidth: 1,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#F5F5F5',
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: {

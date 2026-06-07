@@ -13,6 +13,7 @@ import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const SWIPE_THRESHOLD_X = Dimensions.get('window').width * 0.3;
 const SWIPE_THRESHOLD_UP = -Dimensions.get('window').height * 0.2;
@@ -22,7 +23,7 @@ const SWIPE_THRESHOLD_UP = -Dimensions.get('window').height * 0.2;
 const getCardDimensions = (screenWidth, availableHeight) => {
   // availableHeight = space between header and action buttons
   const isLongPhone = availableHeight >= 480; // tall phones get bigger cards
-  
+
   if (isLongPhone) {
     // Tall phone: fit height into available space with some margin, ensure width < height
     const cardH = availableHeight - 16; // small margin top+bottom
@@ -182,6 +183,8 @@ export const SwipeCard = forwardRef(
       };
     });
 
+    const { theme } = useTheme();
+
     return (
       <View
         style={[styles.cardWrapper, { zIndex: isFirst ? 2 : 1 }]}
@@ -189,7 +192,12 @@ export const SwipeCard = forwardRef(
       >
         {isFirst ? (
           <GestureDetector gesture={panGesture}>
-            <Animated.View style={[styles.card, { width: CARD_WIDTH, height: CARD_HEIGHT }, animatedCardStyle]}>
+            <Animated.View style={[
+              styles.card,
+              { width: CARD_WIDTH, height: CARD_HEIGHT },
+              theme.isDark && { borderWidth: 1, borderColor: theme.accent },
+              animatedCardStyle
+            ]}>
               <CardContent user={user} onPress={onPress} />
 
               {/* Center Swipe overlays */}
@@ -202,7 +210,12 @@ export const SwipeCard = forwardRef(
             </Animated.View>
           </GestureDetector>
         ) : (
-          <Animated.View style={[styles.card, { width: CARD_WIDTH, height: CARD_HEIGHT }, nextCardAnimatedStyle]}>
+          <Animated.View style={[
+            styles.card,
+            { width: CARD_WIDTH, height: CARD_HEIGHT },
+            theme.isDark && { borderWidth: 1, borderColor: theme.accent },
+            nextCardAnimatedStyle
+          ]}>
             <CardContent user={user} />
           </Animated.View>
         )}
@@ -212,6 +225,8 @@ export const SwipeCard = forwardRef(
 );
 
 const CardContent = ({ user, onPress }) => {
+  const { theme } = useTheme();
+
   const locationText = (() => {
     if (user.location?.city) {
       return `${user.location.city}${user.location.country ? `, ${user.location.country}` : ''}`;
@@ -219,9 +234,11 @@ const CardContent = ({ user, onPress }) => {
     return user.city || user.locationText || 'Mumbai, India';
   })();
 
+  const isVerified = user.isVerified || user.verified;
+
   return (
     <TouchableOpacity
-      style={styles.cardInner}
+      style={[styles.cardInner, theme.isDark && { backgroundColor: theme.background }]}
       activeOpacity={0.95}
       onPress={onPress}
       disabled={!onPress}
@@ -229,7 +246,7 @@ const CardContent = ({ user, onPress }) => {
       <FastImage source={{ uri: user.avatar || user.image }} style={styles.image} resizeMode="cover" />
 
       {/* Distance glassmorphism badge */}
-      <View style={styles.distanceBadge}>
+      <View style={[styles.distanceBadge, { backgroundColor: theme.distanceBadgeBg }]}>
         <Icon name="location-outline" size={13} color="#FFFFFF" />
         <Text style={styles.distanceText}>{user.distance != null ? Math.max(1, Math.round(user.distance)) : 1} km</Text>
       </View>
@@ -244,25 +261,53 @@ const CardContent = ({ user, onPress }) => {
       </View>
 
       {/* Bottom translucent info section */}
-      <View style={styles.bottomInfoContainer}>
+      <View style={[
+        styles.bottomInfoContainer,
+        theme.isDark && { backgroundColor: 'rgba(10, 10, 10, 0.75)', borderTopWidth: 0 }
+      ]}>
         <View style={styles.nameRow}>
-          <Text style={styles.name}>{user.fullName || user.name}, {user.age}</Text>
+          <Text style={[
+            styles.name,
+            theme.isDark && { fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', fontWeight: 'bold' }
+          ]}>
+            {user.fullName || user.name}, {user.age}
+          </Text>
         </View>
-        <Text style={styles.locationText}>{locationText}</Text>
 
-        {/* Inline Row for Match Score & Super Like Hint */}
+        {/* Location row with pin icon */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginVertical: 3 }}>
+          <Icon name="location" size={12} color={theme.isDark ? '#FFF' : '#D8D8D8'} />
+          <Text style={[styles.locationText, theme.isDark && { color: '#FFF' }]}>{locationText}</Text>
+        </View>
+
+        {/* Inline Row for Match Score & Verified Badge */}
         <View style={styles.cardRowInline}>
           {user.matchScore !== undefined && (
-            <View style={styles.matchScoreBadgeInline}>
-              <Icon name="flame" size={11} color="#FFF" style={{ marginRight: 2 }} />
-              <Text style={styles.matchScoreTextInline}>{user.matchScore}% Match</Text>
+            <View style={[styles.matchScoreBadgeInline, { backgroundColor: theme.matchBadgeBg }]}>
+              <Icon name="flame" size={11} color={theme.isDark ? '#FF4D6D' : theme.matchBadgeText} style={{ marginRight: 2 }} />
+              <Text style={[styles.matchScoreTextInline, { color: theme.isDark ? '#FF4D6D' : theme.matchBadgeText }]}>
+                {user.matchScore}% Match
+              </Text>
             </View>
           )}
 
-          <View style={styles.superlikeHintCapsule}>
-            <Icon name="arrow-up" size={13} color="#FFF" />
-            <Text style={styles.superlikeHintText}>Swipe up for Super Like</Text>
-          </View>
+          {isVerified && (
+            <View style={[styles.verifiedBadgeInline, { borderColor: theme.accent, backgroundColor: theme.isDark ? 'rgba(0,0,0,0.3)' : 'transparent' }]}>
+              <Icon name="star" size={10} color={theme.accent} style={{ marginRight: 3 }} />
+              <Text style={[styles.verifiedTextInline, { color: theme.accent }]}>VERIFIED</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Super Like Button */}
+        <View style={[
+          styles.superlikeButtonContainer,
+          theme.isDark && { borderColor: theme.accent, borderWidth: 1, backgroundColor: 'rgba(0,0,0,0.4)' }
+        ]}>
+          <Icon name="arrow-up" size={12} color={theme.isDark ? theme.accent : '#FFF'} style={{ marginRight: 4 }} />
+          <Text style={[styles.superlikeButtonText, theme.isDark && { color: theme.accent }]}>
+            SWIPE UP FOR SUPER LIKE
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -321,7 +366,6 @@ const styles = StyleSheet.create({
   distanceBadge: {
     position: 'absolute',
     top: 24, left: 24,
-    backgroundColor: 'rgba(0,0,0,0.45)', // semi-transparent dark background
     paddingHorizontal: 16, paddingVertical: 8,
     borderRadius: 8,
     flexDirection: 'row',
@@ -378,54 +422,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    gap: 4,
-    borderWidth: 1,
-  },
-  verifiedBadge: {
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
-    borderColor: 'rgba(76, 175, 80, 0.3)',
-  },
-  unverifiedBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: TITLE_FONT,
-    textTransform: 'uppercase',
-  },
-  verifiedBadgeText: {
-    color: '#4CAF50',
-  },
-  unverifiedBadgeText: {
-    color: '#BBB',
-  },
   matchScoreBadgeInline: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E94057',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     gap: 3,
   },
   matchScoreTextInline: {
-    color: '#FFF',
     fontSize: 9,
     fontWeight: '700',
     fontFamily: TITLE_FONT,
@@ -438,23 +443,35 @@ const styles = StyleSheet.create({
     marginTop: 5,
     flexWrap: 'wrap',
   },
-  superlikeHintCapsule: {
+  superlikeButtonContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    marginTop: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
   },
-  superlikeHintText: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 8,
+  superlikeButtonText: {
+    color: '#FFF',
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     fontFamily: TITLE_FONT,
   },
+  verifiedBadgeInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  verifiedTextInline: {
+    fontSize: 9,
+    fontWeight: '700',
+    fontFamily: TITLE_FONT,
+    textTransform: 'uppercase',
+  },
 });
-

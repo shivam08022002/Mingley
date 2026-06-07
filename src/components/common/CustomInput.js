@@ -4,6 +4,7 @@ import { Controller } from 'react-hook-form';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
+import { useTheme } from '../../theme/ThemeContext';
 
 export const CustomInput = ({
   control,
@@ -20,22 +21,30 @@ export const CustomInput = ({
   ...rest
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const { theme } = useTheme();
 
   const InputWrapper = ({ children, hasError }) => {
     if (isGradientBorder && !hasError) {
       return (
         <LinearGradient
-          colors={['#E94057', '#8A2387']}
+          colors={theme.isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#8A2387']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.gradientBorder}
         >
-          <View style={styles.innerContainer}>{children}</View>
+          <View style={[styles.innerContainer, { backgroundColor: theme.cardBackground }]}>{children}</View>
         </LinearGradient>
       );
     }
     return (
-      <View style={[styles.container, hasError && styles.errorContainer]}>
+      <View style={[
+        styles.container, 
+        { 
+          backgroundColor: theme.cardBackground, 
+          borderColor: theme.isDark ? theme.cardBorder : '#E8E8E8' 
+        }, 
+        hasError && styles.errorContainer
+      ]}>
         {children}
       </View>
     );
@@ -53,14 +62,14 @@ export const CustomInput = ({
               <>
                 <TouchableOpacity style={styles.countryCodeContainer} activeOpacity={0.7}>
                   <Image source={{ uri: 'https://flagcdn.com/w40/in.png' }} style={styles.flagImage} />
-                  <Text style={styles.countryCode}>+91</Text>
+                  <Text style={[styles.countryCode, { color: theme.textPrimary }]}>+91</Text>
                   <Text style={styles.dropdownArrow}>▼</Text>
                 </TouchableOpacity>
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: theme.isDark ? theme.cardBorder : '#E8E8E8' }]} />
               </>
             )}
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.textPrimary }]}
               onBlur={onBlur}
               onChangeText={onChange}
               value={value}
@@ -160,7 +169,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT,
     height: '100%',
     // Remove blue browser outline on web
-    ...(Platform.OS === 'web' ? { outlineWidth: 0, outlineStyle: 'none', outline: 'none' } : {}),
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {}),
   },
   errorText: {
     ...TYPOGRAPHY.caption,

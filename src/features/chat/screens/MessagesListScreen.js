@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { callService } from '../../../services/apiServices';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useToastStore } from '../../../store/useToastStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
@@ -36,6 +37,7 @@ const StoryBubble = React.memo(({ story, onPress }) => {
 });
 
 export const MessagesListScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('messages'); // 'messages' or 'superchat'
   const [superchatTab, setSuperchatTab] = useState('received'); // 'received' or 'sent'
   const [stories, setStories] = useState([
@@ -120,42 +122,45 @@ export const MessagesListScreen = ({ navigation }) => {
     showToast('Coming Soon', 'info', 2000);
   };
   const ListHeader = () => (
-    <View>
+    <View style={{ backgroundColor: theme.background }}>
       <View style={styles.headerTop}>
-        <Text style={styles.title}>Messages</Text>
-        <TouchableOpacity style={styles.headerCallHistoryBtn} onPress={handleShowCallHistory}>
-          <Icon name="time-outline" size={24} color="#E94057" />
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Messages</Text>
+        <TouchableOpacity
+          style={[styles.headerCallHistoryBtn, { borderColor: theme.actionButtonBorder, backgroundColor: theme.cardBackground }]}
+          onPress={handleShowCallHistory}
+        >
+          <Icon name="time-outline" size={24} color={theme.accent} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabContainer}>
+      <View style={[styles.tabContainer, { backgroundColor: theme.cardBackground }]}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'messages' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'messages' && [styles.tabButtonActive, { backgroundColor: theme.background }]]}
           onPress={() => setActiveTab('messages')}
         >
-          <Text style={[styles.tabText, activeTab === 'messages' && styles.tabTextActive]}>Messages</Text>
+          <Text style={[styles.tabText, { color: theme.textSecondary }, activeTab === 'messages' && { color: theme.accent }]}>Messages</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'superchat' && styles.tabButtonActive]}
+          style={[styles.tabButton, activeTab === 'superchat' && [styles.tabButtonActive, { backgroundColor: theme.background }]]}
           onPress={() => setActiveTab('superchat')}
         >
-          <Text style={[styles.tabText, activeTab === 'superchat' && styles.tabTextActive]}>Superchat</Text>
+          <Text style={[styles.tabText, { color: theme.textSecondary }, activeTab === 'superchat' && { color: theme.accent }]}>Superchat</Text>
         </TouchableOpacity>
       </View>
 
       {activeTab === 'messages' ? (
         <>
-          <View style={styles.searchContainer}>
-            <Icon name="search-outline" size={20} color="#A0A0A0" style={styles.searchIcon} />
+          <View style={[styles.searchContainer, { borderColor: theme.actionButtonBorder, backgroundColor: theme.cardBackground }]}>
+            <Icon name="search-outline" size={20} color={theme.textSecondary} style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: theme.textPrimary }]}
               placeholder="Search"
-              placeholderTextColor="#A0A0A0"
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
 
           <View style={styles.storiesContainer}>
-            <Text style={styles.sectionTitleActivities}>Activities</Text>
+            <Text style={[styles.sectionTitleActivities, { color: theme.textPrimary }]}>Activities</Text>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -170,21 +175,21 @@ export const MessagesListScreen = ({ navigation }) => {
       ) : (
         <View style={styles.superchatSubTabContainer}>
           <TouchableOpacity
-            style={[styles.subTabButton, superchatTab === 'received' && styles.subTabButtonActive]}
+            style={[styles.subTabButton, { borderColor: theme.actionButtonBorder }, superchatTab === 'received' && { backgroundColor: theme.accent, borderColor: theme.accent }]}
             onPress={() => setSuperchatTab('received')}
           >
-            <Text style={[styles.subTabText, superchatTab === 'received' && styles.subTabTextActive]}>Received</Text>
+            <Text style={[styles.subTabText, { color: theme.textSecondary }, superchatTab === 'received' && { color: '#FFFFFF' }]}>Received</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.subTabButton, superchatTab === 'sent' && styles.subTabButtonActive]}
+            style={[styles.subTabButton, { borderColor: theme.actionButtonBorder }, superchatTab === 'sent' && { backgroundColor: theme.accent, borderColor: theme.accent }]}
             onPress={() => setSuperchatTab('sent')}
           >
-            <Text style={[styles.subTabText, superchatTab === 'sent' && styles.subTabTextActive]}>Sent</Text>
+            <Text style={[styles.subTabText, { color: theme.textSecondary }, superchatTab === 'sent' && { color: '#FFFFFF' }]}>Sent</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>
+      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
         {activeTab === 'messages' ? 'Recent Messages' : (superchatTab === 'received' ? 'Received Superchats' : 'Sent Superchats')}
       </Text>
     </View>
@@ -278,8 +283,8 @@ export const MessagesListScreen = ({ navigation }) => {
     <Modal visible={callHistoryModalVisible} transparent animationType="fade" onRequestClose={() => setCallHistoryModalVisible(false)}>
       <BottomSheetContainer onClose={() => setCallHistoryModalVisible(false)} height={600}>
         <View style={{ flex: 1, width: '100%' }}>
-          <View style={styles.txHeader}>
-            <Text style={styles.txHeaderTitle}>Call History</Text>
+          <View style={[styles.txHeader, { borderBottomColor: theme.sectionDivider }]}>
+            <Text style={[styles.txHeaderTitle, { color: theme.textPrimary }]}>Call History</Text>
           </View>
           {loadingHistory ? (
             <ActivityIndicator color="#E94057" style={{ marginTop: 40 }} />
@@ -289,7 +294,7 @@ export const MessagesListScreen = ({ navigation }) => {
               keyExtractor={(item, index) => item.id || String(index)}
               contentContainerStyle={styles.txList}
               showsVerticalScrollIndicator={false}
-              ListEmptyComponent={<Text style={styles.txEmpty}>No call history found.</Text>}
+              ListEmptyComponent={<Text style={[styles.txEmpty, { color: theme.textSecondary }]}>No call history found.</Text>}
               renderItem={({ item }) => {
                 const isOutgoing = item.direction === 'outgoing';
                 const otherUser = isOutgoing ? item.receiver : item.caller;
@@ -298,13 +303,13 @@ export const MessagesListScreen = ({ navigation }) => {
                 const callDate = item.createdAt ? new Date(item.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recent';
                 const isVideo = item.callType === 'video';
                 return (
-                  <View style={styles.txItem}>
+                  <View style={[styles.txItem, { borderBottomColor: theme.sectionDivider }]}>
                     <FastImage 
                       source={{ uri: otherAvatar }} 
                       style={styles.callHistoryAvatar} 
                     />
                     <View style={styles.txLeft}>
-                      <Text style={styles.txTitle}>{decodeEmoji(otherName)}</Text>
+                      <Text style={[styles.txTitle, { color: theme.textPrimary }]}>{decodeEmoji(otherName)}</Text>
                       <View style={styles.callSubRow}>
                         <Icon 
                           name={isOutgoing ? 'arrow-up-outline' : 'arrow-down-outline'} 
@@ -327,10 +332,10 @@ export const MessagesListScreen = ({ navigation }) => {
                         />
                         <Text style={[
                           styles.callStatusText,
+                          { color: theme.textSecondary },
                           item.status === 'active' && { color: '#059669' },
                           item.status === 'declined' && { color: '#DC2626' },
                           item.status === 'missed' && { color: '#DC2626' },
-                          item.status === 'ended' && { color: '#666' }
                         ]}>
                           {item.status || 'Ended'}
                         </Text>
@@ -352,7 +357,7 @@ export const MessagesListScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={activeTab === 'messages' ? (loadingChats ? [] : chats) : (loadingSuperchats ? [] : (superchatTab === 'received' ? receivedSuperchats : sentSuperchats))}
         keyExtractor={item => item.id}
@@ -376,21 +381,21 @@ export const MessagesListScreen = ({ navigation }) => {
           activeTab === 'messages' ? (
             loadingChats ? (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#E94057" />
+                <ActivityIndicator size="large" color={theme.accent} />
               </View>
             ) : (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No recent chats found</Text>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No recent chats found</Text>
               </View>
             )
           ) : (
             loadingSuperchats ? (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#E94057" />
+                <ActivityIndicator size="large" color={theme.accent} />
               </View>
             ) : (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No superchats found</Text>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No superchats found</Text>
               </View>
             )
           )
@@ -424,7 +429,6 @@ export const MessagesListScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   headerTop: {
     flexDirection: 'row',

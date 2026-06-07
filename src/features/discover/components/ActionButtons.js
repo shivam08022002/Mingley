@@ -2,20 +2,53 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const ActionButtons = ({ onDislike, onLike, onSuperchat }) => {
+  const { theme } = useTheme();
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={[styles.button, styles.smallButton]} onPress={onDislike} activeOpacity={0.85}>
-        <Icon name="close" size={32} color="#E86B32" />
+      {/* Pass / X button */}
+      <TouchableOpacity
+        style={[
+          styles.button,
+          styles.smallButton,
+          { 
+            backgroundColor: theme.cardBackground, 
+            borderWidth: 1.5, 
+            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder 
+          },
+        ]}
+        onPress={onDislike}
+        activeOpacity={0.85}
+      >
+        <Icon name="close" size={32} color={theme.isDark ? theme.accent : '#FF6B6B'} />
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, styles.largeButton]} onPress={onLike} activeOpacity={0.85}>
+      {/* Heart / Like button */}
+      <TouchableOpacity
+        style={[styles.button, styles.largeButton, { backgroundColor: theme.likeButton }]}
+        onPress={onLike}
+        activeOpacity={0.85}
+      >
         <Icon name="heart" size={44} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, styles.smallButton]} onPress={onSuperchat} activeOpacity={0.85}>
-        <Icon name="flash" size={32} color="#7C3AED" />
+      <TouchableOpacity
+        style={[
+          styles.button,
+          styles.smallButton,
+          { 
+            backgroundColor: theme.cardBackground, 
+            borderWidth: 1.5, 
+            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder 
+          },
+        ]}
+        onPress={onSuperchat}
+        activeOpacity={0.85}
+      >
+        <Icon name="flash" size={32} color={theme.isDark ? theme.accent : '#7C3AED'} />
       </TouchableOpacity>
     </View>
   );
@@ -33,7 +66,6 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     boxShadow: '0px 6px 12px rgba(0,0,0,0.08)',
     elevation: 4,
   },
@@ -46,9 +78,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: '#E94057',
     boxShadow: '0px 10px 15px rgba(0,0,0,0.35)',
     elevation: 8,
   },
 });
-

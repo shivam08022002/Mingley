@@ -9,6 +9,7 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import { walletService } from '../../../services/apiServices';
 import { useToastStore } from '../../../store/useToastStore';
 import { useProfileStore } from '../../profile/store/useProfileStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // Conditional Native import to prevent Web bundler crashes
 let RazorpayCheckout = null;
@@ -44,16 +45,17 @@ const loadRazorpayWebScript = () => {
 export const PaymentScreen = ({ navigation }) => {
   const { selectedPlan, subscribe, isLoading, fetchStatus, setSelectedPlan } = useSubscriptionStore();
   const [isPaying, setIsPaying] = useState(false);
+  const { isDark, theme } = useTheme();
 
   if (!selectedPlan) {
     // We can't really navigate back here directly if the component is already rendering
     // but we can show an empty state or handle it gracefully.
     return (
-      <SafeAreaView style={s.container}>
+      <SafeAreaView style={[s.container, { backgroundColor: theme.background }]}>
         <View style={s.emptyState}>
-          <Text>No plan selected</Text>
+          <Text style={{ color: theme.textSecondary }}>No plan selected</Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={{ color: '#E94057', marginTop: 10 }}>Go Back</Text>
+            <Text style={{ color: theme.primary, marginTop: 10 }}>Go Back</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -203,67 +205,69 @@ export const PaymentScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={s.container}>
-      <LinearGradient
-        colors={['#fff0f3', '#ffffff', '#f3f0ff']}
-        style={StyleSheet.absoluteFill}
-      />
+    <SafeAreaView style={[s.container, { backgroundColor: theme.background }]}>
+      {!isDark && (
+        <LinearGradient
+          colors={['#fff0f3', '#ffffff', '#f3f0ff']}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
 
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={22} color="#2b1c50" />
+        <TouchableOpacity style={[s.backBtn, { backgroundColor: theme.cardBackground }]} onPress={() => navigation.goBack()}>
+          <Icon name="chevron-back" size={22} color={theme.textPrimary} />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Payment</Text>
+        <Text style={[s.headerTitle, { color: theme.textPrimary }]}>Payment</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
         {/* Selected Plan Info */}
-        <View style={s.planInfoCard}>
-          <View style={s.planIconCircle}>
-            <Icon name="star" size={24} color="#E94057" />
+        <View style={[s.planInfoCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <View style={[s.planIconCircle, { backgroundColor: isDark ? 'rgba(211, 42, 94, 0.15)' : '#FFF0F3' }]}>
+            <Icon name="star" size={24} color={theme.primary} />
           </View>
           <View style={s.planDetails}>
-            <Text style={s.planLabel}>Selected Plan</Text>
-            <Text style={s.planName}>{selectedPlan.name}</Text>
+            <Text style={[s.planLabel, { color: theme.textSecondary }]}>Selected Plan</Text>
+            <Text style={[s.planName, { color: theme.textPrimary }]}>{selectedPlan.name}</Text>
           </View>
-          <View style={s.planPriceTag}>
-            <Text style={s.planPriceText}>₹{subtotal}</Text>
+          <View style={[s.planPriceTag, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[s.planPriceText, { color: theme.textPrimary }]}>₹{subtotal}</Text>
           </View>
         </View>
 
         {/* Secure Checkout Indicator */}
-        <View style={s.trustBanner}>
+        <View style={[s.trustBanner, { backgroundColor: isDark ? '#0A2E16' : '#F3FBF7', borderColor: isDark ? '#144525' : '#C8E6C9' }]}>
           <Icon name="shield-checkmark" size={24} color="#4CAF50" />
           <View style={{ flex: 1 }}>
-            <Text style={s.trustTitle}>100% Secure Checkout</Text>
-            <Text style={s.trustSubtitle}>Your transaction is encrypted & securely processed via Razorpay. Choose UPI, Cards, Netbanking or Wallets directly on the checkout window.</Text>
+            <Text style={[s.trustTitle, { color: isDark ? '#4CAF50' : '#2E7D32' }]}>100% Secure Checkout</Text>
+            <Text style={[s.trustSubtitle, { color: isDark ? '#A5D6A7' : '#4CAF50' }]}>Your transaction is encrypted & securely processed via Razorpay. Choose UPI, Cards, Netbanking or Wallets directly on the checkout window.</Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Sticky footer with Order Summary */}
-      <View style={s.footer}>
+      <View style={[s.footer, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
         <View style={s.summaryContainer}>
           <View style={s.summaryRow}>
-            <Text style={s.summaryKey}>Subtotal</Text>
-            <Text style={s.summaryVal}>₹{subtotal}</Text>
+            <Text style={[s.summaryKey, { color: theme.textSecondary }]}>Subtotal</Text>
+            <Text style={[s.summaryVal, { color: theme.textPrimary }]}>₹{subtotal}</Text>
           </View>
           <View style={s.summaryRow}>
-            <Text style={s.summaryKey}>Tax (GST 18%)</Text>
-            <Text style={s.summaryVal}>₹{tax}</Text>
+            <Text style={[s.summaryKey, { color: theme.textSecondary }]}>Tax (GST 18%)</Text>
+            <Text style={[s.summaryVal, { color: theme.textPrimary }]}>₹{tax}</Text>
           </View>
-          <View style={s.summaryDivider} />
+          <View style={[s.summaryDivider, { backgroundColor: theme.border }]} />
           <View style={[s.summaryRow, { marginBottom: 12 }]}>
-            <Text style={s.totalKey}>Total Amount</Text>
-            <Text style={s.totalVal}>₹{total}</Text>
+            <Text style={[s.totalKey, { color: theme.textPrimary }]}>Total Amount</Text>
+            <Text style={[s.totalVal, { color: theme.primary }]}>₹{total}</Text>
           </View>
         </View>
 
         <TouchableOpacity style={s.payWrap} onPress={handlePay} activeOpacity={0.88} disabled={isLoading || isPaying}>
           <LinearGradient
-            colors={['#E94057', '#8A2387']}
+            colors={isDark ? ['#D32A5E', '#8A2387'] : ['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.payBtn}
           >
@@ -279,7 +283,7 @@ export const PaymentScreen = ({ navigation }) => {
         </TouchableOpacity>
         <View style={s.secureNoteContainer}>
           <Icon name="shield-checkmark" size={12} color="#4CAF50" />
-          <Text style={s.secureNote}>Secure 256-bit SSL encrypted payment</Text>
+          <Text style={[s.secureNote, { color: theme.textSecondary }]}>Secure 256-bit SSL encrypted payment</Text>
         </View>
       </View>
     </SafeAreaView>

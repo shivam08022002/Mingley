@@ -23,11 +23,13 @@ import { userService, subscriptionService } from '../../../services/apiServices'
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import * as Location from 'expo-location';
 import { useProfileStore } from '../../profile/store/useProfileStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { height, width } = Dimensions.get('window');
 
 // ─── Simple single-thumb slider ────────────────────────────────────────────
 const SingleSlider = React.memo(({ value, min, max, onChange }) => {
+  const { theme } = useTheme();
   const [trackWidth, setTrackWidth] = useState(300);
   const dragStartValue = useRef(value);
 
@@ -68,15 +70,23 @@ const SingleSlider = React.memo(({ value, min, max, onChange }) => {
       style={sl.container}
       onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width || 300)}
     >
-      <View style={sl.track} />
-      <View style={[sl.fill, { left: 0, width: pos }]} />
-      <View {...pan.panHandlers} style={[sl.thumb, { left: pos - 12 }]} />
+      <View style={[sl.track, { backgroundColor: theme.isDark ? '#333333' : '#F0F0F0' }]} />
+      <View style={[sl.fill, { left: 0, width: pos, backgroundColor: theme.accent }]} />
+      <View {...pan.panHandlers} style={[
+        sl.thumb,
+        {
+          left: pos - 12,
+          backgroundColor: theme.accent,
+          borderColor: theme.isDark ? '#1A1A1A' : '#FFFFFF'
+        }
+      ]} />
     </View>
   );
 });
 
 // ─── Dual-thumb range slider ────────────────────────────────────────────────
 const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh }) => {
+  const { theme } = useTheme();
   const [trackWidth, setTrackWidth] = useState(300);
   const dragStartLow = useRef(low);
   const dragStartHigh = useRef(high);
@@ -140,10 +150,24 @@ const RangeSlider = React.memo(({ min, max, low, high, onChangeLow, onChangeHigh
       style={sl.container}
       onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width || 300)}
     >
-      <View style={sl.track} />
-      <View style={[sl.fill, { left: lowPos, width: highPos - lowPos }]} />
-      <View {...panLow.panHandlers} style={[sl.thumb, { left: lowPos - 12 }]} />
-      <View {...panHigh.panHandlers} style={[sl.thumb, { left: highPos - 12 }]} />
+      <View style={[sl.track, { backgroundColor: theme.isDark ? '#333333' : '#F0F0F0' }]} />
+      <View style={[sl.fill, { left: lowPos, width: highPos - lowPos, backgroundColor: theme.accent }]} />
+      <View {...panLow.panHandlers} style={[
+        sl.thumb,
+        {
+          left: lowPos - 12,
+          backgroundColor: theme.accent,
+          borderColor: theme.isDark ? '#1A1A1A' : '#FFFFFF'
+        }
+      ]} />
+      <View {...panHigh.panHandlers} style={[
+        sl.thumb,
+        {
+          left: highPos - 12,
+          backgroundColor: theme.accent,
+          borderColor: theme.isDark ? '#1A1A1A' : '#FFFFFF'
+        }
+      ]} />
     </View>
   );
 });
@@ -198,6 +222,8 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
     relationshipType, setRelationshipType,
     reset,
   } = useFilterStore();
+  const { theme } = useTheme();
+  const PINK = '#E94057';
 
   const [allInterests, setAllInterests] = useState([]);
   const [loadingInterests, setLoadingInterests] = useState(false);
@@ -449,9 +475,9 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
         <ScrollView contentContainerStyle={{ paddingBottom: 45 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={s.headerRow}>
-            <Text style={s.title}>Filters</Text>
+            <Text style={[s.title, { color: theme.textPrimary }]}>Filters</Text>
             <TouchableOpacity onPress={handleClear}>
-              <Text style={s.clearBtn}>Clear all</Text>
+              <Text style={[s.clearBtn, { color: theme.isDark ? theme.accent : PINK }]}>Clear all</Text>
             </TouchableOpacity>
           </View>
 
@@ -461,10 +487,20 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               {['girls', 'boys', 'both'].map((opt) => (
                 <TouchableOpacity
                   key={opt}
-                  style={[s.seg, interestedIn === opt && s.segActive]}
+                  style={[
+                    s.seg, 
+                    { backgroundColor: theme.isDark ? theme.cardBackground : '#F6F6F6' },
+                    interestedIn === opt && (theme.isDark 
+                      ? { borderColor: theme.accent, backgroundColor: 'rgba(201, 150, 63, 0.12)' }
+                      : s.segActive)
+                  ]}
                   onPress={() => setInterestedIn(opt)}
                 >
-                  <Text style={[s.segText, interestedIn === opt && s.segTextActive]}>
+                  <Text style={[
+                    s.segText, 
+                    { color: theme.textSecondary },
+                    interestedIn === opt && { color: theme.isDark ? theme.accent : PINK, fontWeight: '700' }
+                  ]}>
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -475,34 +511,58 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           {/* ─ Location ─ */}
           <Section label="Location">
             <View style={s.locationContainer}>
-              <TouchableOpacity style={s.locationRow} onPress={pickLocation} disabled={loadingLocation}>
+              <TouchableOpacity 
+                style={[
+                  s.locationRow, 
+                  { 
+                    backgroundColor: theme.cardBackground, 
+                    borderColor: theme.isDark ? theme.cardBorder : '#F0F0F0' 
+                  }
+                ]} 
+                onPress={pickLocation} 
+                disabled={loadingLocation}
+              >
                 {loadingLocation ? (
-                  <ActivityIndicator size="small" color="#E94057" style={{ marginRight: 6 }} />
+                  <ActivityIndicator size="small" color={theme.isDark ? theme.accent : '#E94057'} style={{ marginRight: 6 }} />
                 ) : (
-                  <Icon name={isTravelMode ? "airplane-outline" : "location-outline"} size={18} color="#E94057" />
+                  <Icon name={isTravelMode ? "airplane-outline" : "location-outline"} size={18} color={theme.isDark ? theme.accent : '#E94057'} />
                 )}
-                <Text style={[s.locationText, !userLocation && s.placeholderText]}>
+                <Text style={[
+                  s.locationText, 
+                  { color: theme.textPrimary },
+                  !userLocation && s.placeholderText
+                ]}>
                   {userLocation || 'Select Location'}
                 </Text>
                 {isTravelMode && (
-                  <View style={s.travelBadge}>
+                  <View style={[s.travelBadge, theme.isDark && { backgroundColor: theme.accent }]}>
                     <Text style={s.travelBadgeText}>Travel Mode</Text>
                   </View>
                 )}
-                <Icon name="chevron-forward" size={18} color="#CCC" />
+                <Icon name="chevron-forward" size={18} color={theme.textSecondary} />
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[s.travelModeBtn, isTravelMode && s.travelModeBtnActive]} 
+                style={[
+                  s.travelModeBtn, 
+                  { 
+                    borderColor: theme.isDark ? theme.accent : '#E94057', 
+                    backgroundColor: isTravelMode ? (theme.isDark ? theme.accent : '#E94057') : 'transparent' 
+                  }
+                ]} 
                 onPress={handleTravelModePress}
               >
                 <Icon 
                   name="airplane" 
                   size={16} 
-                  color={isTravelMode ? '#FFF' : '#E94057'} 
+                  color={isTravelMode ? '#FFF' : (theme.isDark ? theme.accent : '#E94057')} 
                   style={!isTravelMode && { transform: [{ rotate: '45deg' }] }} 
                 />
-                <Text style={[s.travelModeBtnText, isTravelMode && s.travelModeBtnTextActive]}>
+                <Text style={[
+                  s.travelModeBtnText, 
+                  { color: theme.isDark ? theme.accent : '#E94057' },
+                  isTravelMode && s.travelModeBtnTextActive
+                ]}>
                   {isTravelMode ? 'Disable Travel Mode' : 'Enable Travel Mode'}
                 </Text>
               </TouchableOpacity>
@@ -553,10 +613,20 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
               {['casual', 'serious', 'both'].map((opt) => (
                 <TouchableOpacity
                   key={opt}
-                  style={[s.seg, relationshipType === opt && s.segActive]}
+                  style={[
+                    s.seg, 
+                    { backgroundColor: theme.isDark ? theme.cardBackground : '#F6F6F6' },
+                    relationshipType === opt && (theme.isDark 
+                      ? { borderColor: theme.accent, backgroundColor: 'rgba(201, 150, 63, 0.12)' }
+                      : s.segActive)
+                  ]}
                   onPress={() => setRelationshipType(opt)}
                 >
-                  <Text style={[s.segText, relationshipType === opt && s.segTextActive]}>
+                  <Text style={[
+                    s.segText, 
+                    { color: theme.textSecondary },
+                    relationshipType === opt && { color: theme.isDark ? theme.accent : PINK, fontWeight: '700' }
+                  ]}>
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -568,7 +638,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           <Section label="Interests">
             {loadingInterests ? (
               <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator color="#E94057" size="large" />
+                <ActivityIndicator color={theme.isDark ? theme.accent : '#E94057'} size="large" />
               </View>
             ) : (
               <View style={s.chipsWrap}>
@@ -577,18 +647,31 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
                   return (
                     <TouchableOpacity
                       key={item.id}
-                      style={[s.chip, active && s.chipActive]}
+                      style={[
+                        s.chip,
+                        { 
+                          backgroundColor: theme.cardBackground, 
+                          borderColor: theme.isDark ? theme.cardBorder : '#E8E6EA' 
+                        },
+                        active && (theme.isDark 
+                          ? { borderColor: theme.accent, backgroundColor: 'rgba(201,150,63,0.12)' }
+                          : s.chipActive)
+                      ]}
                       onPress={() => toggleInterest(item.name)}
                     >
                       {item.icon && (
                         <Icon
                           name={item.icon}
                           size={14}
-                          color={active ? '#E94057' : '#666'}
+                          color={active ? (theme.isDark ? theme.accent : PINK) : '#666'}
                           style={{ marginRight: 6 }}
                         />
                       )}
-                      <Text style={[s.chipText, active && s.chipTextActive]}>{item.name}</Text>
+                      <Text style={[
+                        s.chipText, 
+                        { color: theme.textSecondary },
+                        active && { color: theme.isDark ? theme.accent : PINK, fontWeight: '700' }
+                      ]}>{item.name}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -598,10 +681,10 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 
           {/* ─ Nearby Users ─ */}
           <Section label="Nearby Users">
-            <View style={s.toggleRow}>
+            <View style={[s.toggleRow, { backgroundColor: theme.cardBackground }]}>
               <View style={s.toggleLabelRow}>
-                <Icon name="navigate-outline" size={16} color="#E94057" style={{ marginRight: 6 }} />
-                <Text style={s.toggleLabel}>Show only nearby users</Text>
+                <Icon name="navigate-outline" size={16} color={theme.isDark ? theme.accent : '#E94057'} style={{ marginRight: 6 }} />
+                <Text style={[s.toggleLabel, { color: theme.textPrimary }]}>Show only nearby users</Text>
                 {!hasNearbyAccess && (
                   <View style={[s.upgradePill, { backgroundColor: '#4FACFE', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2 }]}>
                     <Text style={[s.upgradePillText, { fontSize: 9 }]}>Platinum</Text>
@@ -617,18 +700,18 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
                     setNearbyOnly(val);
                   }
                 }}
-                trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                thumbColor={nearbyOnly ? '#E94057' : '#fff'}
+                trackColor={{ false: '#767577', true: theme.isDark ? theme.accent : '#FFB3BF' }}
+                thumbColor={nearbyOnly ? (theme.isDark ? theme.accent : '#E94057') : '#fff'}
               />
             </View>
           </Section>
 
           {/* ─ Online Now ─ */}
           <Section label="Online Now">
-            <View style={s.toggleRow}>
+            <View style={[s.toggleRow, { backgroundColor: theme.cardBackground }]}>
               <View style={s.toggleLabelRow}>
                 <Icon name="radio-button-on" size={14} color="#22C55E" style={{ marginRight: 6 }} />
-                <Text style={s.toggleLabel}>Show only online users</Text>
+                <Text style={[s.toggleLabel, { color: theme.textPrimary }]}>Show only online users</Text>
                 {!hasOnlineAccess && (
                   <View style={[s.upgradePill, { backgroundColor: '#F59E0B', marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2 }]}>
                     <Text style={[s.upgradePillText, { fontSize: 9 }]}>Gold</Text>
@@ -644,8 +727,8 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
                     setOnlineStatus(val);
                   }
                 }}
-                trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                thumbColor={onlineStatus ? '#E94057' : '#fff'}
+                trackColor={{ false: '#767577', true: theme.isDark ? theme.accent : '#FFB3BF' }}
+                thumbColor={onlineStatus ? (theme.isDark ? theme.accent : '#E94057') : '#fff'}
               />
             </View>
           </Section>
@@ -653,28 +736,34 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           {/* ─ Verified Only (Premium-locked) ─ */}
           <Section label="Verified Profiles">
             {isPremium ? (
-              <View style={s.toggleRow}>
+              <View style={[s.toggleRow, { backgroundColor: theme.cardBackground }]}>
                 <View style={s.toggleLabelRow}>
                   <Icon name="shield-checkmark" size={15} color="#3B82F6" style={{ marginRight: 6 }} />
-                  <Text style={s.toggleLabel}>Show verified profiles only</Text>
+                  <Text style={[s.toggleLabel, { color: theme.textPrimary }]}>Show verified profiles only</Text>
                 </View>
                 <Switch
                   value={verifiedOnly}
                   onValueChange={setVerifiedOnly}
-                  trackColor={{ false: '#E0E0E0', true: '#FFB3BF' }}
-                  thumbColor={verifiedOnly ? '#E94057' : '#fff'}
+                  trackColor={{ false: '#767577', true: theme.isDark ? theme.accent : '#FFB3BF' }}
+                  thumbColor={verifiedOnly ? (theme.isDark ? theme.accent : '#E94057') : '#fff'}
                 />
               </View>
             ) : (
               <TouchableOpacity
-                style={s.lockedRow}
+                style={[
+                  s.lockedRow, 
+                  { 
+                    backgroundColor: theme.isDark ? theme.cardBackground : '#FFF8F0', 
+                    borderColor: theme.isDark ? theme.cardBorder : '#FDE68A' 
+                  }
+                ]}
                 onPress={() => handleUpgradePrompt('Verified Profiles')}
                 activeOpacity={0.8}
               >
                 <View style={s.lockedLeft}>
                   <Icon name="lock-closed" size={17} color="#F59E0B" style={{ marginRight: 8 }} />
                   <View>
-                    <Text style={s.lockedLabel}>Show verified profiles only</Text>
+                    <Text style={[s.lockedLabel, { color: theme.textPrimary }]}>Show verified profiles only</Text>
                     <Text style={s.lockedHint}>Upgrade to unlock</Text>
                   </View>
                 </View>
@@ -689,11 +778,11 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           {/* Apply */}
           <TouchableOpacity style={s.applyBtn} onPress={handleApply}>
             <LinearGradient
-              colors={['#E94057', '#8A2387']}
+              colors={theme.isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#8A2387']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.applyGradient}
             >
-              <Text style={s.applyText}>Apply Filters</Text>
+              <Text style={[s.applyText, theme.isDark && { color: '#0A0A0A', fontWeight: '800' }]}>Apply Filters</Text>
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
@@ -703,12 +792,15 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 });
 
 // Small section wrapper
-const Section = ({ label, children }) => (
-  <View style={s.section}>
-    <Text style={s.sectionLabel}>{label}</Text>
-    {children}
-  </View>
-);
+const Section = ({ label, children }) => {
+  const { theme } = useTheme();
+  return (
+    <View style={s.section}>
+      <Text style={[s.sectionLabel, { color: theme.textSecondary }]}>{label}</Text>
+      {children}
+    </View>
+  );
+};
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const PINK = '#E94057';

@@ -3,9 +3,11 @@ import { View, useWindowDimensions } from 'react-native';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { styles } from '../onboarding.styles';
 import { COLORS } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const Pagination = ({ data, scrollX }) => {
   const { width } = useWindowDimensions();
+  const { theme, isDark } = useTheme();
 
   return (
     <View style={styles.paginationContainer}>
@@ -30,7 +32,7 @@ export const Pagination = ({ data, scrollX }) => {
           return {
             width: dotWidth,
             opacity,
-            backgroundColor: opacity > 0.5 ? '#FF4b72' : '#E0E0E0',
+            backgroundColor: opacity > 0.5 ? theme.accent : (isDark ? '#333333' : '#E0E0E0'),
           };
         });
 

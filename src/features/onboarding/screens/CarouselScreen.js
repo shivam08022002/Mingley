@@ -7,6 +7,7 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Button } from '../../../components/common/Button';
 import { Pagination } from '../components/Pagination';
 import { styles } from '../onboarding.styles';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,9 +35,10 @@ const CAROUSEL_DATA = [
 export const CarouselScreen = ({ navigation }) => {
   const scrollX = useSharedValue(0);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { theme, isDark } = useTheme();
 
   const renderItem = ({ item }) => (
-    <View style={styles.slideCard}>
+    <View style={[styles.slideCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder, borderWidth: isDark ? 1 : 0 }]}>
       <FastImage
         source={item.image}
         style={styles.slideImage}
@@ -47,7 +49,7 @@ export const CarouselScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.carouselContainer}>
+    <SafeAreaView style={[styles.carouselContainer, { backgroundColor: theme.background }]}>
       <Carousel
         width={width }
         height={height * 0.55}
@@ -68,8 +70,8 @@ export const CarouselScreen = ({ navigation }) => {
 
       {/* Text below carousel – changes with active slide */}
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{CAROUSEL_DATA[activeIndex].title}</Text>
-        <Text style={styles.description}>
+        <Text style={[styles.title, { color: theme.accent }]}>{CAROUSEL_DATA[activeIndex].title}</Text>
+        <Text style={[styles.description, { color: theme.textSecondary }]}>
           {CAROUSEL_DATA[activeIndex].description}
         </Text>
       </View>
@@ -82,13 +84,13 @@ export const CarouselScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Welcome')}
           style={styles.createAccountBtn}
           textStyle={styles.createAccountBtnText}
-          variant="solid"
+          variant="primary"
         />
 
         <View style={styles.signInContainer}>
-          <Text style={styles.alreadyText}>Already have an account?</Text>
+          <Text style={[styles.alreadyText, { color: theme.textSecondary }]}>Already have an account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.signInText}>Sign In</Text>
+            <Text style={[styles.signInText, { color: theme.accent }]}>Sign In</Text>
           </TouchableOpacity>
         </View>
       </View>

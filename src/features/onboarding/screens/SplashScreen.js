@@ -4,8 +4,11 @@ import { Image as FastImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from '../onboarding.styles';
 import { COLORS } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const SplashScreen = ({ navigation }) => {
+  const { theme, isDark } = useTheme();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.replace('GetStarted');
@@ -17,7 +20,7 @@ export const SplashScreen = ({ navigation }) => {
   return (
     <View style={styles.splashContainer}>
       <LinearGradient
-        colors={[COLORS.gradientStart, COLORS.gradientEnd]}
+        colors={isDark ? ['#0A0A0A', '#1A1A1A'] : [COLORS.gradientStart, COLORS.gradientEnd]}
         style={styles.gradient}
       >
         <FastImage

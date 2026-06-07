@@ -4,8 +4,10 @@ import { Image as FastImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
+  const { isDark, theme } = useTheme();
   const user = match.matchedUser || match.user || match;
   const isOnline = user.isOnline;
   const lastActive = user.lastActiveAt;
@@ -27,7 +29,10 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[
+        styles.container, 
+        isDark && { borderWidth: 1.5, borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }
+      ]}
       onPress={onPress}
       activeOpacity={0.92}
     >
@@ -52,7 +57,7 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
       </View>
 
       {/* Action row */}
-      <View style={styles.actionsRow}>
+      <View style={[styles.actionsRow, { backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.95)' }]}>
         {/* Decline */}
         <TouchableOpacity
           style={[styles.actionButton, styles.declineButton]}
@@ -62,7 +67,7 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
           <Icon name="close" size={16} color="#FF4D67" />
         </TouchableOpacity>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F0F0F0' }]} />
 
         {/* Chat */}
         <TouchableOpacity

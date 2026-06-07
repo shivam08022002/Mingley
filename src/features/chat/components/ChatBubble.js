@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useChatStore } from '../../../store/useChatStore';
 import { decodeEmoji } from '../../../utils/stringUtils';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // ── Gift catalogue mapping for display ─────────────────────────────────────
 const GIFT_ICONS = {
@@ -46,6 +47,7 @@ const isOnlyEmojis = (str) => {
 };
 
 export const ChatBubble = React.memo(({ item }) => {
+  const { theme, isDark } = useTheme();
   if (!item) return null;
   const isMine = item.isMine;
   const deleteMessage = useChatStore(s => s.deleteChatMessage);
@@ -82,11 +84,19 @@ export const ChatBubble = React.memo(({ item }) => {
         activeOpacity={0.9}
         style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
       >
-        <View style={[styles.giftBubble, isMine ? styles.giftBubbleMine : styles.giftBubbleTheirs]}>
+        <View style={[
+          styles.giftBubble, 
+          isMine 
+            ? [styles.giftBubbleMine, { backgroundColor: theme.primary, borderColor: theme.primary }] 
+            : [styles.giftBubbleTheirs, { backgroundColor: isDark ? '#222126' : '#F3F4F6', borderColor: theme.actionButtonBorder }]
+        ]}>
           <View style={styles.giftIconWrap}>
-            <Icon name={iconName} size={28} color={isMine ? '#FFFFFF' : '#E94057'} />
+            <Icon name={iconName} size={28} color={isMine ? '#FFFFFF' : theme.primary} />
           </View>
-          <Text style={[styles.giftLabel, isMine ? styles.giftLabelMine : styles.giftLabelTheirs]}>
+          <Text style={[
+            styles.giftLabel, 
+            isMine ? styles.giftLabelMine : [styles.giftLabelTheirs, { color: theme.textPrimary }]
+          ]}>
             {item.giftName}
           </Text>
         </View>
@@ -113,7 +123,12 @@ export const ChatBubble = React.memo(({ item }) => {
         activeOpacity={0.9}
         style={[styles.container, isMine ? styles.containerMine : styles.containerTheirs]}
       >
-        <View style={[styles.coinsBubble, isMine ? styles.coinsBubbleMine : styles.coinsBubbleTheirs]}>
+        <View style={[
+          styles.coinsBubble, 
+          isMine 
+            ? [styles.coinsBubbleMine, { backgroundColor: theme.primary, borderColor: theme.primary }] 
+            : [styles.coinsBubbleTheirs, { backgroundColor: isDark ? '#222126' : '#F3F4F6', borderColor: theme.actionButtonBorder }]
+        ]}>
           <View style={{ marginRight: 12 }}>
             <Icon name="logo-bitcoin" size={24} color={isMine ? '#FFF' : '#FFD700'} />
           </View>
@@ -152,7 +167,7 @@ export const ChatBubble = React.memo(({ item }) => {
     >
       <View style={[
         styles.bubble, 
-        isMine ? styles.bubbleMine : styles.bubbleTheirs,
+        isMine ? [styles.bubbleMine, { backgroundColor: theme.primary }] : [styles.bubbleTheirs, { backgroundColor: isDark ? '#222126' : '#F3F4F6' }],
         emojiOnly && { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 4 }
       ]}>
         {item.imageUrl && item.imageUrl !== '' ? (
@@ -165,7 +180,7 @@ export const ChatBubble = React.memo(({ item }) => {
             {item.text && item.text !== '[image]' && (
               <Text style={[
                 styles.text, 
-                isMine ? styles.textMine : styles.textTheirs, 
+                isMine ? styles.textMine : [styles.textTheirs, { color: theme.textPrimary }], 
                 { marginTop: 8 },
                 emojiOnly && { fontSize: 32, lineHeight: 40 }
               ]}>
@@ -176,7 +191,7 @@ export const ChatBubble = React.memo(({ item }) => {
         ) : (
           <Text style={[
             styles.text, 
-            isMine ? styles.textMine : styles.textTheirs,
+            isMine ? styles.textMine : [styles.textTheirs, { color: theme.textPrimary }],
             emojiOnly && { fontSize: 32, lineHeight: 40 }
           ]}>
             {decodeEmoji(item.text)}

@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,22 +19,26 @@ const PERKS = [
 ];
 
 export const SubscriptionIntroScreen = ({ navigation }) => {
+  const { isDark, theme } = useTheme();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FFF5F6', '#F8FAFC', '#F1F5F9']}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {!isDark && (
+        <LinearGradient
+          colors={['#FFF5F6', '#F8FAFC', '#F1F5F9']}
+          style={StyleSheet.absoluteFillObject}
+        />
+      )}
 
       {/* Back button */}
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Icon name="chevron-back" size={22} color="#0F172A" />
+      <TouchableOpacity style={[styles.backBtn, { backgroundColor: isDark ? theme.cardBackground : '#FFF' }]} onPress={() => navigation.goBack()}>
+        <Icon name="chevron-back" size={22} color={theme.textPrimary} />
       </TouchableOpacity>
 
       {/* Hero illustration */}
       <View style={styles.heroWrap}>
-        <View style={styles.glowCircle1} />
-        <View style={styles.glowCircle2} />
+        <View style={[styles.glowCircle1, { backgroundColor: isDark ? '#2D1F3D' : '#FFF0F2' }]} />
+        <View style={[styles.glowCircle2, { backgroundColor: isDark ? '#3B1F3D' : '#EBE9FF' }]} />
         <FastImage
           source={require('../../../assets/Hello-User.png')}
           style={styles.heroImg}
@@ -42,35 +47,35 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
       </View>
 
       {/* Bottom card */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: isDark ? theme.surface : '#FFFFFF', borderColor: isDark ? theme.border : '#FFF1F3' }]}>
         <View style={styles.badgeContainer}>
-          <View style={styles.eyebrowBadge}>
-            <Icon name="sparkles" size={10} color="#E94057" style={{ marginRight: 4 }} />
-            <Text style={styles.eyebrowText}>MINGLEY PREMIUM</Text>
+          <View style={[styles.eyebrowBadge, { backgroundColor: isDark ? 'rgba(211, 42, 94, 0.15)' : '#FFF0F2', borderColor: isDark ? theme.primary : '#FFE0E5' }]}>
+            <Icon name="sparkles" size={10} color={theme.primary} style={{ marginRight: 4 }} />
+            <Text style={[styles.eyebrowText, { color: theme.primary }]}>MINGLEY PREMIUM</Text>
           </View>
         </View>
 
-        <Text style={styles.title}>Say Hello to{'\n'}Premium!</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Say Hello to{'\n'}Premium!</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Get full access to all features and find your perfect match without limits.
         </Text>
 
         {/* Perks list */}
         <View style={styles.perksList}>
           {PERKS.map((p) => (
-            <View key={p.label} style={styles.perkItem}>
+            <View key={p.label} style={[styles.perkItem, { backgroundColor: isDark ? theme.cardBackground : '#FFF8F9', borderColor: isDark ? theme.border : '#FFEBEF' }]}>
               <View style={styles.perkIconWrap}>
                 <LinearGradient
-                  colors={['#FFF0F2', '#FFE5EC']}
+                  colors={isDark ? ['rgba(211, 42, 94, 0.2)', 'rgba(211, 42, 94, 0.1)'] : ['#FFF0F2', '#FFE5EC']}
                   style={styles.perkIconGrad}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 >
-                  <Icon name={p.icon} size={18} color="#E94057" />
+                  <Icon name={p.icon} size={18} color={theme.primary} />
                 </LinearGradient>
               </View>
               <View style={styles.perkTextWrap}>
-                <Text style={styles.perkLabel}>{p.label}</Text>
-                <Text style={styles.perkDesc}>{p.desc}</Text>
+                <Text style={[styles.perkLabel, { color: theme.textPrimary }]}>{p.label}</Text>
+                <Text style={[styles.perkDesc, { color: theme.textSecondary }]}>{p.desc}</Text>
               </View>
             </View>
           ))}
@@ -83,7 +88,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#E94057', '#8A2387']}
+            colors={isDark ? ['#D32A5E', '#8A2387'] : ['#E94057', '#8A2387']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.ctaBtn}
           >
@@ -93,7 +98,7 @@ export const SubscriptionIntroScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.skipBtn}>
-          <Text style={styles.skipText}>Maybe later</Text>
+          <Text style={[styles.skipText, { color: theme.textSecondary }]}>Maybe later</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

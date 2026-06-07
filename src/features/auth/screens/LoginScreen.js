@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
+import { useTheme } from '../../../theme/ThemeContext';
 
 import { authService } from '../../../services/apiServices';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -23,6 +24,7 @@ const loginSchema = yup.object().shape({
 
 export const LoginScreen = ({ navigation }) => {
   const login = useAuthStore(state => state.login);
+  const { theme, isDark } = useTheme();
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
@@ -41,14 +43,14 @@ export const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Back button */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
         onPress={() => navigation.goBack()}
         activeOpacity={0.7}
       >
-        <Icon name="chevron-back" size={24} color="#000" />
+        <Icon name="chevron-back" size={24} color={theme.primary} />
       </TouchableOpacity>
 
       <KeyboardAvoidingView
@@ -62,11 +64,11 @@ export const LoginScreen = ({ navigation }) => {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <Text style={styles.title}>Login</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>Login</Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                 Please enter your registered email or phone number.
               </Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                 We will send you a 4-digit code to verify
               </Text>
             </View>
@@ -94,7 +96,7 @@ export const LoginScreen = ({ navigation }) => {
                 style={styles.forgotPassword}
                 onPress={() => navigation.navigate('ForgotPassword')}
               >
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
               </TouchableOpacity>
 
               <Button
@@ -102,12 +104,12 @@ export const LoginScreen = ({ navigation }) => {
                 onPress={handleSubmit(onSubmit)}
                 style={styles.button}
                 textStyle={styles.buttonText}
-                variant="solid"
+                variant="primary"
               />
             </View>
 
             <View style={styles.footerContainer}>
-              <Text style={styles.footerText}>
+              <Text style={[styles.footerText, { color: theme.textSecondary }]}>
                 By signing in, you agree to our Terms of Service & Privacy Policy
               </Text>
             </View>
@@ -121,7 +123,6 @@ export const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboard: {
     flex: 1,
@@ -130,8 +131,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   backButton: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.m,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACING.xl,
+    marginTop: SPACING.s,
   },
   content: {
     flex: 1,
@@ -145,14 +152,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 40,
-    color: '#000000',
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#5b5b5b',
     textAlign: 'center',
     paddingHorizontal: 10,
     lineHeight: 24,
@@ -168,7 +173,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   forgotPasswordText: {
-    color: '#E94057',
     fontSize: 14,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
@@ -176,13 +180,9 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginTop: 20,
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
@@ -195,7 +195,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   footerText: {
-    color: '#8A8A8F',
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,

@@ -8,8 +8,10 @@ import { Button } from '../../../components/common/Button';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { notificationService } from '../../../services/apiServices';
 import { useToastStore } from '../../../store/useToastStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const NotificationsPermissionScreen = ({ navigation, route }) => {
+  const { theme, isDark } = useTheme();
   const { userData } = route?.params || {};
   const login = useAuthStore(state => state.login);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -66,10 +68,10 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleFinishOnboarding}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, { color: theme.accent }]}>Skip</Text>
         </TouchableOpacity>
       </View>
 
@@ -82,8 +84,8 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
           />
         </View>
 
-        <Text style={styles.title}>Enable notification's</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Enable notification's</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Get push-notification when you get the match or receive a message.
         </Text>
 
@@ -93,7 +95,7 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
           loading={enabling}
           style={styles.actionButton}
           textStyle={styles.buttonText}
-          variant="solid"
+          variant="primary"
         />
       </View>
     </SafeAreaView>
@@ -104,7 +106,6 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'flex-end',
@@ -114,7 +115,6 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
@@ -137,14 +137,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
     marginBottom: 10,
     textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
     fontSize: 16,
-    color: '#5b5b5b',
     lineHeight: 24,
     textAlign: 'center',
     maxWidth: '80%',
@@ -155,10 +153,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     width: '100%',
     height: 52,
-    backgroundColor: '#E94057',
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',

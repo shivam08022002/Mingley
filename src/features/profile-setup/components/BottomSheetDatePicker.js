@@ -12,6 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
 import { GradientButton } from '../../../components/common/GradientButton';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const { height } = Dimensions.get('window');
 
@@ -36,6 +37,7 @@ function getFirstDayOfMonth(month, year) {
 }
 
 export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selectedDate }) => {
+  const { theme, isDark } = useTheme();
   const now = new Date();
   const [year, setYear] = useState(
     selectedDate ? parseInt(selectedDate.split('-')[0]) : 1998
@@ -90,7 +92,7 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
         containerStyle={styles.containerStyle}
       >
 
-          <Text style={styles.sheetTitle}>Birthday</Text>
+          <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>Birthday</Text>
 
           {/* Year navigation */}
           <View style={styles.yearRow}>
@@ -98,32 +100,32 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
               onPress={() => setYear(y => y - 1)}
               style={styles.yearBtn}
             >
-              <Icon name="chevron-back" size={22} color="#E94057" />
+              <Icon name="chevron-back" size={22} color={theme.accent} />
             </TouchableOpacity>
-            <Text style={styles.yearText}>{year}</Text>
+            <Text style={[styles.yearText, { color: theme.accent }]}>{year}</Text>
             <TouchableOpacity
               onPress={() => setYear(y => Math.min(y + 1, now.getFullYear() - 16))}
               style={styles.yearBtn}
             >
-              <Icon name="chevron-forward" size={22} color="#E94057" />
+              <Icon name="chevron-forward" size={22} color={theme.accent} />
             </TouchableOpacity>
           </View>
 
           {/* Month navigation */}
           <View style={styles.monthRow}>
             <TouchableOpacity onPress={prevMonth} style={styles.monthBtn}>
-              <Icon name="chevron-back" size={18} color="#555" />
+              <Icon name="chevron-back" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
-            <Text style={styles.monthText}>{MONTHS[month]}</Text>
+            <Text style={[styles.monthText, { color: theme.textSecondary }]}>{MONTHS[month]}</Text>
             <TouchableOpacity onPress={nextMonth} style={styles.monthBtn}>
-              <Icon name="chevron-forward" size={18} color="#555" />
+              <Icon name="chevron-forward" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Day of week headers */}
           <View style={styles.weekDayRow}>
             {DAYS_OF_WEEK.map(d => (
-              <Text key={d} style={styles.weekDayText}>{d}</Text>
+              <Text key={d} style={[styles.weekDayText, { color: theme.textSecondary }]}>{d}</Text>
             ))}
           </View>
 
@@ -140,13 +142,14 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
                       onPress={() => setDay(cell)}
                       style={[
                         styles.dayCell,
-                        day === cell && styles.dayCellSelected,
+                        day === cell && [styles.dayCellSelected, { backgroundColor: theme.accent }],
                       ]}
                     >
                       <Text
                         style={[
                           styles.dayText,
-                          day === cell && styles.dayTextSelected,
+                          { color: theme.textPrimary },
+                          day === cell && [styles.dayTextSelected, { color: isDark ? '#0A0A0A' : '#FFFFFF' }],
                         ]}
                       >
                         {cell}
@@ -161,7 +164,7 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
           <GradientButton
             title="Save"
             onPress={handleSave}
-            colors={['#E94057', '#E94057']}
+            colors={isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#E94057']}
             style={styles.saveButton}
           />
         </BottomSheetContainer>
@@ -179,7 +182,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     textAlign: 'center',
-    color: '#111',
     marginBottom: 16,
     fontFamily: FONT_MED,
   },
@@ -196,7 +198,6 @@ const styles = StyleSheet.create({
   yearText: {
     fontSize: 36,
     fontWeight: '800',
-    color: '#E94057',
     minWidth: 100,
     textAlign: 'center',
     fontFamily: FONT_NUM_BOLD,
@@ -212,7 +213,6 @@ const styles = StyleSheet.create({
   monthBtn: { padding: 6 },
   monthText: {
     fontSize: 16,
-    color: '#555',
     fontWeight: '600',
     minWidth: 110,
     textAlign: 'center',
@@ -227,7 +227,6 @@ const styles = StyleSheet.create({
     width: 36,
     textAlign: 'center',
     fontSize: 12,
-    color: '#ABABAB',
     fontWeight: '600',
     fontFamily: FONT_NUM,
     letterSpacing: 0.5,
@@ -245,13 +244,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  dayCellSelected: { backgroundColor: '#E94057' },
+  dayCellSelected: {},
   dayText: {
     fontSize: 14,
-    color: '#222',
     fontFamily: FONT_NUM,
     letterSpacing: 0.3,
   },
-  dayTextSelected: { color: '#FFFFFF', fontWeight: '700' },
+  dayTextSelected: { fontWeight: '700' },
   saveButton: { borderRadius: 16 },
 });

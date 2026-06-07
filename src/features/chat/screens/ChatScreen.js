@@ -17,6 +17,7 @@ import { useChatStore } from '../../../store/useChatStore';
 import { signalRService } from '../../../services/signalRService';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 import { useMatchesStore } from '../../matches/store/useMatchesStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const nowTime = () => {
@@ -29,6 +30,7 @@ import { userService } from '../../../services/apiServices';
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export const ChatScreen = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const routeUser = route?.params?.user || {};
   const initialChatId = route?.params?.chatId;
 
@@ -371,15 +373,15 @@ export const ChatScreen = ({ navigation, route }) => {
 
   // ── Header ────────────────────────────────────────────────────────────────
   const renderHeader = () => (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: theme.navBackground, borderBottomColor: theme.sectionDivider }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-        <Icon name="chevron-back" size={26} color="#000" />
+        <Icon name="chevron-back" size={26} color={theme.textPrimary} />
       </TouchableOpacity>
 
       <View style={styles.headerUser}>
         <FastImage source={{ uri: partnerInfo.image }} style={styles.avatar} />
         <View style={styles.userInfo}>
-          <Text style={styles.userName} numberOfLines={1}>{partnerInfo.name}</Text>
+          <Text style={[styles.userName, { color: theme.textPrimary }]} numberOfLines={1}>{partnerInfo.name}</Text>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, !partnerInfo.isOnline && { backgroundColor: '#A0A0A0' }]} />
             <Text style={styles.statusText}>{partnerInfo.isOnline ? 'Online' : 'Offline'}</Text>
@@ -389,14 +391,14 @@ export const ChatScreen = ({ navigation, route }) => {
 
       <View style={styles.headerActions}>
         {/* Coin balance badge */}
-        <View style={styles.coinBadge}>
+        <View style={[styles.coinBadge, theme.isDark && { backgroundColor: theme.surface, borderColor: theme.actionButtonBorder }]}>
           <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
           <Text style={styles.coinBadgeText}>{wallet.coins}</Text>
         </View>
 
         {/* Voice Call Button */}
         <TouchableOpacity
-          style={styles.iconBtn}
+          style={[styles.iconBtn, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}
           onPress={() => navigation.navigate('Calling', { user: partnerInfo, callType: 'audio' })}
         >
           <Icon name="call-outline" size={20} color="#E94057" />
@@ -404,7 +406,7 @@ export const ChatScreen = ({ navigation, route }) => {
 
         {/* Video Call Button */}
         <TouchableOpacity
-          style={styles.iconBtn}
+          style={[styles.iconBtn, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}
           onPress={async () => {
             try {
               await useSubscriptionStore.getState().fetchStatus();
@@ -427,8 +429,8 @@ export const ChatScreen = ({ navigation, route }) => {
         </TouchableOpacity>
 
         {/* Three-dot menu */}
-        <TouchableOpacity style={styles.iconBtn} onPress={() => setMenuModalVisible(p => !p)}>
-          <Icon name="ellipsis-vertical" size={20} color="#444" />
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]} onPress={() => setMenuModalVisible(p => !p)}>
+          <Icon name="ellipsis-vertical" size={20} color={theme.textPrimary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -441,20 +443,20 @@ export const ChatScreen = ({ navigation, route }) => {
         <BottomSheetContainer onClose={() => setGiftModalVisible(false)} height={340}>
           <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={styles.modalTitle}>Send a Gift</Text>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Send a Gift</Text>
               {sendingGift && <ActivityIndicator color="#E94057" />}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={styles.modalSub}>Balance: </Text>
+              <Text style={[styles.modalSub, { color: theme.textSecondary }]}>Balance: </Text>
               <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
-              <Text style={styles.modalSubBold}>{wallet.coins} coins</Text>
+              <Text style={[styles.modalSubBold, { color: theme.textPrimary }]}>{wallet.coins} coins</Text>
             </View>
 
             {/* Category tabs selection */}
             {giftCategories && giftCategories.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll} contentContainerStyle={styles.categoryScrollContent}>
                 <TouchableOpacity
-                  style={[styles.categoryTab, selectedGiftCategory === 'all' && styles.categoryTabActive]}
+                  style={[styles.categoryTab, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }, selectedGiftCategory === 'all' && styles.categoryTabActive]}
                   onPress={() => setSelectedGiftCategory('all')}
                   activeOpacity={0.8}
                 >
@@ -466,7 +468,7 @@ export const ChatScreen = ({ navigation, route }) => {
                   return (
                     <TouchableOpacity
                       key={id}
-                      style={[styles.categoryTab, selectedGiftCategory === id && styles.categoryTabActive]}
+                      style={[styles.categoryTab, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }, selectedGiftCategory === id && styles.categoryTabActive]}
                       onPress={() => setSelectedGiftCategory(id)}
                       activeOpacity={0.8}
                     >
@@ -490,15 +492,19 @@ export const ChatScreen = ({ navigation, route }) => {
                   return (
                     <TouchableOpacity
                       key={gift.id}
-                      style={[styles.giftCardHorizontal, (!afford || sendingGift) && styles.giftCardDisabled]}
+                      style={[
+                        styles.giftCardHorizontal, 
+                        theme.isDark && { backgroundColor: theme.surface, borderColor: theme.actionButtonBorder },
+                        (!afford || sendingGift) && [styles.giftCardDisabled, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }]
+                      ]}
                       onPress={() => handleSendGift(gift)}
                       disabled={!afford || sendingGift}
                       activeOpacity={0.75}
                     >
-                      <View style={styles.giftIconWrap}>
+                      <View style={[styles.giftIconWrap, theme.isDark && { backgroundColor: theme.background }]}>
                         <Icon name={gift.icon || 'gift-outline'} size={32} color={afford ? '#E94057' : '#999'} />
                       </View>
-                      <Text style={styles.giftCardLabel} numberOfLines={1}>{gift.name}</Text>
+                      <Text style={[styles.giftCardLabel, { color: theme.textPrimary }]} numberOfLines={1}>{gift.name}</Text>
                       <View style={styles.giftCardCostRow}>
                         <Icon name="logo-bitcoin" size={11} color={afford ? '#FFD700' : '#C0C0C0'} />
                         <Text style={[styles.giftCardCost, !afford && { color: '#C0C0C0' }]}>{cost}</Text>
@@ -518,13 +524,13 @@ export const ChatScreen = ({ navigation, route }) => {
     <Modal visible={coinsModalVisible} transparent animationType="fade" onRequestClose={() => setCoinsModalVisible(false)}>
       <BottomSheetContainer onClose={() => setCoinsModalVisible(false)} height={320}>
         <View style={{ flex: 1, width: '100%' }}>
-          <Text style={styles.modalTitle}>Send Coins</Text>
+          <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Send Coins</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-            <Text style={styles.modalSub}>Your balance: </Text>
+            <Text style={[styles.modalSub, { color: theme.textSecondary }]}>Your balance: </Text>
             <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
-            <Text style={styles.modalSubBold}>{wallet.coins} coins</Text>
+            <Text style={[styles.modalSubBold, { color: theme.textPrimary }]}>{wallet.coins} coins</Text>
           </View>
-          <TextInput style={styles.amountInput} placeholder="Enter amount" placeholderTextColor="#A0A0A0" keyboardType="numeric" value={coinInputText} onChangeText={setCoinInputText} />
+          <TextInput style={[styles.amountInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.inputBorder }]} placeholder="Enter amount" placeholderTextColor={theme.textSecondary} keyboardType="numeric" value={coinInputText} onChangeText={setCoinInputText} />
           <TouchableOpacity 
             style={[styles.modalActionBtn, (!coinInputText || sendingCoins) && styles.modalActionBtnDisabled]} 
             onPress={handleTransferCoins} 
@@ -552,12 +558,13 @@ export const ChatScreen = ({ navigation, route }) => {
         <TouchableWithoutFeedback onPress={() => setMenuModalVisible(false)}>
           <View style={[StyleSheet.absoluteFillObject, { zIndex: 999, backgroundColor: 'transparent' }]} />
         </TouchableWithoutFeedback>
-        <View style={styles.dropdownMenu}>
+        <View style={[styles.dropdownMenu, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
           {MENU_OPTIONS.map((opt, i) => (
             <TouchableOpacity
               key={i}
               style={[
                 styles.dropdownRow,
+                { borderBottomColor: theme.sectionDivider },
                 opt.label === 'Block User' && styles.dropdownRowDanger,
                 opt.label === 'Report' && styles.dropdownRowDanger,
                 i === MENU_OPTIONS.length - 1 && { borderBottomWidth: 0 }
@@ -574,6 +581,7 @@ export const ChatScreen = ({ navigation, route }) => {
               <Text
                 style={[
                   styles.dropdownRowText,
+                  { color: theme.textPrimary },
                   (opt.label === 'Block User' || opt.label === 'Report') && styles.dropdownRowTextDanger
                 ]}
               >
@@ -591,18 +599,18 @@ export const ChatScreen = ({ navigation, route }) => {
     <Modal visible={reportModalVisible} transparent animationType="fade" onRequestClose={() => setReportModalVisible(false)}>
       <BottomSheetContainer onClose={() => setReportModalVisible(false)} height={380}>
         <View style={{ flex: 1, width: '100%' }}>
-          <Text style={styles.modalTitle}>Report User</Text>
+          <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Report User</Text>
           <TextInput
-            style={styles.amountInput}
+            style={[styles.amountInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.inputBorder }]}
             placeholder="Reason (e.g., Harassment)"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={theme.textSecondary}
             value={reportReason}
             onChangeText={setReportReason}
           />
           <TextInput
-            style={[styles.amountInput, { height: 100, textAlignVertical: 'top' }]}
+            style={[styles.amountInput, { height: 100, textAlignVertical: 'top', backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.inputBorder }]}
             placeholder="Description (optional)"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={theme.textSecondary}
             multiline
             value={reportDesc}
             onChangeText={setReportDesc}
@@ -619,10 +627,10 @@ export const ChatScreen = ({ navigation, route }) => {
   const renderUpgradeModal = () => (
     <Modal visible={upgradeModalVisible} transparent animationType="fade" onRequestClose={() => setUpgradeModalVisible(false)}>
       <View style={styles.centeredModalOverlay}>
-        <View style={styles.centeredModalContent}>
+        <View style={[styles.centeredModalContent, { backgroundColor: theme.cardBackground }]}>
           <Icon name="lock-closed-outline" size={40} color="#E94057" style={{ marginBottom: 12 }} />
-          <Text style={styles.centeredModalTitle}>Premium Feature</Text>
-          <Text style={styles.centeredModalSub}>
+          <Text style={[styles.centeredModalTitle, { color: theme.textPrimary }]}>Premium Feature</Text>
+          <Text style={[styles.centeredModalSub, { color: theme.textSecondary }]}>
             Video calls are only available for Gold and higher tier members. Upgrade now to connect!
           </Text>
           <View style={styles.centeredModalButtonRow}>
@@ -675,11 +683,11 @@ export const ChatScreen = ({ navigation, route }) => {
             inverted={true}
             onContentSizeChange={scrollToEnd}
             ListHeaderComponent={
-              <View style={styles.dateSeparator}>
-                <View style={styles.line} />
-                <Text style={styles.dateText}>Today</Text>
-                <View style={styles.line} />
-              </View>
+            <View style={styles.dateSeparator}>
+              <View style={[styles.line, { backgroundColor: theme.sectionDivider }]} />
+              <Text style={[styles.dateText, { color: theme.textSecondary }]}>Today</Text>
+              <View style={[styles.line, { backgroundColor: theme.sectionDivider }]} />
+            </View>
             }
           />
         )}
@@ -687,21 +695,21 @@ export const ChatScreen = ({ navigation, route }) => {
         {/* ── Indicators ── */}
         {chatQuota ? (
           chatQuota.freeRemaining > 0 && (
-            <View style={styles.freeMsgBanner}>
+            <View style={[styles.freeMsgBanner, theme.isDark && { backgroundColor: theme.surface, borderTopColor: theme.sectionDivider }]}>
               <Icon name="chatbubble-ellipses-outline" size={13} color="#E94057" style={{ marginRight: 5 }} />
               <Text style={styles.freeMsgText}>Free messages left: <Text style={styles.freeMsgCount}>{chatQuota.freeRemaining}</Text></Text>
             </View>
           )
         ) : (
           isFemale && freeMessagesLeft > 0 && (
-            <View style={styles.freeMsgBanner}>
+            <View style={[styles.freeMsgBanner, theme.isDark && { backgroundColor: theme.surface, borderTopColor: theme.sectionDivider }]}>
               <Icon name="chatbubble-ellipses-outline" size={13} color="#E94057" style={{ marginRight: 5 }} />
               <Text style={styles.freeMsgText}>Free messages left: <Text style={styles.freeMsgCount}>{freeMessagesLeft}</Text></Text>
             </View>
           )
         )}
         {warningText && (
-          <View style={styles.warningBanner}>
+          <View style={[styles.warningBanner, theme.isDark && { backgroundColor: theme.surface, borderTopColor: theme.sectionDivider }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="information-circle-outline" size={13} color="#B45309" style={{ marginRight: 5 }} />
               <Text style={styles.warningText}>{warningText}</Text>
@@ -715,13 +723,13 @@ export const ChatScreen = ({ navigation, route }) => {
         )}
 
         {/* ── Actions bar ── */}
-        <View style={styles.actionsBar}>
-          <TouchableOpacity style={styles.actionChip} onPress={() => setGiftModalVisible(true)}>
+        <View style={[styles.actionsBar, { backgroundColor: theme.navBackground, borderTopColor: theme.sectionDivider }]}>
+          <TouchableOpacity style={[styles.actionChip, { backgroundColor: theme.isDark ? theme.surface : '#FFF0F3', borderColor: theme.actionButtonBorder }]} onPress={() => setGiftModalVisible(true)}>
             <Icon name="gift-outline" size={14} color="#E94057" />
             <Text style={styles.actionChipText}>Gift</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionChip} onPress={() => setCoinsModalVisible(true)}>
+          <TouchableOpacity style={[styles.actionChip, { backgroundColor: theme.isDark ? theme.surface : '#FFF0F3', borderColor: theme.actionButtonBorder }]} onPress={() => setCoinsModalVisible(true)}>
             <Icon name="logo-bitcoin" size={14} color="#FFD700" />
             <Text style={styles.actionChipText}>Send Coins</Text>
           </TouchableOpacity>
@@ -729,13 +737,13 @@ export const ChatScreen = ({ navigation, route }) => {
 
         {/* Emoji Selector Panel */}
         {emojiPanelVisible && (
-          <View style={styles.emojiPanel}>
+          <View style={[styles.emojiPanel, theme.isDark && { backgroundColor: theme.surface, borderTopColor: theme.sectionDivider }]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiScroll}>
-              {['❤️', '💖', '😂', '😍', '👍', '😊', '🔥', '😘', '😭', '👏', '🎉', '😉', '🤔', '😎', '✨', '🌹', '🙌', '🎈', '🎁', '🎂', '🥳', '🤩', '🥺', '🤣', '🤤', '😴', '💡', '💯', '👌', '⚡', '🌟', '🍿', '🍕', '🍓', '🥑', '🍷', '🥂', '✈️', '🏖️', '🎵', '🎮', '🧸', '🐱', '🐶', '🦄'].map((emoji) => (
+              {['❤️', '💖', '😂', '😍', '👍', '😊', '🔥', '😘', '😭', '👏', '🎉', '😉', '🤔', '😎', '✨', '🌹', '🙌', '🎈', '🎁', '🎂', '🥳', '🤩', '🥺', '🤣', '🤤', '😴', '💡', '💯', '👌', '⚡', '🌟', '🍿', '🍕', '🍓', '🥑', '🍷', '🥂', '✈️', '🏖️', '🎵', '🎮', '🧸', '🐱', '🐶', '🦄'].map((emoji, index) => (
                 <TouchableOpacity
-                  key={emoji}
+                  key={index}
+                  style={[styles.emojiItem, theme.isDark && { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}
                   onPress={() => setInputText(prev => prev + emoji)}
-                  style={styles.emojiItem}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.emojiText}>{emoji}</Text>
@@ -746,23 +754,23 @@ export const ChatScreen = ({ navigation, route }) => {
         )}
 
         {/* ── Input row ── */}
-        <View style={styles.inputContainer}>
-          <View style={[styles.inputWrapper, !canSend && styles.inputWrapperDisabled]}>
+        <View style={[styles.inputContainer, { backgroundColor: theme.navBackground, borderTopColor: theme.sectionDivider }]}>
+          <View style={[styles.inputWrapper, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }, !canSend && styles.inputWrapperDisabled]}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.textPrimary }]}
               placeholder="Your message"
-              placeholderTextColor="#A0A0A0"
+              placeholderTextColor={theme.textSecondary}
               value={inputText}
               onChangeText={setInputText}
               editable={canSend}
             />
             <TouchableOpacity style={styles.stickerIcon} onPress={() => setEmojiPanelVisible(p => !p)}>
-              <Icon name="happy-outline" size={24} color={emojiPanelVisible ? '#E94057' : '#A0A0A0'} />
+              <Icon name="happy-outline" size={24} color={emojiPanelVisible ? theme.accent : theme.textSecondary} />
             </TouchableOpacity>
           </View>
           {inputText.trim() ? (
-            <TouchableOpacity style={[styles.sendButton, !canSend && styles.sendButtonDisabled]} onPress={handleSend} disabled={!canSend}>
-              <Icon name="send" size={20} color={canSend ? '#E94057' : '#C0C0C0'} />
+            <TouchableOpacity style={[styles.sendButton, { backgroundColor: theme.primary }, !canSend && styles.sendButtonDisabled]} onPress={handleSend} disabled={!canSend}>
+              <Icon name="send" size={20} color="#FFF" />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -774,7 +782,7 @@ export const ChatScreen = ({ navigation, route }) => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   containerStyle: { backgroundColor: 'rgba(0,0,0,0.5)' },
-  contentStyle: { paddingHorizontal: 0 },
+  contentStyle: { paddingHorizontal: 0, paddingBottom: 0 },
   containerInside: { flex: 1 },
 
   // ── Header ───────────────────────────────────────────────────────────────
@@ -1041,10 +1049,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
+    boxShadow: '0px 1px 1px rgba(0,0,0,0.05)',
     elevation: 1,
   },
   emojiText: {
@@ -1064,10 +1069,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    boxShadow: '0px 4px 12px rgba(0,0,0,0.1)',
     elevation: 8,
     zIndex: 1000,
   },
@@ -1100,10 +1102,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
+    boxShadow: '0px 10px 20px rgba(0,0,0,0.15)',
     elevation: 10,
   },
   centeredModalTitle: {

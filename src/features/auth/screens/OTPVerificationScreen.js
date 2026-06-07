@@ -6,11 +6,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { OTPInput } from '../components/OTPInput';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 import { authService } from '../../../services/apiServices';
 import { safeStorage } from '../../../services/api';
 
 export const OTPVerificationScreen = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const { type, identifier, value, password, phone } = route?.params || {};
   const login = useAuthStore(state => state.login);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,19 +109,19 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="chevron-back" size={24} color="#E94057" />
+          <Icon name="chevron-back" size={24} color={theme.isDark ? theme.accent : theme.primary} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.timerText}>{formatTimer(timer)}</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.timerText, { color: theme.textPrimary }]}>{formatTimer(timer)}</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           Type the verification code we've sent to {userIdentifier}
         </Text>
 
@@ -128,7 +130,7 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
         {isLoading && (
           <ActivityIndicator 
             size="large" 
-            color="#E94057" 
+            color={theme.isDark ? theme.accent : theme.primary} 
             style={{ marginTop: 20 }} 
           />
         )}
@@ -138,7 +140,7 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
           onPress={handleResend}
           disabled={timer > 0}
         >
-          <Text style={[styles.resendText, timer > 0 && styles.resendDisabled]}>
+          <Text style={[styles.resendText, { color: theme.isDark ? theme.accent : theme.primary }, timer > 0 && styles.resendDisabled]}>
             Send again
           </Text>
         </TouchableOpacity>
@@ -150,7 +152,6 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingHorizontal: SPACING.xl,
@@ -161,7 +162,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -174,13 +174,11 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: '#000000',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 20,
   },
   subtitle: {
     fontSize: 16,
-    color: '#333333',
     textAlign: 'center',
     maxWidth: 200,
     lineHeight: 24,
@@ -193,7 +191,6 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   resendDisabled: {

@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
+import { useTheme } from '../../../theme/ThemeContext';
 
 import { useProfileSetupStore } from '../../profile-setup/store/useProfileSetupStore';
 
@@ -20,6 +21,7 @@ const schema = yup.object().shape({
 });
 
 export const EmailInputScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const { setAuthDetails } = useProfileSetupStore();
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
@@ -36,19 +38,19 @@ export const EmailInputScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#000" />
+          <Icon name="chevron-back" size={24} color={theme.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Sign up</Text>
-            <Text style={styles.subtitle}>Create an account to get started.</Text>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>Sign up</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Create an account to get started.</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -82,7 +84,7 @@ export const EmailInputScreen = ({ navigation }) => {
               onPress={handleSubmit(onSubmit)}
               style={styles.continueButton}
               textStyle={styles.buttonText}
-              variant="solid"
+              variant="primary"
             />
           </View>
         </View>
@@ -94,7 +96,6 @@ export const EmailInputScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
@@ -114,13 +115,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: '600',
-    color: '#000000',
     marginBottom: 10,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
     fontSize: 16,
-    color: '#5b5b5b',
     lineHeight: 24,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
@@ -130,11 +129,9 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
     marginTop: 30,
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',

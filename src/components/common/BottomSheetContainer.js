@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import Svg, { Path, Rect, Defs, Filter, FeFlood, FeColorMatrix, FeOffset, FeGaussianBlur, FeBlend, G } from 'react-native-svg';
+import { useTheme } from '../../theme/ThemeContext';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -21,6 +22,7 @@ const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
  * @param {object} containerStyle - Optional style for the outer view.
  */
 export const BottomSheetContainer = ({ children, containerStyle, contentStyle, height = 505, onClose }) => {
+  const { theme, isDark } = useTheme();
   const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   useEffect(() => {
@@ -93,10 +95,10 @@ export const BottomSheetContainer = ({ children, containerStyle, contentStyle, h
                 fillRule="evenodd"
                 clipRule="evenodd"
                 d="M14 9.0219C14 5.14381 17.1435 2 21.0215 2C23.2659 2 25.6126 2 27.3371 2C29.1179 2 31.6124 2 33.9835 2C37.8589 2 41 5.14166 41 9.01709C41 9.13673 40.9242 9.24322 40.8111 9.28234L39.1697 9.85037C31.3028 12.5728 22.7335 12.4718 14.933 9.56467L14.1828 9.28509C14.0729 9.24413 14 9.13919 14 9.0219Z"
-                fill="white"
+                fill={theme.cardBackground}
               />
             </G>
-            <Rect x="21" y="5" width="13" height="3" rx="1.5" fill="#E8E6EA" />
+            <Rect x="21" y="5" width="13" height="3" rx="1.5" fill={isDark ? '#555' : '#E8E6EA'} />
             <Defs>
               <Filter id="filter0_d_309_5420" x="0" y="0" width="55" height="37.821" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
                 <FeFlood floodOpacity="0" result="BackgroundImageFix" />
@@ -119,7 +121,7 @@ export const BottomSheetContainer = ({ children, containerStyle, contentStyle, h
                 fillRule="evenodd"
                 clipRule="evenodd"
                 d={svgPath}
-                fill="white"
+                fill={theme.cardBackground}
               />
             </Svg>
           </View>

@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
   mainUserName: {
     fontSize: 32, fontWeight: 'bold', color: '#FFF', marginBottom: 10,
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.45)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 10,
+    textShadow: '0px 3px 10px rgba(0,0,0,0.45)',
   },
   timeTag: {
     flexDirection: 'row', alignItems: 'center',

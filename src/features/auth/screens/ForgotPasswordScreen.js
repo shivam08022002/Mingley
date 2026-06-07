@@ -10,12 +10,14 @@ import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
 import { authService } from '../../../services/apiServices';
 import { useToastStore } from '../../../store/useToastStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const schema = yup.object().shape({
   identifier: yup.string().required('Email or phone number is required'),
 });
 
 export const ForgotPasswordScreen = ({ navigation }) => {
+  const { theme } = useTheme();
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: { identifier: '' },
@@ -39,19 +41,22 @@ export const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#000" />
+        <TouchableOpacity 
+          style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]} 
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="chevron-back" size={24} color={theme.primary} />
         </TouchableOpacity>
 
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Forgot Password</Text>
-            <Text style={styles.subtitle}>Enter your email or phone number to reset your password.</Text>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>Forgot Password</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Enter your email or phone number to reset your password.</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -69,7 +74,7 @@ export const ForgotPasswordScreen = ({ navigation }) => {
               onPress={handleSubmit(onSubmit)}
               style={styles.continueButton}
               textStyle={styles.buttonText}
-              variant="solid"
+              variant="primary"
               loading={loading}
             />
           </View>
@@ -82,14 +87,19 @@ export const ForgotPasswordScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
   },
   backButton: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.m,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACING.xl,
+    marginTop: SPACING.s,
   },
   content: {
     flex: 1,
@@ -102,13 +112,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: '600',
-    color: '#000000',
     marginBottom: 10,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
     fontSize: 16,
-    color: '#5b5b5b',
     lineHeight: 24,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
@@ -118,11 +126,9 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
     marginTop: 30,
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',

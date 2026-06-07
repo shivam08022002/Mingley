@@ -7,10 +7,12 @@ import { SelectCard } from '../components/SelectCard';
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 export const GenderSelectionScreen = ({ navigation }) => {
   const { gender, setGender } = useProfileSetupStore();
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const { theme } = useTheme();
 
   const handleSelect = (selectedGender) => {
     setGender(selectedGender);
@@ -25,18 +27,18 @@ export const GenderSelectionScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[styles.backButton, { borderColor: theme.actionButtonBorder }]}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="chevron-back" size={24} color="#E94057" />
+          <Icon name="chevron-back" size={24} color={theme.accent} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>I am a</Text>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>I am a</Text>
         
         <View style={styles.optionsContainer}>
           <SelectCard 
@@ -62,7 +64,7 @@ export const GenderSelectionScreen = ({ navigation }) => {
           style={styles.continueButton}
           textStyle={styles.buttonText}
           disabled={!gender}
-          variant="solid"
+          variant="primary"
         />
       </View>
     </SafeAreaView>
@@ -72,7 +74,6 @@ export const GenderSelectionScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -86,14 +87,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   skipText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
@@ -104,7 +103,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: 'bold',
-    color: '#000000',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 60,
   },
@@ -116,10 +114,8 @@ const styles = StyleSheet.create({
     marginBottom: 60,
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',

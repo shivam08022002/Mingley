@@ -10,6 +10,7 @@ import { CustomInput } from '../../../components/common/CustomInput';
 import { Button } from '../../../components/common/Button';
 import { authService } from '../../../services/apiServices';
 import { useToastStore } from '../../../store/useToastStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const schema = yup.object().shape({
   otp: yup.string().required('OTP is required').min(4, 'OTP must be at least 4 characters'),
@@ -20,6 +21,7 @@ const schema = yup.object().shape({
 });
 
 export const ResetPasswordScreen = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const { identifier, devOtp } = route.params || {};
   const { control, handleSubmit, setValue, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
@@ -61,19 +63,22 @@ export const ResetPasswordScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#000" />
+        <TouchableOpacity 
+          style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]} 
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="chevron-back" size={24} color={theme.primary} />
         </TouchableOpacity>
  
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Reset Password</Text>
-            <Text style={styles.subtitle}>Enter the OTP sent to {identifier || 'your device'} and your new password.</Text>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>Reset Password</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Enter the OTP sent to {identifier || 'your device'} and your new password.</Text>
           </View>
  
           <View style={styles.formContainer}>
@@ -106,7 +111,7 @@ export const ResetPasswordScreen = ({ navigation, route }) => {
               onPress={handleSubmit(onSubmit)}
               style={styles.continueButton}
               textStyle={styles.buttonText}
-              variant="solid"
+              variant="primary"
               loading={loading}
             />
           </View>
@@ -119,14 +124,19 @@ export const ResetPasswordScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   keyboardView: {
     flex: 1,
   },
   backButton: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.m,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACING.xl,
+    marginTop: SPACING.s,
   },
   content: {
     flex: 1,
@@ -139,13 +149,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: '600',
-    color: '#000000',
     marginBottom: 10,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   subtitle: {
     fontSize: 16,
-    color: '#5b5b5b',
     lineHeight: 24,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
   },
@@ -155,11 +163,9 @@ const styles = StyleSheet.create({
   continueButton: {
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
     marginTop: 30,
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',

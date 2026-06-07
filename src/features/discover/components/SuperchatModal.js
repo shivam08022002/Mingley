@@ -9,11 +9,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../../../store/useChatStore';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 
+import { useTheme } from '../../../theme/ThemeContext';
+
 const { height } = Dimensions.get('window');
 
-const Section = ({ label, children }) => (
+const Section = ({ label, children, theme }) => (
   <View style={s.section}>
-    <Text style={s.sectionLabel}>{label}</Text>
+    <Text style={[s.sectionLabel, { color: theme.textPrimary }]}>{label}</Text>
     {children}
   </View>
 );
@@ -23,6 +25,7 @@ export const SuperchatModal = ({ visible, onClose, user }) => {
   const [coinAmount, setCoinAmount] = useState('500');
   const [isLoading, setIsLoading] = useState(false);
   const { wallet, sendSuperchat, fetchWalletBalance, setDepositModalVisible } = useChatStore();
+  const { theme, isDark } = useTheme();
 
   React.useEffect(() => {
     if (visible) {
@@ -74,60 +77,60 @@ export const SuperchatModal = ({ visible, onClose, user }) => {
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
           <View style={s.headerRow}>
-            <TouchableOpacity style={s.backButton} onPress={onClose}>
-              <Icon name="chevron-back" size={22} color="#333" />
+            <TouchableOpacity style={[s.backButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]} onPress={onClose}>
+              <Icon name="chevron-back" size={22} color={theme.textPrimary} />
             </TouchableOpacity>
             <View style={{ flex: 1, alignItems: 'center', marginRight: 44 }}>
-              <Text style={s.title}>Send Superchat</Text>
+              <Text style={[s.title, { color: theme.textPrimary }]}>Send Superchat</Text>
             </View>
           </View>
 
-          <Text style={s.subtitle}>Direct message to {user?.fullName || user?.name || 'User'}</Text>
+          <Text style={[s.subtitle, { color: theme.textSecondary }]}>Direct message to {user?.fullName || user?.name || 'User'}</Text>
 
-          <View style={s.promoBanner}>
-            <Icon name="shield-checkmark" size={20} color="#E94057" />
-            <Text style={s.promoText}>Send a Superchat. If you don't get a reply, you'll get a full refund!</Text>
+          <View style={[s.promoBanner, isDark && { backgroundColor: theme.surface }]}>
+            <Icon name="shield-checkmark" size={20} color={isDark ? theme.accent : '#E94057'} />
+            <Text style={[s.promoText, isDark && { color: theme.accent }]}>Send a Superchat. If you don't get a reply, you'll get a full refund!</Text>
           </View>
 
-          <Section label="Your Balance">
-            <View style={s.balanceCard}>
+          <Section label="Your Balance" theme={theme}>
+            <View style={[s.balanceCard, { backgroundColor: theme.inputBackground }]}>
               <View style={s.coinsBadge}>
                 <Icon name="logo-bitcoin" size={16} color="#FFD700" />
-                <Text style={s.coinsText}>{wallet.coins} Coins</Text>
+                <Text style={[s.coinsText, { color: theme.textPrimary }]}>{wallet.coins} Coins</Text>
               </View>
               <TouchableOpacity onPress={() => {
                 onClose();
                 setDepositModalVisible(true);
               }}>
-                <Text style={s.topUpBtn}>Top Up</Text>
+                <Text style={[s.topUpBtn, isDark && { color: theme.accent }]}>Top Up</Text>
               </TouchableOpacity>
             </View>
           </Section>
 
-          <Section label="Superchat Amount">
-            <View style={s.inputContainer}>
-              <Icon name="flash" size={20} color="#7C3AED" style={s.inputIcon} />
+          <Section label="Superchat Amount" theme={theme}>
+            <View style={[s.inputContainer, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }]}>
+              <Icon name="flash" size={20} color={isDark ? theme.accent : "#7C3AED"} style={s.inputIcon} />
               <TextInput
-                style={s.amountInput}
+                style={[s.amountInput, { color: theme.textPrimary }]}
                 placeholder="Enter amount"
                 keyboardType="numeric"
                 value={coinAmount}
                 onChangeText={setCoinAmount}
-                placeholderTextColor="#BBB"
+                placeholderTextColor={theme.textSecondary}
               />
-              <Text style={{ fontWeight: '600', color: '#E94057' }}>Coins</Text>
+              <Text style={{ fontWeight: '600', color: isDark ? theme.accent : '#E94057' }}>Coins</Text>
             </View>
           </Section>
 
-          <Section label="Your Message">
+          <Section label="Your Message" theme={theme}>
             <TextInput
-              style={s.textArea}
+              style={[s.textArea, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
               placeholder="Say something nice..."
               multiline
               numberOfLines={4}
               value={message}
               onChangeText={setMessage}
-              placeholderTextColor="#BBB"
+              placeholderTextColor={theme.textSecondary}
             />
           </Section>
 

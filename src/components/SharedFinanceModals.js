@@ -11,6 +11,7 @@ import { BottomSheetContainer } from './common/BottomSheetContainer';
 import { walletService, userService } from '../services/apiServices';
 import { useProfileStore } from '../features/profile/store/useProfileStore';
 import { useToastStore } from '../store/useToastStore';
+import { useTheme } from '../theme/ThemeContext';
 
 // Conditional Native import to prevent Web bundler crashes
 let RazorpayCheckout = null;
@@ -51,6 +52,7 @@ export const DepositModal = ({ visible, onClose }) => {
   const wallet = useChatStore((s) => s.wallet);
   const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
   const { profile } = useProfileStore();
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     if (visible) {
@@ -142,7 +144,7 @@ export const DepositModal = ({ visible, onClose }) => {
             email: 'user@mingley.com',
           },
           theme: {
-            color: '#E94057',
+            color: isDark ? '#F6DCA0' : '#E94057',
           },
         };
         const rzp = new window.Razorpay(options);
@@ -167,7 +169,7 @@ export const DepositModal = ({ visible, onClose }) => {
             contact: '',
             name: 'Mingley User',
           },
-          theme: { color: '#E94057' },
+          theme: { color: isDark ? '#F6DCA0' : '#E94057' },
         };
 
         RazorpayCheckout.open(options)
@@ -230,10 +232,10 @@ export const DepositModal = ({ visible, onClose }) => {
             {/* Header */}
             <View style={s.headerRow}>
               <View style={s.titleWrap}>
-                <Icon name="wallet" size={20} color="#E94057" />
-                <Text style={s.modalTitle}>Top Up Coins</Text>
+                <Icon name="wallet" size={20} color={theme.accent} />
+                <Text style={[s.modalTitle, { color: theme.textPrimary }]}>Top Up Coins</Text>
               </View>
-              <View style={s.balancePill}>
+              <View style={[s.balancePill, isDark && { backgroundColor: theme.cardBackground, borderWidth: 1.5, borderColor: theme.accent }]}>
                 <Icon name="logo-bitcoin" size={13} color="#FFD700" />
                 <Text style={s.balancePillText}>{wallet.coins} coins</Text>
               </View>
@@ -241,31 +243,31 @@ export const DepositModal = ({ visible, onClose }) => {
 
             {/* Package grid */}
             {loadingPkgs ? (
-              <ActivityIndicator color="#E94057" style={{ marginVertical: 30 }} />
+              <ActivityIndicator color={theme.accent} style={{ marginVertical: 30 }} />
             ) : (
               <View style={s.pkgGrid}>
                 {packages.map((pkg) => {
                   const isSelected = selectedPkg?.id === pkg.id;
-                  const gradColors = PACKAGE_GRADIENTS[pkg.id] || ['#E94057', '#8A2387'];
+                  const gradColors = isDark ? ['#F6DCA0', '#D4AF37'] : (PACKAGE_GRADIENTS[pkg.id] || ['#E94057', '#8A2387']);
                   return (
                     <TouchableOpacity
                       key={pkg.id}
-                      style={[s.pkgCard, isSelected && s.pkgCardSelected]}
+                      style={[s.pkgCard, { borderColor: isDark ? theme.actionButtonBorder : '#E8E8E8' }, isSelected && [s.pkgCardSelected, { borderColor: theme.accent }]]}
                       onPress={() => setSelectedPkg(pkg)}
                       activeOpacity={0.85}
                     >
                       {pkg.isPopular && (
-                        <View style={s.popularTag}>
-                          <Text style={s.popularTagText}>⭐ Popular</Text>
+                        <View style={[s.popularTag, isDark && { backgroundColor: theme.accent }]}>
+                          <Text style={[s.popularTagText, isDark && { color: '#0A0A0A' }]}>⭐ Popular</Text>
                         </View>
                       )}
                       {pkg.badge && !pkg.isPopular && (
-                        <View style={s.bonusTag}>
-                          <Text style={s.bonusTagText}>{pkg.badge}</Text>
+                        <View style={[s.bonusTag, isDark && { backgroundColor: theme.accent }]}>
+                          <Text style={[s.bonusTagText, isDark && { color: '#0A0A0A' }]}>{pkg.badge}</Text>
                         </View>
                       )}
                       <LinearGradient
-                        colors={isSelected ? gradColors : ['#F8F8F8', '#F0F0F0']}
+                        colors={isSelected ? gradColors : (isDark ? [theme.cardBackground, theme.cardBackground] : ['#F8F8F8', '#F0F0F0'])}
                         style={s.pkgInner}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
@@ -273,19 +275,19 @@ export const DepositModal = ({ visible, onClose }) => {
                         <Icon
                           name="logo-bitcoin"
                           size={22}
-                          color={isSelected ? '#FFD700' : '#AAA'}
+                          color={isSelected ? (isDark ? '#0A0A0A' : '#FFD700') : theme.textSecondary}
                         />
-                        <Text style={[s.pkgCoins, isSelected && s.pkgCoinsSelected]}>
+                        <Text style={[s.pkgCoins, { color: theme.textPrimary }, isSelected && [s.pkgCoinsSelected, { color: isDark ? '#0A0A0A' : '#fff' }]]}>
                           {pkg.coins}
                         </Text>
-                        <Text style={[s.pkgCoinsLabel, isSelected && s.pkgCoinsLabelSelected]}>
+                        <Text style={[s.pkgCoinsLabel, { color: theme.textSecondary }, isSelected && [s.pkgCoinsLabelSelected, { color: isDark ? '#0A0A0A' : 'rgba(255,255,255,0.8)' }]]}>
                           coins
                         </Text>
-                        <View style={s.pkgDivider} />
-                        <Text style={[s.pkgPrice, isSelected && s.pkgPriceSelected]}>
+                        <View style={[s.pkgDivider, { backgroundColor: isDark ? theme.actionButtonBorder : 'rgba(0,0,0,0.08)' }]} />
+                        <Text style={[s.pkgPrice, { color: theme.textPrimary }, isSelected && [s.pkgPriceSelected, { color: isDark ? '#0A0A0A' : '#fff' }]]}>
                           ₹{pkg.price}
                         </Text>
-                        <Text style={[s.pkgLabel, isSelected && s.pkgLabelSelected]}>
+                        <Text style={[s.pkgLabel, { color: theme.textSecondary }, isSelected && [s.pkgLabelSelected, { color: isDark ? 'rgba(10,10,10,0.8)' : 'rgba(255,255,255,0.7)' }]]}>
                           {pkg.label}
                         </Text>
                       </LinearGradient>
@@ -296,11 +298,17 @@ export const DepositModal = ({ visible, onClose }) => {
             )}
 
             {/* Secure Trust Indicator */}
-            <View style={s.trustBanner}>
-              <Icon name="shield-checkmark" size={22} color="#4CAF50" />
+            <View style={[
+              s.trustBanner,
+              isDark && {
+                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                borderColor: 'rgba(76, 175, 80, 0.3)',
+              }
+            ]}>
+              <Icon name="shield-checkmark" size={22} color={isDark ? '#4CAF50' : '#2E7D32'} />
               <View style={{ flex: 1 }}>
-                <Text style={s.trustTitle}>100% Secure Checkout</Text>
-                <Text style={s.trustSubtitle}>Your transaction is encrypted & securely processed via Razorpay.</Text>
+                <Text style={[s.trustTitle, isDark && { color: '#4CAF50' }]}>100% Secure Checkout</Text>
+                <Text style={[s.trustSubtitle, isDark && { color: '#81C784' }]}>Your transaction is encrypted & securely processed via Razorpay.</Text>
               </View>
             </View>
 
@@ -308,17 +316,18 @@ export const DepositModal = ({ visible, onClose }) => {
             <TouchableOpacity
               style={[
                 s.modalActionBtn,
+                { backgroundColor: theme.accent },
                 (!selectedPkg || submitting) && s.modalActionBtnDisabled,
               ]}
               onPress={handleDepositSubmit}
               disabled={!selectedPkg || submitting}
             >
               {submitting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={isDark ? '#0A0A0A' : '#fff'} />
               ) : (
                 <>
-                  <Icon name="lock-closed" size={16} color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={s.modalActionBtnText}>
+                  <Icon name="lock-closed" size={16} color={isDark ? '#0A0A0A' : '#fff'} style={{ marginRight: 8 }} />
+                  <Text style={[s.modalActionBtnText, { color: isDark ? '#0A0A0A' : '#fff' }]}>
                     {selectedPkg ? `Pay ₹${selectedPkg.price} Securely` : 'Select a Package'}
                   </Text>
                 </>
@@ -338,6 +347,7 @@ export const CashoutModal = ({ visible, onClose }) => {
   const wallet = useChatStore((s) => s.wallet);
   const withdrawCoins = useChatStore((s) => s.withdrawCoins);
   const fetchWalletBalance = useChatStore((s) => s.fetchWalletBalance);
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     if (visible) fetchWalletBalance();
@@ -362,21 +372,36 @@ export const CashoutModal = ({ visible, onClose }) => {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <BottomSheetContainer onClose={onClose} height={460}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : ''} style={{ width: '100%', flex: 1 }}>
-          <Text style={s.modalTitle}>Withdraw Coins</Text>
-          <Text style={s.modalSub}>Available: <Text style={s.modalSubBold}>{wallet.coins} coins</Text></Text>
-          <Text style={s.cashoutNote}>Rs 1 per coin will be credited within 3-5 business days.</Text>
-          <TextInput style={s.amountInput} placeholder="Bank Details or UPI ID" placeholderTextColor="#A0A0A0" value={bankOrUpiText} onChangeText={setBankOrUpiText} />
-          <TextInput style={s.amountInput} placeholder="Enter coins to withdraw" placeholderTextColor="#A0A0A0" keyboardType="numeric" value={cashoutInputText} onChangeText={setCashoutInputText} />
+          <Text style={[s.modalTitle, { color: theme.textPrimary }]}>Withdraw Coins</Text>
+          <Text style={[s.modalSub, { color: theme.textSecondary }]}>Available: <Text style={[s.modalSubBold, { color: theme.accent }]}>{wallet.coins} coins</Text></Text>
+          <View style={[s.cashoutNote, isDark && { backgroundColor: 'rgba(5, 150, 105, 0.15)' }]}>
+            <Text style={{ fontSize: 12, color: isDark ? '#34D399' : '#6B7280', lineHeight: 18 }}>Rs 1 per coin will be credited within 3-5 business days.</Text>
+          </View>
+          <TextInput
+            style={[s.amountInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
+            placeholder="Bank Details or UPI ID"
+            placeholderTextColor="#A0A0A0"
+            value={bankOrUpiText}
+            onChangeText={setBankOrUpiText}
+          />
+          <TextInput
+            style={[s.amountInput, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder, color: theme.textPrimary }]}
+            placeholder="Enter coins to withdraw"
+            placeholderTextColor="#A0A0A0"
+            keyboardType="numeric"
+            value={cashoutInputText}
+            onChangeText={setCashoutInputText}
+          />
           {cashoutInputText !== '' && parseInt(cashoutInputText, 10) > wallet.coins && (
             <Text style={s.cashoutError}>Insufficient coins.</Text>
           )}
           <TouchableOpacity
-            style={[s.modalActionBtn, s.cashoutBtn, (!cashoutInputText || parseInt(cashoutInputText, 10) > wallet.coins || !bankOrUpiText) && s.modalActionBtnDisabled]}
+            style={[s.modalActionBtn, { backgroundColor: isDark ? theme.accent : '#059669' }, (!cashoutInputText || parseInt(cashoutInputText, 10) > wallet.coins || !bankOrUpiText) && s.modalActionBtnDisabled]}
             onPress={handleWithdraw}
             disabled={!cashoutInputText || parseInt(cashoutInputText, 10) > wallet.coins || !bankOrUpiText}
           >
-            <Icon name="wallet-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
-            <Text style={s.modalActionBtnText}>Withdraw</Text>
+            <Icon name="wallet-outline" size={16} color={isDark ? '#0A0A0A' : '#FFF'} style={{ marginRight: 6 }} />
+            <Text style={[s.modalActionBtnText, { color: isDark ? '#0A0A0A' : '#FFF' }]}>Withdraw</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>
       </BottomSheetContainer>
@@ -389,6 +414,7 @@ export const VerifyModal = ({ visible, onClose }) => {
   const [selfieUrl, setSelfieUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const { theme, isDark } = useTheme();
 
   const handleVerify = async () => {
     if (!selfieUrl) { Alert.alert('Error', 'Please take a selfie to verify your identity.'); return; }
@@ -417,29 +443,29 @@ export const VerifyModal = ({ visible, onClose }) => {
       <BottomSheetContainer onClose={onClose} height={580}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : ''} style={{ width: '100%', flex: 1, paddingHorizontal: 20 }}>
           <View style={{ alignItems: 'center', marginVertical: 25 }}>
-            <View style={s.verifyIconCircle}>
-              <Icon name="shield-checkmark" size={42} color="#E94057" />
+            <View style={[s.verifyIconCircle, { backgroundColor: theme.iconWrapBackground }]}>
+              <Icon name="shield-checkmark" size={42} color={theme.accent} />
             </View>
-            <Text style={s.modalTitle}>Identity Verification</Text>
-            <Text style={s.verifyBonusText}>
+            <Text style={[s.modalTitle, { color: theme.textPrimary }]}>Identity Verification</Text>
+            <Text style={[s.verifyBonusText, { color: theme.textSecondary }]}>
               Get a 50-coin bonus credited to your account after successful verification!
             </Text>
           </View>
           
           <View style={{ alignItems: 'center', marginBottom: 20, width: '100%' }}>
-            <Text style={[s.inputLabel, { alignSelf: 'flex-start', marginBottom: 10 }]}>Selfie Verification</Text>
+            <Text style={[s.inputLabel, { color: theme.textSecondary, alignSelf: 'flex-start', marginBottom: 10 }]}>Selfie Verification</Text>
             {selfieUrl ? (
               <View style={{ alignItems: 'center' }}>
                 <Image
                   source={{ uri: selfieUrl }}
-                  style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#E94057', marginBottom: 10 }}
+                  style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: theme.accent, marginBottom: 10 }}
                 />
                 <TouchableOpacity 
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: '#F3F4F6' }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: theme.iconWrapBackground }}
                   onPress={() => setSelfieUrl(null)}
                 >
-                  <Icon name="camera-reverse-outline" size={14} color="#6B7280" />
-                  <Text style={{ color: '#6B7280', fontSize: 12, fontWeight: '600' }}>Retake Selfie</Text>
+                  <Icon name="camera-reverse-outline" size={14} color={theme.accent} />
+                  <Text style={{ color: theme.accent, fontSize: 12, fontWeight: '600' }}>Retake Selfie</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -458,31 +484,31 @@ export const VerifyModal = ({ visible, onClose }) => {
                   borderRadius: 18,
                   borderWidth: 2,
                   borderStyle: 'dashed',
-                  borderColor: '#D1D5DB',
+                  borderColor: isDark ? theme.accent : '#D1D5DB',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: '#F9FAFB',
+                  backgroundColor: theme.inputBackground,
                 }}
                 activeOpacity={0.8}
               >
-                <Icon name="camera" size={32} color="#9CA3AF" style={{ marginBottom: 6 }} />
-                <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>Tap to Take Selfie</Text>
+                <Icon name="camera" size={32} color={isDark ? theme.accent : '#9CA3AF'} style={{ marginBottom: 6 }} />
+                <Text style={{ fontSize: 13, color: theme.textSecondary, fontWeight: '600' }}>Tap to Take Selfie</Text>
               </TouchableOpacity>
             )}
           </View>
 
           <TouchableOpacity style={s.checkboxContainer} onPress={() => setAgreed(!agreed)} activeOpacity={0.8}>
-            <View style={[s.checkbox, agreed && s.checkboxActive]}>
-              {agreed && <Icon name="checkmark" size={14} color="#FFF" />}
+            <View style={[s.checkbox, { borderColor: isDark ? theme.accent : '#D1D5DB' }, agreed && [s.checkboxActive, { backgroundColor: theme.accent, borderColor: theme.accent }]]}>
+              {agreed && <Icon name="checkmark" size={14} color={isDark ? '#0A0A0A' : '#FFF'} />}
             </View>
-            <Text style={s.verifyDisclaimer}>I agree to the Terms of Service regarding identity verification.</Text>
+            <Text style={[s.verifyDisclaimer, { color: theme.textSecondary }]}>I agree to the Terms of Service regarding identity verification.</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[s.modalActionBtn, (!selfieUrl || !agreed || isLoading) && s.modalActionBtnDisabled]}
+            style={[s.modalActionBtn, { backgroundColor: theme.accent }, (!selfieUrl || !agreed || isLoading) && s.modalActionBtnDisabled]}
             onPress={handleVerify}
             disabled={!selfieUrl || !agreed || isLoading}
           >
-            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={s.modalActionBtnText}>Submit for Verification</Text>}
+            {isLoading ? <ActivityIndicator color={isDark ? '#0A0A0A' : '#fff'} /> : <Text style={[s.modalActionBtnText, { color: isDark ? '#0A0A0A' : '#fff' }]}>Submit for Verification</Text>}
           </TouchableOpacity>
         </KeyboardAvoidingView>
       </BottomSheetContainer>

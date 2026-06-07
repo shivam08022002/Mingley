@@ -10,6 +10,7 @@ import { BottomSheetContainer } from '../../../components/common/BottomSheetCont
 import { Button } from '../../../components/common/Button';
 import { useProfileSetupStore } from '../store/useProfileSetupStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const DismissKeyboard = ({ children }) => {
   if (Platform.OS === 'web') {
@@ -42,12 +43,12 @@ export const ProfileDetailsScreen = ({ navigation }) => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
+  const { theme, isDark } = useTheme();
 
   const handleSkip = () => {
     if (isAuthenticated) {
       navigation.navigate('Home');
     } else {
-      // During registration, maybe we don't allow skip or we navigate to next step
       navigation.navigate('GenderSelection');
     }
   };
@@ -66,7 +67,6 @@ export const ProfileDetailsScreen = ({ navigation }) => {
       Alert.alert('Validation Error', 'First name is required.');
       return;
     }
-    // If no last name provided, first name is used as full name (no block)
     if (!profileDetails.birthday) {
       Alert.alert('Validation Error', 'Please select your birthday.');
       return;
@@ -75,7 +75,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <DismissKeyboard>
         <View style={{ flex: 1 }}>
           <View style={styles.header} />
@@ -84,23 +84,23 @@ export const ProfileDetailsScreen = ({ navigation }) => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.content}
           >
-            <Text style={styles.title}>Profile details</Text>
+            <Text style={[styles.title, { color: theme.textPrimary }]}>Profile details</Text>
             
             <View style={styles.avatarContainer}>
               <TouchableOpacity onPress={handleSelectAvatar} activeOpacity={0.85}>
-                <View style={styles.avatarWrapper}>
+                <View style={[styles.avatarWrapper, { backgroundColor: isDark ? theme.cardBackground : '#F0F0F0' }]}>
                    {profileDetails.avatar ? (
                      <FastImage
                         source={{ uri: profileDetails.avatar }}
                         style={styles.avatar}
                      />
                    ) : (
-                     <View style={styles.placeholderAvatar}>
-                       <Icon name="person" size={54} color="#D0D0D0" />
+                     <View style={[styles.placeholderAvatar, { backgroundColor: isDark ? theme.cardBackground : '#F3F4F6' }]}>
+                       <Icon name="person" size={54} color={isDark ? '#444' : '#D0D0D0'} />
                      </View>
                    )}
-                   <View style={styles.cameraIcon}>
-                     <Icon name="camera" size={16} color="#FFFFFF" />
+                   <View style={[styles.cameraIcon, { backgroundColor: theme.accent, borderColor: theme.background }]}>
+                     <Icon name="camera" size={16} color={isDark ? '#0A0A0A' : '#FFFFFF'} />
                    </View>
                 </View>
               </TouchableOpacity>
@@ -121,12 +121,12 @@ export const ProfileDetailsScreen = ({ navigation }) => {
               />
 
               <TouchableOpacity 
-                style={styles.birthdayButton}
+                style={[styles.birthdayButton, { backgroundColor: theme.iconWrapBackground }]}
                 onPress={() => setDatePickerVisible(true)}
                 activeOpacity={0.8}
               >
-                <Icon name="calendar-outline" size={24} color="#E94057" style={styles.calendarIcon} />
-                <Text style={[styles.birthdayText, !profileDetails.birthday && styles.birthdayPlaceholder]}>
+                <Icon name="calendar-outline" size={24} color={theme.accent} style={styles.calendarIcon} />
+                <Text style={[styles.birthdayText, { color: theme.accent }, !profileDetails.birthday && { color: theme.accent }]}>
                   {profileDetails.birthday ? formatDisplayDate(profileDetails.birthday) : 'Choose birthday date'}
                 </Text>
               </TouchableOpacity>
@@ -137,7 +137,7 @@ export const ProfileDetailsScreen = ({ navigation }) => {
               onPress={handleConfirm}
               style={styles.confirmButton}
               textStyle={styles.buttonText}
-              variant="solid"
+              variant="primary"
             />
           </KeyboardAvoidingView>
         </View>
@@ -155,13 +155,13 @@ export const ProfileDetailsScreen = ({ navigation }) => {
         <BottomSheetContainer onClose={() => setAvatarModalVisible(false)} height={540}>
           <View style={{ flex: 1, width: '100%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={styles.modalTitle}>Choose Profile Picture</Text>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Choose Profile Picture</Text>
             </View>
-            <Text style={styles.modalSubtitleText}>Select a premium portrait style to set your primary avatar</Text>
+            <Text style={[styles.modalSubtitleText, { color: theme.textSecondary }]}>Select a premium portrait style to set your primary avatar</Text>
 
             {/* Boy Avatars */}
-            <Text style={styles.genderSectionHeader}>Boy Avatars 🙋‍♂️</Text>
-            <View style={styles.avatarSectionBackground}>
+            <Text style={[styles.genderSectionHeader, { color: theme.accent }]}>Boy Avatars 🙋‍♂️</Text>
+            <View style={[styles.avatarSectionBackground, { backgroundColor: theme.iconWrapBackground, borderColor: isDark ? theme.cardBorder : '#FFE3E7' }]}>
               <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false} 
@@ -177,16 +177,16 @@ export const ProfileDetailsScreen = ({ navigation }) => {
                     }}
                     activeOpacity={0.8}
                   >
-                    <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
-                    <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
+                    <FastImage source={{ uri: choice.url }} style={[styles.avatarSelectionImage, { borderColor: isDark ? theme.actionButtonBorder : '#F0F0F0' }]} />
+                    <Text style={[styles.avatarSelectionLabel, { color: theme.textPrimary }]}>{choice.label}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
 
             {/* Girl Avatars */}
-            <Text style={styles.genderSectionHeader}>Girl Avatars 🙋‍♀️</Text>
-            <View style={styles.avatarSectionBackground}>
+            <Text style={[styles.genderSectionHeader, { color: theme.accent }]}>Girl Avatars 🙋‍♀️</Text>
+            <View style={[styles.avatarSectionBackground, { backgroundColor: theme.iconWrapBackground, borderColor: isDark ? theme.cardBorder : '#FFE3E7' }]}>
               <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false} 
@@ -202,8 +202,8 @@ export const ProfileDetailsScreen = ({ navigation }) => {
                     }}
                     activeOpacity={0.8}
                   >
-                    <FastImage source={{ uri: choice.url }} style={styles.avatarSelectionImage} />
-                    <Text style={styles.avatarSelectionLabel}>{choice.label}</Text>
+                    <FastImage source={{ uri: choice.url }} style={[styles.avatarSelectionImage, { borderColor: isDark ? theme.actionButtonBorder : '#F0F0F0' }]} />
+                    <Text style={[styles.avatarSelectionLabel, { color: theme.textPrimary }]}>{choice.label}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -218,7 +218,6 @@ export const ProfileDetailsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'flex-end',
@@ -228,7 +227,6 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
   content: {
@@ -239,7 +237,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 34,
     fontWeight: 'bold',
-    color: '#000000',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
     marginBottom: 40,
   },
@@ -251,7 +248,6 @@ const styles = StyleSheet.create({
     width: 130,
     height: 140,
     borderRadius: 40,
-    backgroundColor: '#F0F0F0',
     position: 'relative',
   },
   avatar: {
@@ -263,7 +259,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 40,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -274,11 +269,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E94057',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#FFFFFF',
   },
   formContainer: {
     gap: SPACING.m,
@@ -287,7 +280,6 @@ const styles = StyleSheet.create({
   birthdayButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF0F3',
     height: 60,
     borderRadius: 16,
     paddingHorizontal: SPACING.m,
@@ -299,70 +291,38 @@ const styles = StyleSheet.create({
   birthdayText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
-  },
-  birthdayPlaceholder: {
-    color: '#E94057',
   },
   confirmButton: {
     marginTop: 'auto',
     marginBottom: 60,
     borderRadius: 16,
     height: 52,
-    backgroundColor: '#E94057',
   },
   buttonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111',
   },
   modalSubtitleText: {
     fontSize: 13,
-    color: '#777',
     marginBottom: 20,
     lineHeight: 18,
   },
   genderSectionHeader: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#E94057',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 10,
   },
   avatarSectionBackground: {
-    backgroundColor: '#FFF5F6',
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: '#FFE3E7',
     paddingVertical: 14,
     paddingHorizontal: 8,
     marginBottom: 20,
@@ -383,16 +343,10 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: '#F0F0F0',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
   },
   avatarSelectionLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#444',
     marginTop: 8,
     textAlign: 'center',
   },

@@ -12,19 +12,15 @@ import {
   MessagesTabIcon,
   ProfileTabIcon,
 } from './TabIcons';
+import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
-// Home indicator bar (black pill at very bottom)
-const HomeIndicator = () => (
-  <View style={styles.homeIndicatorWrapper}>
-    <Svg width={134} height={5} viewBox="0 0 134 5" fill="none">
-      <Rect width="134" height="5" rx="2.5" fill="black" />
-    </Svg>
-  </View>
-);
+
 
 export const BottomTabNavigator = () => {
+  const { theme } = useTheme();
+
   return (
     <View style={{ flex: 1 }}>
       <Tab.Navigator
@@ -36,15 +32,17 @@ export const BottomTabNavigator = () => {
             if (route.name === 'Messages') return <MessagesTabIcon focused={focused} />;
             if (route.name === 'Profile')  return <ProfileTabIcon focused={focused} />;
           },
-          tabBarActiveTintColor: '#E94057',
-          tabBarInactiveTintColor: '#ADAFBB',
+          tabBarActiveTintColor: theme.iconActive,
+          tabBarInactiveTintColor: theme.iconInactive,
           tabBarShowLabel: false,
           tabBarStyle: {
-            backgroundColor: '#FFFFFF',
-            borderTopWidth: 0,
-            elevation: 12,
+            backgroundColor: theme.navBackground,
+            borderTopWidth: 1,
+            borderTopColor: theme.isDark ? '#333333' : '#E2E8F0',
+            borderBottomWidth: 0,
+            elevation: theme.isDark ? 0 : 12,
             shadowColor: '#000',
-            shadowOpacity: 0.08,
+            shadowOpacity: theme.isDark ? 0 : 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: -2 },
             height: Platform.OS === 'ios' ? 82 : 68,
@@ -59,16 +57,11 @@ export const BottomTabNavigator = () => {
         <Tab.Screen name="Profile"   component={ProfileScreen} />
       </Tab.Navigator>
 
-      {/* Home indicator pill at the very bottom */}
-      <HomeIndicator />
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  homeIndicatorWrapper: {
-    alignItems: 'center',
-    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
-    backgroundColor: '#FFFFFF',
-  },
+
 });

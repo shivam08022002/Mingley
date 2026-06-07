@@ -4,9 +4,10 @@ import {
   Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FAIcon from 'react-native-vector-icons/FontAwesome5';
-import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
+import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { SwipeCard } from '../components/SwipeCard';
 import { ActionButtons } from '../components/ActionButtons';
 import { FilterSheet } from '../components/FilterSheet';
@@ -14,13 +15,13 @@ import { SuperchatModal } from '../components/SuperchatModal';
 import { useFilterStore } from '../store/useFilterStore';
 import { useDiscoverStore } from '../store/useDiscoverStore';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
 
 // ─── Component ───────────────────────────────────────────────────────────────
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
-
 import { useProfileStore } from '../../profile/store/useProfileStore';
 
 const areFiltersEqual = (f1, f2) => {
@@ -41,6 +42,7 @@ const areFiltersEqual = (f1, f2) => {
 
 export const DiscoverScreen = React.memo(() => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const filters = useFilterStore();
   const fetchProfile = useProfileStore((s) => s.fetchProfile);
   const profile = useProfileStore((s) => s.profile);
@@ -173,11 +175,11 @@ export const DiscoverScreen = React.memo(() => {
 
   const TopCards = useMemo(() => {
     if (isLoading && profiles.length === 0) {
-      return <ActivityIndicator size="large" color="#E94057" />;
+      return <ActivityIndicator size="large" color={theme.accent} />;
     }
 
     if (profiles.length === 0 && !isLoading) {
-      return <Text style={styles.noMoreText}>No profiles match your filters 🙈</Text>;
+      return <Text style={[styles.noMoreText, { color: theme.textSecondary }]}>No profiles match your filters 🙈</Text>;
     }
 
     return profiles.slice(0, 2).map((user, index) => (
@@ -194,31 +196,56 @@ export const DiscoverScreen = React.memo(() => {
         onPress={index === 0 ? () => navigation.navigate('UserProfile', { user }) : undefined}
       />
     ));
-  }, [profiles, isLoading, cardsContainerHeight, handleSwipeLeft, handleSwipeRight, handleSwipeUp, navigation]);
+  }, [profiles, isLoading, cardsContainerHeight, handleSwipeLeft, handleSwipeRight, handleSwipeUp, navigation, theme]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Subtle Golden Background Glow in Dark Mode */}
+      {theme.isDark && (
+        <LinearGradient
+          colors={['rgba(0,0,0,0)', 'rgba(179, 145, 112, 0.25)', 'rgba(0,0,0,0)']}
+          locations={[0, 0.45, 0.9]}
+          style={StyleSheet.absoluteFillObject}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          pointerEvents="none"
+        />
+      )}
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.crownButton}
+          style={[styles.crownButton, {
+            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder,
+            backgroundColor: theme.cardBackground,
+          }]}
           onPress={() => navigation.navigate('SubscriptionPlans')}
           activeOpacity={0.8}
         >
-          <FAIcon name="crown" size={20} color={COLORS.primary} />
+          <FAIcon name="crown" size={20} color={theme.crownIcon} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Discover</Text>
-          <Text style={styles.headerSubtitle}>{displayLocation}</Text>
+          <Text style={[
+            styles.headerTitle,
+            { color: theme.accent },
+            theme.isDark && { fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', fontWeight: 'bold' }
+          ]}>Discover</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>{displayLocation}</Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.headerButton, hasActive && styles.headerButtonActive]}
+          style={[
+            styles.headerButton,
+            { 
+              borderColor: hasActive ? theme.accent : (theme.isDark ? theme.accent : theme.actionButtonBorder), 
+              backgroundColor: theme.cardBackground,
+              borderRadius: theme.isDark ? 26 : 16
+            },
+          ]}
           onPress={() => setFilterVisible(true)}
         >
-          <Icon name="options-outline" size={24} color="#E94057" />
-          {hasActive && <View style={styles.filterDot} />}
+          <Icon name="options-outline" size={24} color={theme.filterIcon} />
+          {hasActive && <View style={[styles.filterDot, { backgroundColor: theme.accent }]} />}
         </TouchableOpacity>
       </View>
 
@@ -254,47 +281,38 @@ export const DiscoverScreen = React.memo(() => {
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingHorizontal: SPACING.xl, paddingTop: SPACING.m,
   },
   headerButton: {
     width: 52, height: 52, borderRadius: 16,
-    borderWidth: 1, borderColor: '#F0F0F0',
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
     justifyContent: 'center', alignItems: 'center',
   },
-  headerButtonActive: { borderColor: '#E94057' },
   crownButton: {
     width: 52,
     height: 52,
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: '#F0F0F0',
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    // shadowColor: COLORS.primary,
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.15,
-    // shadowRadius: 4,
     elevation: 3,
   },
   filterDot: {
     position: 'absolute', top: 10, right: 10,
-    width: 8, height: 8, borderRadius: 4, backgroundColor: '#E94057',
+    width: 8, height: 8, borderRadius: 4,
   },
   headerTitleContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { ...TYPOGRAPHY.h2, color: '#1F1F1F', marginBottom: 2, fontSize: 28, fontWeight: '600', fontFamily: TITLE_MED },
-  headerSubtitle: { ...TYPOGRAPHY.caption, color: '#7A7A7A', fontFamily: TITLE_FONT },
+  headerTitle: { ...TYPOGRAPHY.h2, marginBottom: 2, fontSize: 28, fontWeight: '600', fontFamily: TITLE_MED },
+  headerSubtitle: { ...TYPOGRAPHY.caption, fontFamily: TITLE_FONT },
   cardsContainer: {
     flex: 1, marginTop: 8, marginBottom: 14,
     justifyContent: 'center', alignItems: 'center',
   },
   noMoreText: {
-    ...TYPOGRAPHY.body, color: '#A0A0A0',
+    ...TYPOGRAPHY.body,
     textAlign: 'center', paddingHorizontal: 32,
   },
 });
-

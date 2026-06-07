@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useAuthStore } from './useAuthStore';
+import { useProfileStore } from '../features/profile/store/useProfileStore';
 import { walletService, giftService, superchatService, chatService } from '../services/apiServices';
 
 /**
@@ -295,8 +296,8 @@ export const useChatStore = create((set, get) => ({
       const response = await chatService.getMessages(chatId);
       const rawMessages = response.data?.messages ?? response.messages ?? [];
       
-      // Get current user ID from either auth store or chat store
-      const currentUserId = get().user?.id || get().user?._id;
+      // Get current user ID from either auth store, chat store, or profile store
+      const currentUserId = get().user?.id || get().user?._id || useProfileStore.getState().profile?.id || useProfileStore.getState().profile?._id;
       
       const mappedMessages = rawMessages
         .filter(m => !m.content?.startsWith('Sent a ') && !m.text?.startsWith('Sent a '))
@@ -400,7 +401,7 @@ export const useChatStore = create((set, get) => ({
     if (rawMessage.content?.startsWith('Sent a ') || rawMessage.text?.startsWith('Sent a ')) {
       return;
     }
-    const currentUserId = get().user?.id || get().user?._id;
+    const currentUserId = get().user?.id || get().user?._id || useProfileStore.getState().profile?.id || useProfileStore.getState().profile?._id;
     const mapped = {
       ...rawMessage,
       id: rawMessage.id || rawMessage._id,

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { navigationRef } from '../navigation';
+import { navigationRef } from '../navigation/navigationRef';
 
 let toastTimeout = null;
 
