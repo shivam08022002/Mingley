@@ -28,12 +28,77 @@ import { useSubscriptionStore } from '../../subscription/store/useSubscriptionSt
 let createAgoraRtcEngine, RtcSurfaceView, ChannelProfileType, ClientRoleType;
 
 if (Platform.OS !== 'web') {
-  const req = require;
-  const Agora = req('react-native-agora');
-  createAgoraRtcEngine = Agora.createAgoraRtcEngine;
-  RtcSurfaceView       = Agora.RtcSurfaceView;
-  ChannelProfileType   = Agora.ChannelProfileType;
-  ClientRoleType       = Agora.ClientRoleType;
+  try {
+    const req = require;
+    const Agora = req('react-native-agora');
+    createAgoraRtcEngine = Agora.createAgoraRtcEngine;
+    RtcSurfaceView       = Agora.RtcSurfaceView;
+    ChannelProfileType   = Agora.ChannelProfileType;
+    ClientRoleType       = Agora.ClientRoleType;
+  } catch (e) {
+    console.warn('[CallingScreen] Agora SDK not found. Voice/Video calling will be mocked.', e);
+  }
+}
+
+// Fallback mocks for web or when react-native-agora is not installed/loaded
+if (!ChannelProfileType) {
+  ChannelProfileType = {
+    ChannelProfileCommunication: 0,
+  };
+}
+if (!ClientRoleType) {
+  ClientRoleType = {
+    ClientRoleBroadcaster: 1,
+  };
+}
+if (!RtcSurfaceView) {
+  RtcSurfaceView = View;
+}
+if (!createAgoraRtcEngine) {
+  createAgoraRtcEngine = () => ({
+    initialize: () => {
+      console.log('[Agora Mock] initialize called');
+    },
+    enableAudio: () => {
+      console.log('[Agora Mock] enableAudio called');
+    },
+    enableVideo: () => {
+      console.log('[Agora Mock] enableVideo called');
+    },
+    startPreview: () => {
+      console.log('[Agora Mock] startPreview called');
+    },
+    addListener: (event, callback) => {
+      console.log(`[Agora Mock] addListener: ${event}`);
+      if (event === 'onJoinChannelSuccess') {
+        setTimeout(() => callback({ channelId: 'mock-channel' }, 0), 1000);
+      }
+      if (event === 'onUserJoined') {
+        setTimeout(() => callback({ channelId: 'mock-channel' }, 12345), 3000);
+      }
+    },
+    setEnableSpeakerphone: (enabled) => {
+      console.log(`[Agora Mock] setEnableSpeakerphone: ${enabled}`);
+    },
+    joinChannel: (token, channel, uid, options) => {
+      console.log(`[Agora Mock] joinChannel: ${channel}`);
+    },
+    muteLocalAudioStream: (muted) => {
+      console.log(`[Agora Mock] muteLocalAudioStream: ${muted}`);
+    },
+    muteLocalVideoStream: (muted) => {
+      console.log(`[Agora Mock] muteLocalVideoStream: ${muted}`);
+    },
+    switchCamera: () => {
+      console.log('[Agora Mock] switchCamera called');
+    },
+    leaveChannel: () => {
+      console.log('[Agora Mock] leaveChannel called');
+    },
+    release: () => {
+      console.log('[Agora Mock] release called');
+    },
+  });
 }
 
 const CALLER_IMAGE_FALLBACK =
