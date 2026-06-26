@@ -1,5 +1,5 @@
 import { HubConnectionBuilder, HttpTransportType, LogLevel } from '@microsoft/signalr';
-import { safeStorage } from './api';
+import { safeStorage, BASE_URL } from './api';
 import { useChatStore } from '../store/useChatStore';
 import { useMatchesStore } from '../features/matches/store/useMatchesStore';
 import { useToastStore } from '../store/useToastStore';
@@ -21,7 +21,7 @@ class SignalRService {
       }
 
       this.connection = new HubConnectionBuilder()
-        .withUrl(`https://mingley-backend-v2.onrender.com/hubs/chat?access_token=${token}`, {
+        .withUrl(`${BASE_URL}/hubs/chat?access_token=${token}`, {
           skipNegotiation: true,
           transport: HttpTransportType.WebSockets,
         })
@@ -190,4 +190,3 @@ class SignalRService {
 }
 
 export const signalRService = new SignalRService();
-

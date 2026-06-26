@@ -31,7 +31,7 @@ const safeStorage = {
   }
 };
 
-const BASE_URL = 'https://mingley-backend-v2.onrender.com';
+export const BASE_URL = 'http://139.59.80.82';
 
 const api = axios.create({
   baseURL: BASE_URL,
