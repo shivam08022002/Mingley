@@ -9,7 +9,8 @@
       "bundleIdentifier": "com.shivam.mingley"
     },
     "android": {
-      "package": "com.shivam.mingley"
+      "package": "com.shivam.mingley",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
