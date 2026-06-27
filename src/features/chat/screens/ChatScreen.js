@@ -5,6 +5,7 @@ import {
   Dimensions, Modal, Alert, ActionSheetIOS, ActivityIndicator,
   ScrollView, TouchableWithoutFeedback
 } from 'react-native';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -31,6 +32,7 @@ import { userService } from '../../../services/apiServices';
 // ─── Main component ───────────────────────────────────────────────────────────
 export const ChatScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
+  usePreventScreenCapture();
   const routeUser = route?.params?.user || {};
   const initialChatId = route?.params?.chatId;
 
@@ -493,7 +495,7 @@ export const ChatScreen = ({ navigation, route }) => {
                     <TouchableOpacity
                       key={gift.id}
                       style={[
-                        styles.giftCardHorizontal, 
+                        styles.giftCardHorizontal,
                         theme.isDark && { backgroundColor: theme.surface, borderColor: theme.actionButtonBorder },
                         (!afford || sendingGift) && [styles.giftCardDisabled, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }]
                       ]}
@@ -531,9 +533,9 @@ export const ChatScreen = ({ navigation, route }) => {
             <Text style={[styles.modalSubBold, { color: theme.textPrimary }]}>{wallet.coins} coins</Text>
           </View>
           <TextInput style={[styles.amountInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.inputBorder }]} placeholder="Enter amount" placeholderTextColor={theme.textSecondary} keyboardType="numeric" value={coinInputText} onChangeText={setCoinInputText} />
-          <TouchableOpacity 
-            style={[styles.modalActionBtn, (!coinInputText || sendingCoins) && styles.modalActionBtnDisabled]} 
-            onPress={handleTransferCoins} 
+          <TouchableOpacity
+            style={[styles.modalActionBtn, (!coinInputText || sendingCoins) && styles.modalActionBtnDisabled]}
+            onPress={handleTransferCoins}
             disabled={!coinInputText || sendingCoins}
           >
             {sendingCoins ? (
@@ -634,17 +636,17 @@ export const ChatScreen = ({ navigation, route }) => {
             Video calls are only available for Gold and higher tier members. Upgrade now to connect!
           </Text>
           <View style={styles.centeredModalButtonRow}>
-            <TouchableOpacity 
-              style={[styles.centeredModalBtn, styles.centeredModalBtnCancel]} 
+            <TouchableOpacity
+              style={[styles.centeredModalBtn, styles.centeredModalBtnCancel]}
               onPress={() => setUpgradeModalVisible(false)}
             >
               <Text style={styles.centeredModalBtnCancelText}>Back</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.centeredModalBtn, styles.centeredModalBtnAction]} 
-              onPress={() => { 
-                setUpgradeModalVisible(false); 
-                navigation.navigate('SubscriptionPlans'); 
+            <TouchableOpacity
+              style={[styles.centeredModalBtn, styles.centeredModalBtnAction]}
+              onPress={() => {
+                setUpgradeModalVisible(false);
+                navigation.navigate('SubscriptionPlans');
               }}
             >
               <Text style={styles.centeredModalBtnActionText}>Upgrade</Text>
@@ -683,11 +685,11 @@ export const ChatScreen = ({ navigation, route }) => {
             inverted={true}
             onContentSizeChange={scrollToEnd}
             ListHeaderComponent={
-            <View style={styles.dateSeparator}>
-              <View style={[styles.line, { backgroundColor: theme.sectionDivider }]} />
-              <Text style={[styles.dateText, { color: theme.textSecondary }]}>Today</Text>
-              <View style={[styles.line, { backgroundColor: theme.sectionDivider }]} />
-            </View>
+              <View style={styles.dateSeparator}>
+                <View style={[styles.line, { backgroundColor: theme.sectionDivider }]} />
+                <Text style={[styles.dateText, { color: theme.textSecondary }]}>Today</Text>
+                <View style={[styles.line, { backgroundColor: theme.sectionDivider }]} />
+              </View>
             }
           />
         )}

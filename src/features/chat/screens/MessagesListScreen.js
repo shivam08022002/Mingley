@@ -64,6 +64,7 @@ export const MessagesListScreen = ({ navigation }) => {
     respondToSuperchat,
   } = useChatStore();
   const currentUser = useChatStore((s) => s.user);
+  const pendingSuperchatsCount = receivedSuperchats.filter((s) => !s.isResponded).length;
 
   const handleShowCallHistory = async () => {
     setCallHistoryModalVisible(true);
@@ -107,12 +108,12 @@ export const MessagesListScreen = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      if (activeTab === 'messages') {
-        loadChatsData();
-      } else {
+      loadChatsData();
+      fetchReceivedSuperchats().catch((e) => console.error('BG fetch superchats error:', e));
+      if (activeTab === 'superchat') {
         loadSuperchatsData();
       }
-    }, [activeTab, loadChatsData, loadSuperchatsData])
+    }, [activeTab, loadChatsData, loadSuperchatsData, fetchReceivedSuperchats])
   );
 
   const showToast = useToastStore((s) => s.showToast);
@@ -144,7 +145,14 @@ export const MessagesListScreen = ({ navigation }) => {
           style={[styles.tabButton, activeTab === 'superchat' && [styles.tabButtonActive, { backgroundColor: theme.background }]]}
           onPress={() => setActiveTab('superchat')}
         >
-          <Text style={[styles.tabText, { color: theme.textSecondary }, activeTab === 'superchat' && { color: theme.accent }]}>Superchat</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[styles.tabText, { color: theme.textSecondary }, activeTab === 'superchat' && { color: theme.accent }]}>Superchat</Text>
+            {pendingSuperchatsCount > 0 && (
+              <View style={[styles.badgeContainer, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.badgeText, { color: theme.isDark ? '#131314' : '#FFFFFF' }]}>{pendingSuperchatsCount}</Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -178,7 +186,24 @@ export const MessagesListScreen = ({ navigation }) => {
             style={[styles.subTabButton, { borderColor: theme.actionButtonBorder }, superchatTab === 'received' && { backgroundColor: theme.accent, borderColor: theme.accent }]}
             onPress={() => setSuperchatTab('received')}
           >
-            <Text style={[styles.subTabText, { color: theme.textSecondary }, superchatTab === 'received' && { color: '#FFFFFF' }]}>Received</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.subTabText, { color: theme.textSecondary }, superchatTab === 'received' && { color: '#FFFFFF' }]}>Received</Text>
+              {pendingSuperchatsCount > 0 && (
+                <View style={[
+                  styles.subBadgeContainer,
+                  superchatTab === 'received'
+                    ? { backgroundColor: theme.isDark ? '#131314' : '#FFFFFF' }
+                    : { backgroundColor: theme.accent }
+                ]}>
+                  <Text style={[
+                    styles.subBadgeText,
+                    superchatTab === 'received'
+                      ? { color: theme.accent }
+                      : { color: theme.isDark ? '#131314' : '#FFFFFF' }
+                  ]}>{pendingSuperchatsCount}</Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.subTabButton, { borderColor: theme.actionButtonBorder }, superchatTab === 'sent' && { backgroundColor: theme.accent, borderColor: theme.accent }]}
@@ -201,8 +226,8 @@ export const MessagesListScreen = ({ navigation }) => {
       'Type your response to accept this Superchat:',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Send', 
+        {
+          text: 'Send',
           onPress: async (text) => {
             if (!text) return;
             try {
@@ -220,10 +245,10 @@ export const MessagesListScreen = ({ navigation }) => {
 
   const renderSuperchatItem = ({ item }) => {
     const isReceived = superchatTab === 'received';
-    const user = isReceived 
+    const user = isReceived
       ? { fullName: item.fromUserName, avatar: item.fromUserAvatar, id: item.fromUserId }
       : { fullName: item.toUserName, avatar: item.toUserAvatar, id: item.toUserId };
-    
+
     // Check if the user has already responded
     const isResponded = item.isResponded;
 
@@ -304,17 +329,17 @@ export const MessagesListScreen = ({ navigation }) => {
                 const isVideo = item.callType === 'video';
                 return (
                   <View style={[styles.txItem, { borderBottomColor: theme.sectionDivider }]}>
-                    <FastImage 
-                      source={{ uri: otherAvatar }} 
-                      style={styles.callHistoryAvatar} 
+                    <FastImage
+                      source={{ uri: otherAvatar }}
+                      style={styles.callHistoryAvatar}
                     />
                     <View style={styles.txLeft}>
                       <Text style={[styles.txTitle, { color: theme.textPrimary }]}>{decodeEmoji(otherName)}</Text>
                       <View style={styles.callSubRow}>
-                        <Icon 
-                          name={isOutgoing ? 'arrow-up-outline' : 'arrow-down-outline'} 
-                          size={12} 
-                          color={isOutgoing ? '#E94057' : '#059669'} 
+                        <Icon
+                          name={isOutgoing ? 'arrow-up-outline' : 'arrow-down-outline'}
+                          size={12}
+                          color={isOutgoing ? '#E94057' : '#059669'}
                           style={{ marginRight: 4 }}
                         />
                         <Text style={styles.txDate}>
@@ -324,10 +349,10 @@ export const MessagesListScreen = ({ navigation }) => {
                     </View>
                     <View style={styles.txRight}>
                       <View style={styles.callTypeAndStatus}>
-                        <Icon 
-                          name={isVideo ? 'videocam-outline' : 'call-outline'} 
-                          size={16} 
-                          color="#666" 
+                        <Icon
+                          name={isVideo ? 'videocam-outline' : 'call-outline'}
+                          size={16}
+                          color="#666"
                           style={{ marginRight: 6 }}
                         />
                         <Text style={[
@@ -675,6 +700,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#DC2626',
     fontFamily: TITLE_MED,
+  },
+  badgeContainer: {
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    marginLeft: 6,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  subBadgeContainer: {
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  subBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
 

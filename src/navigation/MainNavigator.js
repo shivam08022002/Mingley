@@ -22,7 +22,7 @@ const Stack = createNativeStackNavigator();
 
 export const MainNavigator = () => {
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       initialRouteName="Home"
       screenOptions={{ headerShown: false }}
     >
@@ -35,7 +35,10 @@ export const MainNavigator = () => {
       <Stack.Screen 
         name="Chat" 
         component={ChatScreen} 
-        options={{ animation: 'slide_from_bottom' }} 
+        options={{ 
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+        }} 
       />
       <Stack.Screen name="Calling" component={CallingScreen} />
 
