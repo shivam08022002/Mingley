@@ -256,9 +256,9 @@ export const userService = {
     }
   },
 
-  updateCoverPhoto: async (url) => {
+updateCoverPhoto: async (url) => {
     try {
-      const response = await api.post('/v1/users/me/cover-photo', { url });
+      const response = await api.post('/v1/users/me/cover-photo', { coverPhotoUrl: url });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -595,7 +595,6 @@ export const subscriptionService = {
     }
   },
 };
-
 export const callService = {
   initiateCall: async (targetId, callType) => {
     try {
@@ -651,6 +650,15 @@ export const callService = {
     }
   },
 
+  getCallStatus: async (callId) => {
+    try {
+      const response = await api.get(`/v1/calls/${callId}/status`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   getCallHistory: async () => {
     try {
       const response = await api.get('/v1/calls/history');
@@ -664,21 +672,13 @@ export const callService = {
 export const notificationService = {
   updateFcmToken: async (token) => {
     try {
-      const response = await api.post('/v1/notifications/fcm-token', { token });
+      const response = await api.put('/v1/users/me/fcm-token', { token });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
   },
 
-  testPush: async (title, body) => {
-    try {
-      const response = await api.post('/v1/notifications/test-push', { title, body });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
+  // NOTE: there is no /v1/notifications/test-push endpoint on the backend.
+  // Remove any calls to a `testPush` method until that endpoint exists server-side.
 };
-
-

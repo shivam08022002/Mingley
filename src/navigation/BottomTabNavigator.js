@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet, Platform } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DiscoverScreen } from '../features/discover/screens/DiscoverScreen';
 import { MatchesScreen } from '../features/matches/screens/MatchesScreen';
 import { MessagesListScreen } from '../features/chat/screens/MessagesListScreen';
@@ -16,10 +17,14 @@ import { useTheme } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
-
-
 export const BottomTabNavigator = () => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // Dynamic bottom padding: if the device has a bottom inset (like notch or display buttons), 
+  // use it. Otherwise, fallback to a sensible padding of 12 for older/flat screen styling.
+  const bottomPadding = insets.bottom > 0 ? insets.bottom : 12;
+  const tabHeight = 60 + bottomPadding;
 
   return (
     <View style={{ flex: 1 }}>
@@ -45,8 +50,8 @@ export const BottomTabNavigator = () => {
             shadowOpacity: theme.isDark ? 0 : 0.08,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: -2 },
-            height: Platform.OS === 'ios' ? 82 : 68,
-            paddingBottom: Platform.OS === 'ios' ? 12 : 8,
+            height: tabHeight,
+            paddingBottom: bottomPadding,
             paddingTop: 14,
           },
         })}
@@ -56,8 +61,6 @@ export const BottomTabNavigator = () => {
         <Tab.Screen name="Messages"  component={MessagesListScreen} />
         <Tab.Screen name="Profile"   component={ProfileScreen} />
       </Tab.Navigator>
-
-
     </View>
   );
 };

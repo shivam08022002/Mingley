@@ -7,6 +7,7 @@ import {
   Modal,
   Dimensions,
   Platform,
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
@@ -91,7 +92,10 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
         onClose={onClose}
         containerStyle={styles.containerStyle}
       >
-
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
           <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>Birthday</Text>
 
           {/* Year navigation */}
@@ -167,7 +171,8 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
             colors={isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#E94057']}
             style={styles.saveButton}
           />
-        </BottomSheetContainer>
+        </ScrollView>
+      </BottomSheetContainer>
     </Modal>
   );
 };

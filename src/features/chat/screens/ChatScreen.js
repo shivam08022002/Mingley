@@ -6,7 +6,6 @@ import {
   ScrollView, TouchableWithoutFeedback
 } from 'react-native';
 import { usePreventScreenCapture } from 'expo-screen-capture';
-
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 import { Image as FastImage } from 'expo-image';

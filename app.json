@@ -6,15 +6,41 @@
     "orientation": "portrait",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.shivam.mingley"
+      "bundleIdentifier": "com.shivam.mingley",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Mingley uses your location to show you people nearby and calculate distance."
+      }
     },
     "android": {
       "package": "com.shivam.mingley",
-      "usesCleartextTraffic": true
+      "googleServicesFile": "./google-services.json",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
     "web": {
       "bundler": "metro",
       "output": "single"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Mingley uses your location to show you people nearby and calculate distance."
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "48ea7664-c47b-49da-a246-792fe58a2a53"
+      }
     }
   }
 }

@@ -2,6 +2,7 @@ package com.shivam.mingley
 
 import android.os.Build
 import android.os.Bundle
+import com.shivam.mingley.R
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

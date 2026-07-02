@@ -4,9 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
-
+import { registerForPushNotificationsAsync, openNotificationSettings } from '../../../services/pushNotificationService';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { notificationService } from '../../../services/apiServices';
 import { useToastStore } from '../../../store/useToastStore';
 import { useTheme } from '../../../theme/ThemeContext';
 
@@ -30,39 +29,36 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
   const handleEnableNotifications = async () => {
     setEnabling(true);
     try {
-      // 1. Generate realistic mock Firebase FCM token
-      const mockToken = `fcm_token_shivam_${Math.random().toString(36).substring(2, 15)}_${Date.now().toString(36)}`;
-      
-      // Validate that the token is not empty/null before sending
-      if (!mockToken || mockToken.trim() === '') {
-        showToast({ title: 'Invalid FCM Token', text: 'The device notification token is invalid. Please try again.', type: 'error' });
+      const result = await registerForPushNotificationsAsync();
+
+      if (!result.success) {
+        if (result.reason === 'permission_denied_permanently') {
+          setEnabling(false);
+          Alert.alert(
+            'Enable Notifications',
+            'You previously denied notification permission. To receive alerts for matches and messages, please enable notifications for Mingley in your device settings.',
+            [
+              { text: 'Not Now', style: 'cancel', onPress: () => setTimeout(handleFinishOnboarding, 300) },
+              { text: 'Open Settings', onPress: () => openNotificationSettings() },
+            ]
+          );
+          return;
+        }
+        if (result.reason === 'permission_denied') {
+          showToast({ title: 'Permission Needed', text: 'Enable notifications in your device settings to receive alerts.', type: 'error' });
+        } else {
+          showToast({ title: 'Notification Error', text: 'Could not register for notifications. You can try again from Settings.', type: 'error' });
+        }
         setEnabling(false);
+        setTimeout(handleFinishOnboarding, 1200);
         return;
       }
 
-      // 2. Post token to endpoint /v1/notifications/fcm-token
-      await notificationService.updateFcmToken(mockToken);
-      
-      // 3. Send test push notification to endpoint /v1/notifications/test-push
-      await notificationService.testPush(
-        "Welcome to Mingley! 💖",
-        "Awesome! Push notifications are successfully enabled. 🚀 Keep matching!"
-      );
-      
-      // 4. Show success toast then proceed
-      showToast({ title: 'Notifications Enabled! 🔔', text: 'A test push notification has been sent to your device.', type: 'success' });
+      showToast({ title: 'Notifications Enabled! 🔔', text: 'You\'ll now receive real notifications from Mingley.', type: 'success' });
       setTimeout(handleFinishOnboarding, 1800);
     } catch (error) {
       console.error("Enable push notification error:", error);
-      // Check if error is related to invalid FCM token
-      const errMsg = error?.message || error?.error || (typeof error === 'string' ? error : '');
-      const isTokenError = errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('fcm') || errMsg.toLowerCase().includes('invalid');
-      if (isTokenError) {
-        showToast({ title: 'Invalid FCM Token', text: 'The device notification token is invalid or expired. Please try again.', type: 'error' });
-      } else {
-        showToast({ title: 'Notification Error', text: errMsg || 'Failed to register notifications. Please try again.', type: 'error' });
-      }
-    } finally {
+      showToast({ title: 'Notification Error', text: 'Failed to register notifications. Please try again.', type: 'error' });
       setEnabling(false);
     }
   };

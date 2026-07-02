@@ -389,44 +389,91 @@ We reserve the right to terminate or suspend your account at our sole discretion
     }
   }, [navigation, fetchTransactions, handleDeleteAccount]);
 
+  // const handleUpdateLocation = async (manualCoords) => {
+
+
+
+  //   setLoadingLocation(true);
+  //   try {
+  //     let lat, lng, city, country;
+  //     if (manualCoords && manualCoords.lat) {
+  //       lat = manualCoords.lat;
+  //       lng = manualCoords.lng;
+  //       city = manualCoords.city;
+  //       country = manualCoords.country || 'India';
+  //     } else {
+  //       // Request GPS permission
+  //       const { status } = await Location.requestForegroundPermissionsAsync();
+  //       if (status !== 'granted') {
+  //         Alert.alert('Permission Denied', 'Location permission is required to update your location.');
+  //         setLoadingLocation(false);
+  //         return;
+  //       }
+  //       // Get current GPS coordinates
+  //       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+  //       // Reverse geocode to get city/country
+  //       const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+  //       lat = loc.coords.latitude;
+  //       lng = loc.coords.longitude;
+  //       city = geo?.city || geo?.subregion || geo?.region || 'Unknown';
+  //       country = geo?.country || 'Unknown';
+  //     }
+
+  //     await userService.updateLocation({ lat, lng, city, country });
+  //     await fetchUserData();
+  //     Alert.alert('Success', `Location updated to ${city}, ${country}!`);
+  //     setLocationModalVisible(false);
+  //   } catch (e) {
+  //     Alert.alert('Error', 'Failed to update location. Please try again.');
+  //   } finally {
+  //     setLoadingLocation(false);
+  //   }
+  // };
+
   const handleUpdateLocation = async (manualCoords) => {
-    setLoadingLocation(true);
-    try {
-      let lat, lng, city, country;
-      if (manualCoords && manualCoords.lat) {
-        lat = manualCoords.lat;
-        lng = manualCoords.lng;
-        city = manualCoords.city;
-        country = manualCoords.country || 'India';
-      } else {
-        // Request GPS permission
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission Denied', 'Location permission is required to update your location.');
-          setLoadingLocation(false);
-          return;
-        }
-        // Get current GPS coordinates
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        // Reverse geocode to get city/country
-        const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-        lat = loc.coords.latitude;
-        lng = loc.coords.longitude;
+  setLoadingLocation(true);
+  try {
+    let lat, lng, city, country;
+    if (manualCoords && manualCoords.lat) {
+      lat = manualCoords.lat;
+      lng = manualCoords.lng;
+      city = manualCoords.city;
+      country = manualCoords.country || 'India';
+    } else {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to update your location.');
+        setLoadingLocation(false);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      lat = loc.coords.latitude;
+      lng = loc.coords.longitude;
+
+      // Reverse geocode is best-effort — if it fails, still send lat/lng.
+      // The backend does its own reverse geocode to fill in city/country.
+      city = 'Unknown';
+      country = 'Unknown';
+      try {
+        const [geo] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
         city = geo?.city || geo?.subregion || geo?.region || 'Unknown';
         country = geo?.country || 'Unknown';
+      } catch (geoErr) {
+        console.warn('On-device reverse geocode failed, backend will resolve it:', geoErr);
       }
-
-      await userService.updateLocation({ lat, lng, city, country });
-      await fetchUserData();
-      Alert.alert('Success', `Location updated to ${city}, ${country}!`);
-      setLocationModalVisible(false);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to update location. Please try again.');
-    } finally {
-      setLoadingLocation(false);
     }
-  };
 
+    await userService.updateLocation({ lat, lng, city, country });
+    await fetchUserData();
+    Alert.alert('Success', `Location updated${city !== 'Unknown' ? ` to ${city}, ${country}` : ''}!`);
+    setLocationModalVisible(false);
+  } catch (e) {
+    console.error('Location update error:', e);
+    Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to update location. Please try again.');
+  } finally {
+    setLoadingLocation(false);
+  }
+};
   const handleToggleTravelMode = async (enabled, travelDetails = null) => {
     setLoadingTravelMode(true);
     try {

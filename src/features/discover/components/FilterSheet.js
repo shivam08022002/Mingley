@@ -230,6 +230,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
   const [userLocation, setUserLocation] = useState('');
   const [isTravelMode, setIsTravelMode] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [locationAlertVisible, setLocationAlertVisible] = useState(false);
 
   const [localDistance, setLocalDistance] = useState(distance);
   const [localAgeRange, setLocalAgeRange] = useState(ageRange);
@@ -383,31 +384,64 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
   }, [onClose, onApply]);
   const handleClear = useCallback(() => reset(), [reset]);
 
+  // const detectGPSLocation = async () => {
+  //   setLoadingLocation(true);
+  //   try {
+  //     const { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== 'granted') {
+  //       Alert.alert('Permission Denied', 'Location permission is required to detect your location.');
+  //       setLoadingLocation(false);
+  //       return;
+  //     }
+  //     const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+  //     const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+  //     if (geo) {
+  //       const city = geo.city || geo.subregion || geo.district || 'Unknown City';
+  //       const country = geo.country || 'India';
+  //       await updateManualLocation(city, country, loc.coords.latitude, loc.coords.longitude);
+  //     } else {
+  //       Alert.alert('Error', 'Could not resolve location coordinates.');
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     Alert.alert('Error', 'Failed to detect current location.');
+  //   } finally {
+  //     setLoadingLocation(false);
+  //   }
+  // };
+
+
   const detectGPSLocation = async () => {
-    setLoadingLocation(true);
+  setLoadingLocation(true);
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Location permission is required to detect your location.');
+      setLoadingLocation(false);
+      return;
+    }
+    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+
+    let city = 'Unknown City';
+    let country = 'India';
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Location permission is required to detect your location.');
-        setLoadingLocation(false);
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
       if (geo) {
-        const city = geo.city || geo.subregion || geo.district || 'Unknown City';
-        const country = geo.country || 'India';
-        await updateManualLocation(city, country, loc.coords.latitude, loc.coords.longitude);
-      } else {
-        Alert.alert('Error', 'Could not resolve location coordinates.');
+        city = geo.city || geo.subregion || geo.district || 'Unknown City';
+        country = geo.country || 'India';
       }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to detect current location.');
-    } finally {
-      setLoadingLocation(false);
+    } catch (geoErr) {
+      console.warn('On-device reverse geocode failed, backend will resolve it:', geoErr);
     }
-  };
+
+    await updateManualLocation(city, country, loc.coords.latitude, loc.coords.longitude);
+  } catch (err) {
+    console.error(err);
+    Alert.alert('Error', err?.message || 'Failed to detect current location.');
+  } finally {
+    setLoadingLocation(false);
+  }
+};
 
   const updateManualLocation = async (city, country, lat, lng) => {
     try {
@@ -445,17 +479,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
   };
 
   const pickLocation = () => {
-    Alert.alert(
-      'Update Location',
-      'How would you like to update your current location?',
-      [
-        { text: 'Detect GPS Location', onPress: () => detectGPSLocation() },
-        { text: 'Select Mumbai', onPress: () => updateManualLocation('Mumbai', 'India', 19.0760, 72.8777) },
-        { text: 'Select Delhi', onPress: () => updateManualLocation('Delhi', 'India', 28.7041, 77.1025) },
-        { text: 'Select Bangalore', onPress: () => updateManualLocation('Bangalore', 'India', 12.9716, 77.5946) },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    setLocationAlertVisible(true);
   };
 
   return (
@@ -787,6 +811,129 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
           </TouchableOpacity>
         </ScrollView>
       </BottomSheetContainer>
+
+      {/* Custom styled Location Modal */}
+      <Modal
+        visible={locationAlertVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLocationAlertVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setLocationAlertVisible(false)}>
+          <View style={s.locModalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[
+                s.locModalBox, 
+                { 
+                  backgroundColor: theme.cardBackground,
+                  borderColor: theme.isDark ? theme.cardBorder : 'rgba(0,0,0,0.08)',
+                  borderWidth: 1,
+                }
+              ]}>
+                {/* Header */}
+                <View style={s.locModalHeader}>
+                  <Text style={[s.locModalTitle, { color: theme.textPrimary }]}>Update Location</Text>
+                  <TouchableOpacity onPress={() => setLocationAlertVisible(false)} style={s.locCloseBtn}>
+                    <Icon name="close" size={22} color={theme.textPrimary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Subtitle */}
+                <Text style={[s.locModalSubtitle, { color: theme.textSecondary }]}>
+                  How would you like to update your current location?
+                </Text>
+
+                {/* Visual Map/Bubble Graphic Illustration */}
+                <View style={s.locDiagContainer}>
+                  {/* Dashed Connecting Line in the background */}
+                  <View style={[s.locLine, { borderColor: theme.accent + '35' }]} />
+                  
+                  {/* Select Delhi */}
+                  <TouchableOpacity 
+                    style={[
+                      s.locBubble, 
+                      { 
+                        backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.08)' : '#FFF0F3',
+                        borderColor: theme.accent,
+                        shadowColor: theme.accent,
+                      }
+                    ]}
+                    onPress={() => {
+                      updateManualLocation('Delhi', 'India', 28.7041, 77.1025);
+                      setLocationAlertVisible(false);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="location-outline" size={20} color={theme.accent} />
+                    <Text style={[s.locBubbleText, { color: theme.accent }]}>DELHI</Text>
+                  </TouchableOpacity>
+
+                  {/* Select Mumbai */}
+                  <TouchableOpacity 
+                    style={[
+                      s.locBubble, 
+                      { 
+                        backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.08)' : '#FFF0F3',
+                        borderColor: theme.accent,
+                        shadowColor: theme.accent,
+                      }
+                    ]}
+                    onPress={() => {
+                      updateManualLocation('Mumbai', 'India', 19.0760, 72.8777);
+                      setLocationAlertVisible(false);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="location-outline" size={20} color={theme.accent} />
+                    <Text style={[s.locBubbleText, { color: theme.accent }]}>MUMBAI</Text>
+                  </TouchableOpacity>
+
+                  {/* Select Bangalore */}
+                  <TouchableOpacity 
+                    style={[
+                      s.locBubble, 
+                      { 
+                        backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.08)' : '#FFF0F3',
+                        borderColor: theme.accent,
+                        shadowColor: theme.accent,
+                      }
+                    ]}
+                    onPress={() => {
+                      updateManualLocation('Bangalore', 'India', 12.9716, 77.5946);
+                      setLocationAlertVisible(false);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="location-outline" size={20} color={theme.accent} />
+                    <Text style={[s.locBubbleText, { color: theme.accent }]}>BENGALURU</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Bottom Buttons */}
+                <TouchableOpacity 
+                  style={s.locGPSBtn} 
+                  onPress={() => {
+                    detectGPSLocation();
+                    setLocationAlertVisible(false);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={theme.isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#8A2387']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={s.locGPSBtnGradient}
+                  >
+                    <Icon name="compass" size={18} color={theme.isDark ? '#0A0A0A' : '#ffffff'} style={{ marginRight: 6 }} />
+                    <Text style={[s.locGPSBtnText, { color: theme.isDark ? '#0A0A0A' : '#ffffff' }, theme.isDark && { fontWeight: '800' }]}>
+                      DETECT GPS LOCATION
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </Modal>
   );
 });
@@ -1004,6 +1151,98 @@ const s = StyleSheet.create({
     height: 54, justifyContent: 'center', alignItems: 'center',
   },
   applyText: { fontSize: 16, fontWeight: '800', color: '#fff', fontFamily: FONT_MED },
+
+  // Location custom alert styles
+  locModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locModalBox: {
+    width: '85%',
+    maxWidth: 340,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  locModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  locModalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    fontFamily: FONT_MED,
+  },
+  locCloseBtn: {
+    padding: 4,
+  },
+  locModalSubtitle: {
+    fontSize: 14,
+    fontFamily: FONT,
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  locDiagContainer: {
+    height: 100,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 20,
+    position: 'relative',
+    paddingHorizontal: 8,
+  },
+  locLine: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    height: 1,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    top: 50,
+  },
+  locBubble: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    zIndex: 2,
+  },
+  locBubbleText: {
+    fontSize: 9,
+    fontWeight: '800',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  locGPSBtn: {
+    marginTop: 12,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  locGPSBtnGradient: {
+    height: 50,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locGPSBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: FONT_MED,
+  },
 });
 
 // Slider styles

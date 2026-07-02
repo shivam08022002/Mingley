@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "412000357964",
+    "project_id": "mingley-19b73",
+    "storage_bucket": "mingley-19b73.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412000357964:android:2d1a5bec081e98a86beee9",
+        "android_client_info": {
+          "package_name": "com.shivam.mingley"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCd6DWfA70HJMfIpqRFR2RNXquVILbecHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

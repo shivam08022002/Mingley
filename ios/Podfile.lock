@@ -1,5 +1,14 @@
 PODS:
+  - AgoraIrisRTC_iOS (4.5.3-build.1)
+  - AgoraRtcEngine_Special_iOS (4.5.3.70)
+  - EXApplication (7.0.8):
+    - ExpoModulesCore
+  - EXAV (16.0.8):
+    - ExpoModulesCore
+    - ReactCommon/turbomodule/core
   - EXConstants (18.0.13):
+    - ExpoModulesCore
+  - EXNotifications (0.32.17):
     - ExpoModulesCore
   - Expo (54.0.35):
     - ExpoModulesCore
@@ -27,6 +36,8 @@ PODS:
     - ReactNativeDependencies
     - Yoga
   - ExpoAsset (12.0.13):
+    - ExpoModulesCore
+  - ExpoContacts (15.0.11):
     - ExpoModulesCore
   - ExpoFileSystem (19.0.23):
     - ExpoModulesCore
@@ -68,6 +79,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - ExpoScreenCapture (8.0.9):
+    - ExpoModulesCore
   - FBLazyVector (0.81.5)
   - hermes-engine (0.81.5):
     - hermes-engine/Pre-built (= 0.81.5)
@@ -1369,6 +1382,30 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
+  - react-native-agora (4.5.4):
+    - AgoraIrisRTC_iOS (= 4.5.3-build.1)
+    - AgoraRtcEngine_Special_iOS (= 4.5.3.70)
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - react-native-razorpay (3.0.0):
     - hermes-engine
     - razorpay-pod
@@ -2172,9 +2209,13 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
-  - EXConstants (from `../node_modules/expo/node_modules/expo-constants/ios`)
+  - EXApplication (from `../node_modules/expo-application/ios`)
+  - EXAV (from `../node_modules/expo-av/ios`)
+  - EXConstants (from `../node_modules/expo-constants/ios`)
+  - EXNotifications (from `../node_modules/expo-notifications/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo/node_modules/expo-asset/ios`)
+  - ExpoContacts (from `../node_modules/expo-contacts/ios`)
   - ExpoFileSystem (from `../node_modules/expo/node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo/node_modules/expo-font/ios`)
   - ExpoImage (from `../node_modules/expo-image/ios`)
@@ -2182,6 +2223,7 @@ DEPENDENCIES:
   - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
   - ExpoLocation (from `../node_modules/expo-location/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
+  - ExpoScreenCapture (from `../node_modules/expo-screen-capture/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2218,6 +2260,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-agora (from `../node_modules/react-native-agora`)
   - react-native-razorpay (from `../node_modules/react-native-razorpay`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-worklets-core (from `../node_modules/react-native-worklets-core`)
@@ -2264,6 +2307,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - AgoraIrisRTC_iOS
+    - AgoraRtcEngine_Special_iOS
     - libavif
     - libdav1d
     - libwebp
@@ -2274,12 +2319,20 @@ SPEC REPOS:
     - SDWebImageWebPCoder
 
 EXTERNAL SOURCES:
+  EXApplication:
+    :path: "../node_modules/expo-application/ios"
+  EXAV:
+    :path: "../node_modules/expo-av/ios"
   EXConstants:
-    :path: "../node_modules/expo/node_modules/expo-constants/ios"
+    :path: "../node_modules/expo-constants/ios"
+  EXNotifications:
+    :path: "../node_modules/expo-notifications/ios"
   Expo:
     :path: "../node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/expo/node_modules/expo-asset/ios"
+  ExpoContacts:
+    :path: "../node_modules/expo-contacts/ios"
   ExpoFileSystem:
     :path: "../node_modules/expo/node_modules/expo-file-system/ios"
   ExpoFont:
@@ -2294,6 +2347,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-location/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
+  ExpoScreenCapture:
+    :path: "../node_modules/expo-screen-capture/ios"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2365,6 +2420,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-agora:
+    :path: "../node_modules/react-native-agora"
   react-native-razorpay:
     :path: "../node_modules/react-native-razorpay"
   react-native-safe-area-context:
@@ -2453,9 +2510,15 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  AgoraIrisRTC_iOS: d6468160cad25d36c2b6cb5e9bd5b17ba4e58677
+  AgoraRtcEngine_Special_iOS: 48063561d21b07524358ee0a17abc6be762c58f7
+  EXApplication: 1e98d4b1dccdf30627f92917f4b2c5a53c330e5f
+  EXAV: b60fcf142fae6684d295bc28cd7cfcb3335570ea
   EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
+  EXNotifications: c67e92b9fdfe785ff9dbdc5f4c0ff935de357da7
   Expo: edf5879dd9f83d2aa5b05d012412c810bc182ac1
   ExpoAsset: 9e5a7c9c0a9fb83ad5b2bb365141f2bd7f289b66
+  ExpoContacts: 1c976e6c0b9be9b256ea038eba5c86f5707a73ce
   ExpoFileSystem: a8e7fb1e958471764fb48d281cf9fa81a9e4d77c
   ExpoFont: dfb7c572372b610da45b41e3b436321fd6a97215
   ExpoImage: 686f972bff29525733aa13357f6691dc90aa03d8
@@ -2463,6 +2526,7 @@ SPEC CHECKSUMS:
   ExpoLinearGradient: 809102bdb979f590083af49f7fa4805cd931bd58
   ExpoLocation: d5b61cb4970fa982e39ca94246a206a0c3b812ca
   ExpoModulesCore: 9e6a5514828e7dd5ded9e99d33557be2d284e660
+  ExpoScreenCapture: 73e5215ce972e245806c19a546ae0ffef33ead48
   FBLazyVector: e95a291ad2dadb88e42b06e0c5fb8262de53ec12
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
   libavif: 5f8e715bea24debec477006f21ef9e95432e254d
@@ -2502,6 +2566,7 @@ SPEC CHECKSUMS:
   React-logger: 50fdb9a8236da90c0b1072da5c32ee03aeb5bf28
   React-Mapbuffer: 9050ee10c19f4f7fca8963d0211b2854d624973e
   React-microtasksnativemodule: f775db9e991c6f3b8ccbc02bfcde22770f96e23b
+  react-native-agora: b17144c976d366fbd85b25a0fa5899a157805f96
   react-native-razorpay: abd4d43bf5d22e2df46fe57fa924e5fcd45e3097
   react-native-safe-area-context: 37e680fc4cace3c0030ee46e8987d24f5d3bdab2
   react-native-worklets-core: 3a098cd17188379c1a0ecbdea1f7d28f70dbb2a0

@@ -86,16 +86,22 @@ api.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        // Refresh token API
+        // Refresh token API — backend route is /v1/auth/refresh (no "-token" suffix)
         const response = await axios.post(
-          `${BASE_URL}/v1/auth/refresh-token`,
+          `${BASE_URL}/v1/auth/refresh`,
           {
             refreshToken: refreshToken,
           },
         );
 
-        const newAccessToken = response.data.accessToken;
-        const newRefreshToken = response.data.refreshToken;
+        // Backend wraps every response as { success, message, data: {...} } —
+        // the tokens are nested under response.data.data, not response.data.
+        const newAccessToken = response.data?.data?.accessToken;
+        const newRefreshToken = response.data?.data?.refreshToken;
+
+        if (!newAccessToken) {
+          throw new Error('Refresh response missing accessToken');
+        }
 
         // Save new tokens
         await safeStorage.setItem(

@@ -122,7 +122,7 @@ export const MatchesScreen = () => {
   const renderLikeItem = ({ item }) => (
     <TouchableOpacity
       style={[
-        styles.likeCard,
+        styles.likeCard, 
         { backgroundColor: theme.cardBackground },
         theme.isDark && { borderWidth: 1.5, borderColor: theme.cardBorder }
       ]}

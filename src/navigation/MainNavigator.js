@@ -32,13 +32,13 @@ export const MainNavigator = () => {
       <Stack.Screen name="InterestsSelection" component={InterestsSelectionScreen} />
       <Stack.Screen name="ContactsPermission" component={ContactsPermissionScreen} />
       <Stack.Screen name="NotificationsPermission" component={NotificationsPermissionScreen} />
-      <Stack.Screen 
-        name="Chat" 
-        component={ChatScreen} 
-        options={{ 
+      <Stack.Screen
+        name="Chat"
+        component={ChatScreen}
+        options={{
           presentation: 'transparentModal',
           animation: 'slide_from_bottom',
-        }} 
+        }}
       />
       <Stack.Screen name="Calling" component={CallingScreen} />
 

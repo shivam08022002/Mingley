@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
+import * as Contacts from 'expo-contacts';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { Button } from '../../../components/common/Button';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -22,21 +23,47 @@ export const ContactsPermissionScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleAccessContacts = async () => {
-    setLoading(true);
-    try {
-      const mockPhoneNumbers = ['+1987654321', '+1122334455', '+1555666777'];
-      await userService.uploadContacts(mockPhoneNumbers);
-      Alert.alert('Contacts Synced', 'Your contacts have been successfully synced.');
-      navigation.navigate('NotificationsPermission', { userData });
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Error', e.message || 'Failed to sync contacts.');
-      navigation.navigate('NotificationsPermission', { userData });
-    } finally {
+const handleAccessContacts = async () => {
+  setLoading(true);
+  try {
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Enable contacts access in your phone settings to use this feature.');
       setLoading(false);
+      return;
     }
-  };
+
+    const { data } = await Contacts.getContactsAsync({
+      fields: [Contacts.Fields.PhoneNumbers],
+    });
+    const phoneNumbers = data
+      .flatMap(c => c.phoneNumbers?.map(p => p.number) || [])
+      .filter(Boolean);
+
+    if (phoneNumbers.length === 0) {
+      Alert.alert('No Contacts Found', 'We couldn\'t find any phone numbers in your contacts.');
+      navigation.navigate('NotificationsPermission', { userData });
+      return;
+    }
+
+    const result = await userService.uploadContacts(phoneNumbers);
+    const total = result?.data?.total ?? result?.total ?? 0;
+
+    Alert.alert(
+      'Contacts Synced',
+      total > 0
+        ? `We found ${total} of your contacts already on Mingley!`
+        : `Synced ${phoneNumbers.length} contacts. None of them are on Mingley yet.`
+    );
+    navigation.navigate('NotificationsPermission', { userData });
+  } catch (e) {
+    console.error(e);
+    Alert.alert('Error', e.message || 'Failed to sync contacts.');
+    navigation.navigate('NotificationsPermission', { userData });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>

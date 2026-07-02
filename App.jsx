@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Navigation } from './src/navigation';
 import { Toast } from './src/components/common/Toast';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import * as ScreenCapture from 'expo-screen-capture';
 
 // Inject global CSS fixes for web platform
 if (Platform.OS === 'web') {
@@ -70,16 +71,30 @@ if (Platform.OS === 'web') {
 
 import { useAuthStore } from './src/store/useAuthStore';
 import { signalRService } from './src/services/signalRService';
+import { registerForPushNotificationsAsync } from './src/services/pushNotificationService';
 
 // Inner app component that can consume the theme
 function AppContent() {
   const { theme } = useTheme();
+  const isRestoring = useAuthStore((s) => s.isRestoring);
+
+  // Restore a saved session on app start — checks stored tokens and, if
+  // still valid (including auto-refreshing an expired access token via
+  // the 30-day refresh token), logs the user back in without them having
+  // to re-enter credentials. This runs exactly once per app launch.
+  useEffect(() => {
+    useAuthStore.getState().restoreSession();
+  }, []);
 
   useEffect(() => {
     // Listen to changes in auth state to build / terminate live websockets
+    // and keep the device's push token registered while logged in.
     const unsubscribe = useAuthStore.subscribe((state) => {
       if (state.isAuthenticated) {
         signalRService.start();
+        if (Platform.OS !== 'web') {
+          registerForPushNotificationsAsync();
+        }
       } else {
         signalRService.stop();
       }
@@ -89,10 +104,19 @@ function AppContent() {
     const initialAuth = useAuthStore.getState().isAuthenticated;
     if (initialAuth) {
       signalRService.start();
+      if (Platform.OS !== 'web') {
+        registerForPushNotificationsAsync();
+      }
     }
 
     return () => unsubscribe();
   }, []);
+
+  // Don't render the app until we've checked for a saved session — avoids
+  // a flash of the login screen for users who are actually still logged in.
+  if (isRestoring) {
+    return null;
+  }
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08375DB3F3373199A42FC32D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 625B22340C5ECDDBCF80A24F /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		45473D505D0D43B0B1AAE720 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25273D8AE3D57E5CB636420 /* ExpoModulesProvider.swift */; };
-		4D286A7146D58BA1DDBE937B /* libPods-Mingley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 07A4B3D0ABCBBAC3EFC5E854 /* libPods-Mingley.a */; };
-		4D8FA9DA3AC5C853C411BCBE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7D2621BCF875B0317135314F /* PrivacyInfo.xcprivacy */; };
+		9E3255BB89E02C80F19408B3 /* libPods-Mingley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 012E2354B9029E89D5FFB522 /* libPods-Mingley.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		FF1CD55DDF1708FB1F2A07A3 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A506F6B81387C25E903605 /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		07A4B3D0ABCBBAC3EFC5E854 /* libPods-Mingley.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Mingley.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		012E2354B9029E89D5FFB522 /* libPods-Mingley.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Mingley.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* Mingley.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mingley.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Mingley/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mingley/Info.plist; sourceTree = "<group>"; };
-		3DA1B6DADA8D24734745A48B /* Pods-Mingley.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mingley.release.xcconfig"; path = "Target Support Files/Pods-Mingley/Pods-Mingley.release.xcconfig"; sourceTree = "<group>"; };
-		7D2621BCF875B0317135314F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Mingley/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1BE4B36AB28ED09CF277142F /* Pods-Mingley.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mingley.debug.xcconfig"; path = "Target Support Files/Pods-Mingley/Pods-Mingley.debug.xcconfig"; sourceTree = "<group>"; };
+		20A506F6B81387C25E903605 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Mingley/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		625B22340C5ECDDBCF80A24F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Mingley/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Mingley/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B0AC97A008239724E06339D0 /* Pods-Mingley.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mingley.debug.xcconfig"; path = "Target Support Files/Pods-Mingley/Pods-Mingley.debug.xcconfig"; sourceTree = "<group>"; };
-		B25273D8AE3D57E5CB636420 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Mingley/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		E7DC533CA477B56441ACD95E /* Pods-Mingley.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mingley.release.xcconfig"; path = "Target Support Files/Pods-Mingley/Pods-Mingley.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Mingley/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Mingley-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Mingley-Bridging-Header.h"; path = "Mingley/Mingley-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,13 +37,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4D286A7146D58BA1DDBE937B /* libPods-Mingley.a in Frameworks */,
+				9E3255BB89E02C80F19408B3 /* libPods-Mingley.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0F2EE7F391526C78D96E12F1 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				59B7C7FE846EC68D4EBDE60A /* Mingley */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* Mingley */ = {
 			isa = PBXGroup;
 			children = (
@@ -53,7 +61,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				7D2621BCF875B0317135314F /* PrivacyInfo.xcprivacy */,
+				625B22340C5ECDDBCF80A24F /* PrivacyInfo.xcprivacy */,
 			);
 			name = Mingley;
 			sourceTree = "<group>";
@@ -62,23 +70,15 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				07A4B3D0ABCBBAC3EFC5E854 /* libPods-Mingley.a */,
+				012E2354B9029E89D5FFB522 /* libPods-Mingley.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		3D16B749613750655009CEF2 /* ExpoModulesProviders */ = {
+		59B7C7FE846EC68D4EBDE60A /* Mingley */ = {
 			isa = PBXGroup;
 			children = (
-				6A3E896F710863EF36DB62FA /* Mingley */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		6A3E896F710863EF36DB62FA /* Mingley */ = {
-			isa = PBXGroup;
-			children = (
-				B25273D8AE3D57E5CB636420 /* ExpoModulesProvider.swift */,
+				20A506F6B81387C25E903605 /* ExpoModulesProvider.swift */,
 			);
 			name = Mingley;
 			sourceTree = "<group>";
@@ -97,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				CF2432963A5468864FF9587F /* Pods */,
-				3D16B749613750655009CEF2 /* ExpoModulesProviders */,
+				8A11E493F8EC017723C5A7A0 /* Pods */,
+				0F2EE7F391526C78D96E12F1 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -113,6 +113,16 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		8A11E493F8EC017723C5A7A0 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				1BE4B36AB28ED09CF277142F /* Pods-Mingley.debug.xcconfig */,
+				E7DC533CA477B56441ACD95E /* Pods-Mingley.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -120,16 +130,6 @@
 			);
 			name = Supporting;
 			path = Mingley/Supporting;
-			sourceTree = "<group>";
-		};
-		CF2432963A5468864FF9587F /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				B0AC97A008239724E06339D0 /* Pods-Mingley.debug.xcconfig */,
-				3DA1B6DADA8D24734745A48B /* Pods-Mingley.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Mingley" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				0A4C3B3410068CC17BCF6FED /* [Expo] Configure project */,
+				CCB116364877F37587D9D2A4 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				DBD44613BDDFDB05F96B1CEF /* [CP] Embed Pods Frameworks */,
+				0DD26942EDCAFE97463647D9 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				4D8FA9DA3AC5C853C411BCBE /* PrivacyInfo.xcprivacy in Resources */,
+				08375DB3F3373199A42FC32D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -242,29 +242,81 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		0A4C3B3410068CC17BCF6FED /* [Expo] Configure project */ = {
+		0DD26942EDCAFE97463647D9 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/Mingley/Mingley.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-Mingley/expo-configure-project.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-Mingley/Pods-Mingley-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraIrisRTC_iOS/AgoraRtcWrapper.framework/AgoraRtcWrapper",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAiEchoCancellationExtension.framework/AgoraAiEchoCancellationExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAiEchoCancellationLLExtension.framework/AgoraAiEchoCancellationLLExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAiNoiseSuppressionExtension.framework/AgoraAiNoiseSuppressionExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAiNoiseSuppressionLLExtension.framework/AgoraAiNoiseSuppressionLLExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAudioBeautyExtension.framework/AgoraAudioBeautyExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraClearVisionExtension.framework/AgoraClearVisionExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraContentInspectExtension.framework/AgoraContentInspectExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraFaceCaptureExtension.framework/AgoraFaceCaptureExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraFaceDetectionExtension.framework/AgoraFaceDetectionExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraLipSyncExtension.framework/AgoraLipSyncExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraReplayKitExtension.framework/AgoraReplayKitExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraRtcKit.framework/AgoraRtcKit",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraSoundTouch.framework/AgoraSoundTouch",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraSpatialAudioExtension.framework/AgoraSpatialAudioExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraVideoAv1EncoderExtension.framework/AgoraVideoAv1EncoderExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraVideoEncoderExtension.framework/AgoraVideoEncoderExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraVideoQualityAnalyzerExtension.framework/AgoraVideoQualityAnalyzerExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraVideoSegmentationExtension.framework/AgoraVideoSegmentationExtension",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/Agorafdkaac.framework/Agorafdkaac",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/Agoraffmpeg.framework/Agoraffmpeg",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/aosl.framework/aosl",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/video_dec.framework/video_dec",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/video_enc.framework/video_enc",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/razorpay-pod/RazorpayStandard.framework/RazorpayStandard",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/razorpay-pod/RazorpayCore.framework/RazorpayCore",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/razorpay-pod/Razorpay.framework/Razorpay",
 			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
+			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-Mingley/ExpoModulesProvider.swift",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraRtcWrapper.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAiEchoCancellationExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAiEchoCancellationLLExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAiNoiseSuppressionExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAiNoiseSuppressionLLExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAudioBeautyExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraClearVisionExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraContentInspectExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraFaceCaptureExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraFaceDetectionExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraLipSyncExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraReplayKitExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraRtcKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraSoundTouch.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraSpatialAudioExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraVideoAv1EncoderExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraVideoEncoderExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraVideoQualityAnalyzerExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraVideoSegmentationExtension.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Agorafdkaac.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Agoraffmpeg.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/aosl.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/video_dec.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/video_enc.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RazorpayStandard.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RazorpayCore.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Razorpay.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Mingley/expo-configure-project.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mingley/Pods-Mingley-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -273,8 +325,10 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Mingley/Pods-Mingley-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXNotifications/ExpoNotifications_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNCAsyncStorage/RNCAsyncStorage_resources.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNSVG/RNSVGFilters.bundle",
@@ -303,8 +357,10 @@
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoApplication_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNCAsyncStorage_resources.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNSVGFilters.bundle",
@@ -336,33 +392,29 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mingley/Pods-Mingley-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		DBD44613BDDFDB05F96B1CEF /* [CP] Embed Pods Frameworks */ = {
+		CCB116364877F37587D9D2A4 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Mingley/Pods-Mingley-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/razorpay-pod/RazorpayStandard.framework/RazorpayStandard",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/razorpay-pod/RazorpayCore.framework/RazorpayCore",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/razorpay-pod/Razorpay.framework/Razorpay",
+			inputFileListPaths = (
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/Mingley/Mingley.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-Mingley/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RazorpayStandard.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RazorpayCore.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Razorpay.framework",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-Mingley/ExpoModulesProvider.swift",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mingley/Pods-Mingley-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Mingley/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -372,7 +424,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				45473D505D0D43B0B1AAE720 /* ExpoModulesProvider.swift in Sources */,
+				FF1CD55DDF1708FB1F2A07A3 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -381,7 +433,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B0AC97A008239724E06339D0 /* Pods-Mingley.debug.xcconfig */;
+			baseConfigurationReference = 1BE4B36AB28ED09CF277142F /* Pods-Mingley.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -417,7 +469,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3DA1B6DADA8D24734745A48B /* Pods-Mingley.release.xcconfig */;
+			baseConfigurationReference = E7DC533CA477B56441ACD95E /* Pods-Mingley.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

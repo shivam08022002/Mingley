@@ -338,13 +338,6 @@ export const ProfileScreen = React.memo(() => {
                 <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.actionRow, { borderBottomColor: theme.sectionDivider }]} onPress={() => setDepositModalVisible(true)}>
-                <View style={[styles.actionIconWrap, { backgroundColor: theme.iconWrapBackground }]}>
-                  <Icon name="wallet-outline" size={18} color={theme.accent} />
-                </View>
-                <Text style={[styles.actionLabel, { color: theme.textPrimary }]}>Coin Packages</Text>
-                <Icon name="chevron-forward" size={16} color={theme.textSecondary} />
-              </TouchableOpacity>
 
               <TouchableOpacity style={[styles.actionRow, styles.lastActionRow]} onPress={handleSignOut}>
                 <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(233,64,87,0.12)' }]}>

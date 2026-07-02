@@ -30,14 +30,14 @@ export const MatchesGridItem = ({ match, onPress, onChat, onDecline }) => {
   return (
     <TouchableOpacity
       style={[
-        styles.container,
+        styles.container, 
         isDark && { borderWidth: 1.5, borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }
       ]}
       onPress={onPress}
       activeOpacity={0.92}
     >
       <FastImage source={{ uri: user.avatar || user.image }} style={styles.image} />
-
+      
       {/* Online Status Badge */}
       <View style={styles.statusBadge}>
         <View style={[styles.statusDot, { backgroundColor: isOnline ? '#4CAF50' : '#A0A0A0' }]} />

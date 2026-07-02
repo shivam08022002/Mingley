@@ -8,23 +8,26 @@ export const useDiscoverStore = create((set, get) => ({
   page: 1,
   hasMore: true,
 
-  fetchProfiles: async (filters = {}) => {
+fetchProfiles: async (filters = {}) => {
     if (get().isLoading) return;
 
     set({ isLoading: true, error: null });
     try {
+      const genderMap = { girls: 'female', boys: 'male', both: undefined };
+      const [minAge, maxAge] = filters.ageRange || [18, 40];
+
       const params = {
         page: get().page,
         limit: 20,
-        interestedIn: filters.interestedIn || 'both',
-        distance: filters.distance || 50,
-        ageRange: filters.ageRange || [18, 40],
-        onlineStatus: filters.onlineStatus || false,
-        verifiedOnly: filters.verifiedOnly || false,
-        ...filters,
+        gender: genderMap[filters.interestedIn] ?? undefined,
+        minAge,
+        maxAge,
+        maxDistance: filters.distance || 50,
+        onlineOnly: filters.onlineStatus || undefined,
+        // NOTE: verifiedOnly and nearbyOnly are not per-request filters on the
+        // backend — they're saved via PUT /v1/users/me/preferences instead.
       };
 
-      // Fetch from both endpoints concurrently
       const [feedResponse, likesResponse] = await Promise.all([
         discoverService.getFeed(params),
         discoverService.getLikesFeed(params)
@@ -33,10 +36,9 @@ export const useDiscoverStore = create((set, get) => ({
       const feedProfiles = feedResponse.data?.users || [];
       const likesProfiles = likesResponse.data?.users || [];
 
-      // Merge and deduplicate
       const mergedProfiles = [...likesProfiles, ...feedProfiles];
       const uniqueProfilesMap = new Map();
-      
+
       mergedProfiles.forEach(p => {
         const id = p.id || p._id;
         if (id && !uniqueProfilesMap.has(id)) {
@@ -46,7 +48,7 @@ export const useDiscoverStore = create((set, get) => ({
 
       const newProfiles = Array.from(uniqueProfilesMap.values());
       const hasNext = (feedResponse.data?.pagination?.hasNext || likesResponse.data?.pagination?.hasNext) ?? false;
-      
+
       set((state) => ({
         profiles: state.page === 1 ? newProfiles : [...state.profiles, ...newProfiles],
         hasMore: hasNext,
