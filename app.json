@@ -2,6 +2,7 @@
   "expo": {
     "name": "Mingley",
     "slug": "mingley",
+    "owner": "shivam404",
     "version": "1.0.0",
     "orientation": "portrait",
     "ios": {
@@ -14,7 +15,12 @@
     "android": {
       "package": "com.shivam.mingley",
       "googleServicesFile": "./google-services.json",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -39,7 +45,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "48ea7664-c47b-49da-a246-792fe58a2a53"
+        "projectId": "ffe1fd3c-f945-47b3-92f6-d94fcbb65448"
       }
     }
   }
