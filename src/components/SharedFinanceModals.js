@@ -128,13 +128,21 @@ export const DepositModal = ({ visible, onClose }) => {
                 signature: response.razorpay_signature,
                 packageId: selectedPkg.id,
               });
-              alert(`Payment successful! ${selectedPkg.coins} coins credited to your wallet.`);
+              useToastStore.getState().showToast({
+                title: 'Payment Success!',
+                text: `Payment successful! ${selectedPkg.coins} coins credited to your wallet.`,
+                type: 'success'
+              });
               onClose();
               await refreshProfileBalance();
               fetchWalletBalance();
             } catch (err) {
               await refreshProfileBalance();
-              alert(err.message || 'Payment verification failed.');
+              useToastStore.getState().showToast({
+                title: 'Payment Failed',
+                text: err.message || 'Payment verification failed.',
+                type: 'error'
+              });
             } finally {
               setSubmitting(false);
             }
@@ -182,20 +190,32 @@ export const DepositModal = ({ visible, onClose }) => {
                 signature: data.razorpay_signature,
                 packageId: selectedPkg.id,
               });
-              Alert.alert('Success', `Payment successful! ${selectedPkg.coins} coins credited to your wallet.`);
+              useToastStore.getState().showToast({
+                title: 'Payment Success!',
+                text: `Payment successful! ${selectedPkg.coins} coins credited to your wallet.`,
+                type: 'success'
+              });
               onClose();
               await refreshProfileBalance();
               fetchWalletBalance();
             } catch (err) {
               await refreshProfileBalance();
-              Alert.alert('Error', err.message || 'Payment verification failed.');
+              useToastStore.getState().showToast({
+                title: 'Payment Failed',
+                text: err.message || 'Payment verification failed.',
+                type: 'error'
+              });
             } finally {
               setSubmitting(false);
             }
           })
           .catch(async (error) => {
             await refreshProfileBalance();
-            Alert.alert('Payment Cancelled', error.description || 'Payment was cancelled.');
+            useToastStore.getState().showToast({
+              title: 'Payment Cancelled',
+              text: error.description || 'Payment was cancelled.',
+              type: 'info'
+            });
             setSubmitting(false);
           });
       }

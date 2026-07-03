@@ -271,16 +271,16 @@ export const MessagesListScreen = ({ navigation }) => {
         <FastImage source={{ uri: user.avatar || 'https://via.placeholder.com/150' }} style={styles.superchatAvatar} />
         <View style={styles.superchatInfo}>
           <View style={styles.superchatHeaderRow}>
-            <Text style={styles.superchatName}>{decodeEmoji(user.fullName || 'User')}</Text>
-            <View style={styles.amountBadge}>
+            <Text style={[styles.superchatName, { color: theme.textPrimary }]}>{decodeEmoji(user.fullName || 'User')}</Text>
+            <View style={[styles.amountBadge, { backgroundColor: theme.isDark ? 'rgba(124,58,237,0.2)' : '#F3E8FF' }]}>
               <Icon name="flash" size={10} color="#7C3AED" />
               <Text style={styles.amountBadgeText}>{item.coinAmount || 500} coins</Text>
             </View>
           </View>
-          <Text style={styles.superchatMessage} numberOfLines={1}>
+          <Text style={[styles.superchatMessage, { color: theme.textSecondary }]} numberOfLines={1}>
             {decodeEmoji(item.message || 'Sent a Superchat!')}
           </Text>
-          <Text style={styles.superchatTime}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+          <Text style={[styles.superchatTime, { color: theme.textSecondary }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
           {isResponded && (
             <Text style={{ fontSize: 11, color: '#22C55E', marginTop: 4, fontWeight: '600' }}>
               ✓ Responded
@@ -288,7 +288,7 @@ export const MessagesListScreen = ({ navigation }) => {
           )}
         </View>
         {isReceived && !isResponded && (
-          <View style={styles.pendingBadge}>
+          <View style={[styles.pendingBadge, { backgroundColor: theme.isDark ? 'rgba(233,64,87,0.15)' : '#FFF0F2' }]}>
             <Text style={styles.pendingText}>Pending</Text>
           </View>
         )}

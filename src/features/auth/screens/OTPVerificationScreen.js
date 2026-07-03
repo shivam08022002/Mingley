@@ -17,64 +17,74 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
   const login = useAuthStore(state => state.login);
   const [isLoading, setIsLoading] = useState(false);
   const isVerifying = useRef(false);
-  
+  const hasCheckedVerification = useRef(false);
+
   // Use identifier if present, otherwise fallback to value (passed from EmailInputScreen)
   const userIdentifier = identifier || value;
   const userPhone = phone || (type === 'phone' ? value : null);
 
-  const { control, watch } = useForm({
+  const { control, watch, setValue } = useForm({
     defaultValues: { otp: '' },
   });
 
   const otpValue = watch('otp');
   const [timer, setTimer] = useState(42);
 
+  // DEV/TESTING CONVENIENCE: for login attempts on unverified accounts,
+  // the backend returns the real OTP directly (devOtp) since there's no
+  // SMS/email provider wired up yet. This checks for that once on mount
+  // and auto-fills the OTP input so testing doesn't require checking
+  // server logs manually. REMOVE THIS before shipping real SMS/email OTP —
+  // it only works because the backend intentionally exposes devOtp in
+  // non-production environments.
+  useEffect(() => {
+    const routeOtp = route?.params?.devOtp;
+    if (routeOtp && type === 'login' && !hasCheckedVerification.current) {
+      hasCheckedVerification.current = true;
+      console.log('[DEV] Auto-filling OTP from route params:', routeOtp);
+      setValue('otp', String(routeOtp));
+    }
+  }, [route?.params?.devOtp]);
+
   useEffect(() => {
     const verifyAndLogin = async () => {
-      if (otpValue?.length === 4 && !isVerifying.current) {
+      if (otpValue?.length === 6 && !isVerifying.current) {
         isVerifying.current = true;
         setIsLoading(true);
         try {
           if (type === 'login') {
-            const response = await authService.login({
-              identifier: userIdentifier,
-              password,
-              twoFactorCode: otpValue,
-              fcmToken: 'mock-device-token',
-            });
-
-            // Handle different possible response structures
-            const userData = response.user || response.data?.user || (response.id ? response : null);
-            const tokens = response.tokens || response.data?.tokens || {
-              accessToken: response.accessToken || response.data?.accessToken,
-              refreshToken: response.refreshToken || response.data?.refreshToken
-            };
-
-            if (userData) {
-              if (tokens.accessToken) {
-                await safeStorage.setItem('accessToken', tokens.accessToken);
-              }
-              if (tokens.refreshToken) {
-                await safeStorage.setItem('refreshToken', tokens.refreshToken);
-              }
-              navigation.navigate('ContactsPermission', { userData });
-            } else {
-              // Fallback: if we got a 200 but couldn't find user data, 
-              // at least try to login with mock data or alert
-              console.warn('Login successful but no user data found in response:', response);
-              navigation.navigate('ContactsPermission', { 
-                userData: { identifier: userIdentifier, id: 'unknown-id' } 
-              });
+            const targetUserId = route?.params?.userId;
+            if (!targetUserId) {
+              throw new Error('User ID is missing. Please restart the login process.');
             }
+
+            const verifyResponse = await authService.verifyOtp(
+              targetUserId,
+              otpValue,
+              'registration'
+            );
+            const verifyData = verifyResponse?.data || verifyResponse;
+            const accessToken = verifyData?.accessToken || verifyData?.data?.accessToken;
+            const refreshToken = verifyData?.refreshToken || verifyData?.data?.refreshToken;
+            const userObj = verifyData?.user || verifyData?.data?.user;
+
+            if (!accessToken) {
+              throw new Error('OTP verification did not return a valid session. Please try again.');
+            }
+
+            await safeStorage.setItem('accessToken', accessToken);
+            if (refreshToken) {
+              await safeStorage.setItem('refreshToken', refreshToken);
+            }
+            navigation.navigate('ContactsPermission', { userData: userObj });
           } else {
-              // For registration flows (email/phone), we treat OTP as a dummy verification step
-              // and continue to the next page (ProfileDetails)
-              setIsLoading(false);
-              navigation.navigate('ProfileDetails');
-            }
+            // For registration flows (email/phone), we treat OTP as a dummy verification step
+            // and continue to the next page (ProfileDetails)
+            setIsLoading(false);
+            navigation.navigate('ProfileDetails');
+          }
         } catch (error) {
           console.error('OTP Verification/Login error:', error);
-          // Extract a human-readable message from the API error response
           const errMsg =
             error?.message ||
             error?.error ||
@@ -89,111 +99,45 @@ export const OTPVerificationScreen = ({ navigation, route }) => {
     };
 
     verifyAndLogin();
-  }, [otpValue, login, type, userIdentifier, password, userPhone]);
+  }, [otpValue]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+    if (timer <= 0) return;
+    const interval = setInterval(() => setTimer(t => t - 1), 1000);
     return () => clearInterval(interval);
-  }, []);
-
-  const handleResend = () => {
-    setTimer(42);
-  };
-
-  const formatTimer = (secs) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, '0');
-    const s = (secs % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
+  }, [timer]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="chevron-back" size={24} color={theme.isDark ? theme.accent : theme.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="chevron-back" size={28} color={theme.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <Text style={[styles.timerText, { color: theme.textPrimary }]}>{formatTimer(timer)}</Text>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Verify OTP</Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Type the verification code we've sent to {userIdentifier}
+          Enter the 6-digit code sent to {userIdentifier}
         </Text>
 
         <OTPInput control={control} name="otp" />
 
-        {isLoading && (
-          <ActivityIndicator 
-            size="large" 
-            color={theme.isDark ? theme.accent : theme.primary} 
-            style={{ marginTop: 20 }} 
-          />
-        )}
+        {isLoading && <ActivityIndicator size="large" color={theme.accent} style={{ marginTop: 20 }} />}
 
-        <TouchableOpacity 
-          style={styles.resendContainer}
-          onPress={handleResend}
-          disabled={timer > 0}
-        >
-          <Text style={[styles.resendText, { color: theme.isDark ? theme.accent : theme.primary }, timer > 0 && styles.resendDisabled]}>
-            Send again
-          </Text>
-        </TouchableOpacity>
+        <Text style={[styles.timerText, { color: theme.textSecondary }]}>
+          {timer > 0 ? `Resend code in ${timer}s` : 'Resend code'}
+        </Text>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.m,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: SPACING.xl,
-    paddingTop: 60,
-    alignItems: 'center',
-  },
-  timerText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    maxWidth: 200,
-    lineHeight: 24,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
-  },
-  resendContainer: {
-    marginTop: 'auto',
-    marginBottom: 60,
-  },
-  resendText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
-  },
-  resendDisabled: {
-    opacity: 0.5,
-  },
+  container: { flex: 1 },
+  header: { paddingHorizontal: SPACING.xl, paddingTop: SPACING.m },
+  content: { flex: 1, paddingHorizontal: SPACING.xl, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
+  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 40 },
+  timerText: { marginTop: 24, fontSize: 14 },
 });

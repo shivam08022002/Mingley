@@ -6,6 +6,7 @@ export const useAuthStore = create((set, get) => ({
   isAuthenticated: false,
   user: null,
   isRestoring: true, // true while checking for a saved session on app start
+  isSplashFinished: false, // true once the mandatory 2s boot splash is done
   isLoggingOut: false,
 
   login: (userData) => set({ isAuthenticated: true, user: userData, isLoggingOut: false }),

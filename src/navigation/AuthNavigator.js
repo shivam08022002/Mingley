@@ -15,6 +15,7 @@ import { GenderSelectionScreen } from '../features/profile-setup/screens/GenderS
 import { InterestsSelectionScreen } from '../features/profile-setup/screens/InterestsSelectionScreen';
 import { ContactsPermissionScreen } from '../features/profile-setup/screens/ContactsPermissionScreen';
 import { NotificationsPermissionScreen } from '../features/profile-setup/screens/NotificationsPermissionScreen';
+import { LocationPermissionScreen } from '../features/profile-setup/screens/LocationPermissionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ export const AuthNavigator = () => {
       <Stack.Screen name="InterestsSelection" component={InterestsSelectionScreen} />
       <Stack.Screen name="ContactsPermission" component={ContactsPermissionScreen} />
       <Stack.Screen name="NotificationsPermission" component={NotificationsPermissionScreen} />
+      <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />
     </Stack.Navigator>
   );
 };

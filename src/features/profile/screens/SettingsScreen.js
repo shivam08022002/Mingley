@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import * as Location from 'expo-location';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator, TextInput, Platform, Alert, Modal, FlatList, Dimensions, Switch
+  TouchableOpacity, ActivityIndicator, TextInput, Platform, Alert, Modal, FlatList, Dimensions, Switch, AppState
 } from 'react-native';
 
 const { height } = Dimensions.get('window');
@@ -13,6 +13,8 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useChatStore } from '../../../store/useChatStore';
 import { authService, userService } from '../../../services/apiServices';
 import { decodeEmoji } from '../../../utils/stringUtils';
+import { registerForPushNotificationsAsync, openNotificationSettings } from '../../../services/pushNotificationService';
+import * as Notifications from 'expo-notifications';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
 import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -161,6 +163,49 @@ export const SettingsScreen = React.memo(() => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [pushEnabled, setPushEnabled] = useState(false);
+
+  useEffect(() => {
+    const checkPushStatus = async () => {
+      const { status } = await Notifications.getPermissionsAsync();
+      setPushEnabled(status === 'granted');
+    };
+    
+    checkPushStatus();
+    
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') checkPushStatus();
+    });
+    
+    return () => subscription.remove();
+  }, []);
+
+  const togglePushNotifications = async (newValue) => {
+    if (newValue) {
+      const result = await registerForPushNotificationsAsync();
+      if (result.success) {
+        setPushEnabled(true);
+      } else {
+        Alert.alert(
+          'Enable Notifications',
+          'Please enable notifications for Mingley in your device settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => openNotificationSettings() },
+          ]
+        );
+      }
+    } else {
+      Alert.alert(
+        'Disable Notifications',
+        'To turn off push notifications, please disable them in your device settings.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => openNotificationSettings() },
+        ]
+      );
+    }
+  };
 
   useEffect(() => {
     fetchUserData();
@@ -554,11 +599,13 @@ We reserve the right to terminate or suspend your account at our sole discretion
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
-        {/* ── Appearance Section (Dark Mode Toggle) ── */}
+        {/* ── Preferences Section (Dark Mode & Push Notifs) ── */}
         <View style={s.section}>
-          <Text style={[s.sectionTitle, { color: theme.textSecondary }]}>Appearance</Text>
+          <Text style={[s.sectionTitle, { color: theme.textSecondary }]}>Preferences</Text>
           <View style={[s.card, { backgroundColor: theme.background, borderColor: theme.cardBorder, borderWidth: isDark ? 1 : 0 }]}>
-            <View style={[row.container, { borderBottomWidth: 0 }]}>
+            
+            {/* Dark Mode */}
+            <View style={[row.container, { borderBottomColor: theme.sectionDivider, borderBottomWidth: 1 }]}>
               <View style={[row.iconWrap, { backgroundColor: theme.iconWrapBackground }]}>
                 <Icon name={isDark ? 'moon' : 'sunny-outline'} size={18} color={theme.accent} />
               </View>
@@ -570,6 +617,21 @@ We reserve the right to terminate or suspend your account at our sole discretion
                 thumbColor={isDark ? theme.accent : '#f4f3f4'}
               />
             </View>
+
+            {/* Push Notifications */}
+            <View style={[row.container, { borderBottomWidth: 0 }]}>
+              <View style={[row.iconWrap, { backgroundColor: theme.iconWrapBackground }]}>
+                <Icon name="notifications-outline" size={18} color={theme.accent} />
+              </View>
+              <Text style={[row.label, { color: theme.textPrimary }]}>Push Notifications</Text>
+              <Switch
+                value={pushEnabled}
+                onValueChange={togglePushNotifications}
+                trackColor={{ false: '#767577', true: theme.accent }}
+                thumbColor={pushEnabled ? theme.accent : '#f4f3f4'}
+              />
+            </View>
+
           </View>
         </View>
 

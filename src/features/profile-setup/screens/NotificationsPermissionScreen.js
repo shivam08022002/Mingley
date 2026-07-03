@@ -18,12 +18,7 @@ export const NotificationsPermissionScreen = ({ navigation, route }) => {
   const { showToast } = useToastStore();
 
   const handleFinishOnboarding = () => {
-    if (isAuthenticated) {
-      navigation.navigate('Home');
-    } else {
-      // Finalize registration onboarding
-      login(userData || { id: 'new-user', name: 'User' }); // The actual user data is already in tokens
-    }
+    navigation.navigate('LocationPermission', { userData });
   };
 
   const handleEnableNotifications = async () => {

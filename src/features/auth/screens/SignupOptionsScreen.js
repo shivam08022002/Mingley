@@ -62,32 +62,14 @@ export const SignupOptionsScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.orContainer}>
-          <View style={[styles.divider, { backgroundColor: theme.sectionDivider }]} />
-          <Text style={[styles.orText, { color: theme.textSecondary }]}>or sign up with</Text>
-          <View style={[styles.divider, { backgroundColor: theme.sectionDivider }]} />
+        <View style={styles.disclaimerContainer}>
+          <Text style={[styles.disclaimerText, { color: theme.textSecondary }]}>
+            By signing up, you agree to our{' '}
+            <Text style={[styles.disclaimerLink, { color: theme.accent }]}>Terms of Use</Text>
+            {' '}and{' '}
+            <Text style={[styles.disclaimerLink, { color: theme.accent }]}>Privacy Policy</Text>.
+          </Text>
         </View>
-
-        <View style={styles.socialContainer}>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
-             <Icon name="logo-google" size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
-             <Icon name="logo-apple" size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.socialButton, { backgroundColor: theme.cardBackground, borderColor: theme.actionButtonBorder }]}>
-             <Icon name="logo-instagram" size={24} color={theme.textPrimary} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity>
-          <Text style={[styles.footerLink, { color: theme.accent }]}>Terms of use</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={[styles.footerLink, { color: theme.accent }]}>Privacy Policy</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -156,46 +138,19 @@ const styles = StyleSheet.create({
     color: '#E94057',
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
-  orContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 30,
+  disclaimerContainer: {
     width: '100%',
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#F0F0F0',
-  },
-  orText: {
-    marginHorizontal: 15,
-    color: '#000000',
-    fontSize: 14,
-    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  socialButton: {
-    width: 65,
-    height: 55,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginTop: 20,
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 30,
-    paddingBottom: 40,
-  },
-  footerLink: {
+  disclaimerText: {
     fontSize: 14,
-    color: '#E94057',
+    textAlign: 'center',
+    lineHeight: 20,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+  },
+  disclaimerLink: {
+    fontWeight: '600',
   },
 });

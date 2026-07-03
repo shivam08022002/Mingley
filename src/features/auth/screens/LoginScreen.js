@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -18,14 +18,22 @@ import { safeStorage } from '../../../services/api';
 const loginSchema = yup.object().shape({
   identifier: yup
     .string()
-    .required('Email or phone number is required'),
+    .required('Email or phone number is required')
+    .test('email-or-phone', 'Must be a valid email or 10-digit phone number', (value) => {
+      if (!value) return false;
+      const val = value.trim();
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      const isPhone = /^[0-9]{10}$/.test(val);
+      return isEmail || isPhone;
+    }),
   password: yup.string().required('Password is required'),
 });
 
 export const LoginScreen = ({ navigation }) => {
   const login = useAuthStore(state => state.login);
   const { theme, isDark } = useTheme();
-  const { control, handleSubmit, watch, formState: { errors } } = useForm({
+  const [isLoading, setIsLoading] = useState(false);
+  const { control, handleSubmit, watch, setError, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
   });
@@ -39,11 +47,87 @@ export const LoginScreen = ({ navigation }) => {
     const isPhone = /^[0-9]{10}$/.test(data.identifier.trim());
     const finalIdentifier = isPhone ? `+91${data.identifier.trim()}` : data.identifier.trim();
 
-    navigation.navigate('OTPVerification', {
-      type: 'login',
-      identifier: finalIdentifier,
-      password: data.password
-    });
+    setIsLoading(true);
+    try {
+      const response = await authService.login({
+        identifier: finalIdentifier,
+        password: data.password,
+        fcmToken: 'mock-device-token',
+      });
+
+      const responseData = response?.data || response;
+      const hasReqVerification = responseData?.data?.requiresVerification || responseData?.requiresVerification;
+      const targetUserId = responseData?.data?.userId || responseData?.userId;
+      const devOtp = responseData?.data?.devOtp || responseData?.devOtp;
+
+      if (hasReqVerification && targetUserId) {
+        // Account exists but not verified yet. Navigate to OTPVerification.
+        navigation.navigate('OTPVerification', {
+          type: 'login',
+          identifier: finalIdentifier,
+          password: data.password,
+          userId: targetUserId,
+          devOtp: devOtp,
+        });
+      } else {
+        // Already verified, save tokens and go through onboarding permissions.
+        const userData = responseData?.data?.user || responseData?.user;
+        const accessToken = responseData?.data?.accessToken || responseData?.accessToken;
+        const refreshToken = responseData?.data?.refreshToken || responseData?.refreshToken;
+
+        if (!userData || !accessToken) {
+          throw new Error('Login succeeded but no session was returned. Please try again.');
+        }
+
+        await safeStorage.setItem('accessToken', accessToken);
+        if (refreshToken) {
+          await safeStorage.setItem('refreshToken', refreshToken);
+        }
+        // Navigate to permission screens instead of logging in directly.
+        // login() is called at the end of the LocationPermission screen.
+        navigation.navigate('ContactsPermission', { userData });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      let errMsg = 'Invalid credentials. Please check your details and try again.';
+      if (error) {
+        if (typeof error === 'object') {
+          errMsg = error.message || error.error || error.messageDetail || errMsg;
+          if (error.errors && Array.isArray(error.errors)) {
+            errMsg = error.errors.map(e => e.message || e).join(', ');
+          } else if (error.data && typeof error.data === 'object') {
+            errMsg = error.data.message || error.data.error || errMsg;
+          }
+        } else if (typeof error === 'string') {
+          errMsg = error;
+        }
+      }
+
+      if (typeof errMsg === 'string' && errMsg.includes('|')) {
+        errMsg = errMsg.split('|')[0].trim();
+      }
+
+      const finalMsg = errMsg;
+
+      if (errMsg.toLowerCase().includes('password')) {
+        setError('password', { type: 'manual', message: finalMsg });
+      } else if (
+        errMsg.toLowerCase().includes('user') ||
+        errMsg.toLowerCase().includes('account') ||
+        errMsg.toLowerCase().includes('not found') ||
+        errMsg.toLowerCase().includes('phone') ||
+        errMsg.toLowerCase().includes('email') ||
+        errMsg.toLowerCase().includes('credential') ||
+        errMsg.toLowerCase().includes('invalid')
+      ) {
+        setError('identifier', { type: 'manual', message: finalMsg });
+      } else {
+        Alert.alert('Login Failed', finalMsg);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -124,6 +208,7 @@ export const LoginScreen = ({ navigation }) => {
               <Button
                 title="Submit"
                 onPress={handleSubmit(onSubmit)}
+                loading={isLoading}
                 style={styles.button}
                 textStyle={styles.buttonText}
                 variant="primary"

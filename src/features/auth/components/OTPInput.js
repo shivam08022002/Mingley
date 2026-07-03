@@ -6,7 +6,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 
 export const OTPInput = ({ control, name }) => {
   const { theme } = useTheme();
-  const [code, setCode] = useState(['', '', '', '']);
+  const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputs = useRef([]);
 
   return (
@@ -14,7 +14,7 @@ export const OTPInput = ({ control, name }) => {
       control={control}
       name={name}
       rules={{
-        validate: (value) => value?.length === 4 || 'Code must be 4 digits',
+        validate: (value) => value?.length === 6 || 'Code must be 6 digits',
       }}
       render={({ field: { onChange, value }, fieldState: { error } }) => {
         const handleOtpChange = (text, index) => {
@@ -25,7 +25,7 @@ export const OTPInput = ({ control, name }) => {
           const otpString = newCode.join('');
           onChange(otpString);
 
-          if (text && index < 3) {
+          if (text && index < 5) {
             inputs.current[index + 1].focus();
           }
         };
@@ -35,6 +35,16 @@ export const OTPInput = ({ control, name }) => {
             inputs.current[index - 1].focus();
           }
         };
+
+        // Sync local code state if form is reset or prefilled externally (such as devOtp auto-typing)
+        React.useEffect(() => {
+          if (value && value.length === 6) {
+            const arr = value.split('');
+            setCode(arr);
+          } else if (!value) {
+            setCode(['', '', '', '', '', '']);
+          }
+        }, [value]);
 
         return (
           <View style={styles.container}>
@@ -86,19 +96,19 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: SPACING.m,
+    gap: 8,
     marginVertical: SPACING.xl,
   },
   inputContainer: {
-    width: 65,
-    height: 65,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
   },
   inputFilled: {
-    backgroundColor: '#E94057', // Red color from the image
+    backgroundColor: '#E94057', 
     borderWidth: 0,
   },
   inputEmpty: {
@@ -110,7 +120,7 @@ const styles = StyleSheet.create({
     borderColor: '#E94057',
   },
   input: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
     width: '100%',

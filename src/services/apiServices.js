@@ -18,7 +18,14 @@ export const authService = {
       throw error.response?.data || error.message;
     }
   },
-
+  verifyOtp: async (userId, otp, purpose = 'registration') => {
+    try {
+      const response = await api.post('/v1/auth/verify-otp', { userId, otp, purpose });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
   changePassword: async (passwordData) => {
     try {
       const response = await api.post('/v1/auth/change-password', passwordData);
@@ -256,7 +263,7 @@ export const userService = {
     }
   },
 
-updateCoverPhoto: async (url) => {
+  updateCoverPhoto: async (url) => {
     try {
       const response = await api.post('/v1/users/me/cover-photo', { coverPhotoUrl: url });
       return response.data;

@@ -9,7 +9,8 @@ import { useAuthStore } from '../../../store/useAuthStore';
 
 export const SplashScreen = ({ navigation }) => {
   const { theme, isDark } = useTheme();
-  const isLoggingOut = useAuthStore((s) => s.isLoggingOut);
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
+  const isSplashFinished = useAuthStore((state) => state.isSplashFinished);
 
   useEffect(() => {
     if (isLoggingOut) {
@@ -17,13 +18,19 @@ export const SplashScreen = ({ navigation }) => {
       useAuthStore.setState({ isLoggingOut: false });
       navigation.replace('Login');
     } else {
-      const timer = setTimeout(() => {
+      if (!isSplashFinished) {
+        // Initial app boot
+        const timer = setTimeout(() => {
+          useAuthStore.setState({ isSplashFinished: true });
+        }, 2000);
+        return () => clearTimeout(timer);
+      } else {
+        // App is already booted, but user is not logged in.
+        // AuthNavigator defaults to Splash, so we just pass them through to GetStarted.
         navigation.replace('GetStarted');
-      }, 2000);
-
-      return () => clearTimeout(timer);
+      }
     }
-  }, [isLoggingOut, navigation]);
+  }, [isLoggingOut, isSplashFinished, navigation]);
 
   return (
     <View style={styles.splashContainer}>
