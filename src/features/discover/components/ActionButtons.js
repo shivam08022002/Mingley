@@ -4,11 +4,11 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { SPACING } from '../../../constants/theme';
 import { useTheme } from '../../../theme/ThemeContext';
 
-export const ActionButtons = ({ onDislike, onLike, onSuperchat }) => {
+export const ActionButtons = ({ onDislike, onLike, onSuperchat, style }) => {
   const { theme } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {/* Pass / X button */}
       <TouchableOpacity
         style={[
@@ -66,19 +66,25 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: 'center',
     alignItems: 'center',
-    boxShadow: '0px 6px 12px rgba(0,0,0,0.08)',
-    elevation: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 6,
   },
   smallButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
   },
   largeButton: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    boxShadow: '0px 10px 15px rgba(0,0,0,0.35)',
-    elevation: 8,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 10,
   },
 });

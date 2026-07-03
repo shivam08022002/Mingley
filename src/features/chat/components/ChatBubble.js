@@ -175,7 +175,7 @@ export const ChatBubble = React.memo(({ item }) => {
             <FastImage
               source={{ uri: item.imageUrl }}
               style={styles.image}
-              resizeMode="cover"
+              contentFit="cover"
             />
             {item.text && item.text !== '[image]' && (
               <Text style={[

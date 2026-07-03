@@ -20,6 +20,36 @@ if (Platform.OS === 'web') {
 
   const style = document.createElement('style');
   style.textContent = `
+    /* Load vector icon fonts dynamically on Web platform */
+    @font-face {
+      font-family: 'Ionicons';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/Ionicons.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'FontAwesome5_Brands';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/FontAwesome5_Brands.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'FontAwesome5Brands-Regular';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/FontAwesome5_Brands.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'FontAwesome5_Regular';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/FontAwesome5_Regular.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'FontAwesome5Free-Regular';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/FontAwesome5_Regular.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'FontAwesome5_Solid';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/FontAwesome5_Solid.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'FontAwesome5Free-Solid';
+      src: url('https://unpkg.com/react-native-vector-icons@10.3.0/Fonts/FontAwesome5_Solid.ttf') format('truetype');
+    }
+
     /* Remove blue browser outline on all inputs */
     input, textarea, select {
       outline: none !important;

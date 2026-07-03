@@ -258,14 +258,15 @@ export const DiscoverScreen = React.memo(() => {
         }}
       >
         {TopCards}
+        {profiles.length > 0 && (
+          <ActionButtons
+            onDislike={triggerDislike}
+            onLike={triggerLike}
+            onSuperchat={triggerSuperchat}
+            style={styles.actionButtonsFloating}
+          />
+        )}
       </View>
-
-      {/* Action Buttons */}
-      <ActionButtons
-        onDislike={triggerDislike}
-        onLike={triggerLike}
-        onSuperchat={triggerSuperchat}
-      />
 
       {/* Filter Sheet */}
       <FilterSheet visible={isFilterVisible} onClose={() => setFilterVisible(false)} onApply={handleReload} />
@@ -308,8 +309,18 @@ const styles = StyleSheet.create({
   headerTitle: { ...TYPOGRAPHY.h2, marginBottom: 2, fontSize: 28, fontWeight: '600', fontFamily: TITLE_MED },
   headerSubtitle: { ...TYPOGRAPHY.caption, fontFamily: TITLE_FONT },
   cardsContainer: {
-    flex: 1, marginTop: 8, marginBottom: 14,
+    flex: 1, marginTop: 8, marginBottom: 0,
     justifyContent: 'center', alignItems: 'center',
+    position: 'relative',
+  },
+  actionButtonsFloating: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 10 : 20,
+    left: 0,
+    right: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    zIndex: 100,
   },
   noMoreText: {
     ...TYPOGRAPHY.body,

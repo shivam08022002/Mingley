@@ -431,7 +431,7 @@ export const MessagesListScreen = ({ navigation }) => {
       {!!storyViewer && (
         <View style={[StyleSheet.absoluteFill, { zIndex: 9999, elevation: 9999 }]}>
           <TouchableOpacity style={svStyles.overlay} activeOpacity={1} onPress={() => setStoryViewer(null)}>
-            <FastImage source={{ uri: storyViewer.image }} style={svStyles.fullImage} resizeMode="cover" />
+            <FastImage source={{ uri: storyViewer.image }} style={svStyles.fullImage} contentFit="cover" />
             <LinearGradient colors={['rgba(0,0,0,0.5)', 'transparent']} style={svStyles.topGradient} />
             <View style={svStyles.topRow}>
               <FastImage source={{ uri: storyViewer.image }} style={svStyles.tinyAvatar} />

@@ -3,6 +3,7 @@
     "name": "Mingley",
     "slug": "mingley",
     "owner": "shivam404",
+    "icon": "./src/assets/appicon2.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "ios": {
@@ -20,7 +21,11 @@
         "ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/appicon_foreground.png",
+        "backgroundColor": "#000000"
+      }
     },
     "web": {
       "bundler": "metro",

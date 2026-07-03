@@ -21,20 +21,10 @@ const SWIPE_THRESHOLD_UP = -Dimensions.get('window').height * 0.2;
 // Responsive card sizing based on available container height
 // availableHeight is passed in from DiscoverScreen via layout measurement
 const getCardDimensions = (screenWidth, availableHeight) => {
-  // availableHeight = space between header and action buttons
-  const isLongPhone = availableHeight >= 480; // tall phones get bigger cards
-
-  if (isLongPhone) {
-    // Tall phone: fit height into available space with some margin, ensure width < height
-    const cardH = availableHeight - 16; // small margin top+bottom
-    const cardW = Math.min(screenWidth - 48, cardH * 0.70); // ~10:14 portrait ratio
-    return { cardW, cardH };
-  } else {
-    // Compact phone: narrower card to keep portrait ratio
-    const cardH = availableHeight - 8;
-    const cardW = Math.min(screenWidth - 56, cardH * 0.72); // slightly narrower
-    return { cardW, cardH };
-  }
+  // Full screen width and height (with small 16px margins)
+  const cardW = screenWidth - 32;
+  const cardH = availableHeight - 16;
+  return { cardW, cardH };
 };
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
@@ -243,7 +233,7 @@ const CardContent = ({ user, onPress }) => {
       onPress={onPress}
       disabled={!onPress}
     >
-      <FastImage source={{ uri: user.avatar || user.image }} style={styles.image} resizeMode="cover" />
+      <FastImage source={{ uri: user.avatar || user.image }} style={styles.image} contentFit="cover" />
 
       {/* Distance glassmorphism badge */}
       <View style={[styles.distanceBadge, { backgroundColor: theme.distanceBadgeBg }]}>
@@ -260,11 +250,12 @@ const CardContent = ({ user, onPress }) => {
         <View style={styles.dot} />
       </View>
 
-      {/* Bottom translucent info section */}
-      <View style={[
-        styles.bottomInfoContainer,
-        theme.isDark && { backgroundColor: 'rgba(10, 10, 10, 0.75)', borderTopWidth: 0 }
-      ]}>
+      {/* Bottom translucent gradient overlay to blend into the card naturally */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.85)']}
+        locations={[0, 0.35, 1]}
+        style={styles.bottomInfoContainer}
+      >
         <View style={styles.nameRow}>
           <Text style={[
             styles.name,
@@ -283,7 +274,7 @@ const CardContent = ({ user, onPress }) => {
         {/* Inline Row for Match Score & Verified Badge */}
         <View style={styles.cardRowInline}>
           {user.matchScore !== undefined && (
-            <View style={[styles.matchScoreBadgeInline, { backgroundColor: theme.matchBadgeBg }]}>
+            <View style={[styles.matchScoreBadgeInline, { backgroundColor: theme.isDark ? 'rgba(255, 77, 109, 0.12)' : theme.matchBadgeBg }]}>
               <Icon name="flame" size={11} color={theme.isDark ? '#FF4D6D' : theme.matchBadgeText} style={{ marginRight: 2 }} />
               <Text style={[styles.matchScoreTextInline, { color: theme.isDark ? '#FF4D6D' : theme.matchBadgeText }]}>
                 {user.matchScore}% Match
@@ -292,8 +283,8 @@ const CardContent = ({ user, onPress }) => {
           )}
 
           {isVerified && (
-            <View style={[styles.verifiedBadgeInline, { borderColor: theme.accent, backgroundColor: theme.isDark ? 'rgba(0,0,0,0.3)' : 'transparent' }]}>
-              <Icon name="star" size={10} color={theme.accent} style={{ marginRight: 3 }} />
+            <View style={[styles.verifiedBadgeInline, { borderColor: theme.accent, backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.15)' : 'rgba(233, 64, 87, 0.06)' }]}>
+              <Icon name="checkmark-circle" size={11} color={theme.accent} style={{ marginRight: 3 }} />
               <Text style={[styles.verifiedTextInline, { color: theme.accent }]}>VERIFIED</Text>
             </View>
           )}
@@ -309,7 +300,7 @@ const CardContent = ({ user, onPress }) => {
             SWIPE UP FOR SUPER LIKE
           </Text>
         </View>
-      </View>
+      </LinearGradient>
     </TouchableOpacity>
   );
 };
@@ -343,13 +334,14 @@ const styles = StyleSheet.create({
   bottomInfoContainer: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 115, // Pushes text above the floating buttons
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     borderTopWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   name: {
     color: '#FFFFFF',

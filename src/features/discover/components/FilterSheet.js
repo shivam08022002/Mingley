@@ -840,7 +840,7 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
 
                 {/* Subtitle */}
                 <Text style={[s.locModalSubtitle, { color: theme.textSecondary }]}>
-                  How would you like to update your current location?
+                  Tap a city below to set it as your location, or use automatic GPS detection:
                 </Text>
 
                 {/* Visual Map/Bubble Graphic Illustration */}
@@ -855,7 +855,9 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
                       { 
                         backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.08)' : '#FFF0F3',
                         borderColor: theme.accent,
-                        shadowColor: theme.accent,
+                        shadowColor: theme.isDark ? 'transparent' : theme.accent,
+                        shadowOpacity: theme.isDark ? 0 : 0.1,
+                        elevation: theme.isDark ? 0 : 2,
                       }
                     ]}
                     onPress={() => {
@@ -875,7 +877,9 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
                       { 
                         backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.08)' : '#FFF0F3',
                         borderColor: theme.accent,
-                        shadowColor: theme.accent,
+                        shadowColor: theme.isDark ? 'transparent' : theme.accent,
+                        shadowOpacity: theme.isDark ? 0 : 0.1,
+                        elevation: theme.isDark ? 0 : 2,
                       }
                     ]}
                     onPress={() => {
@@ -895,7 +899,9 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
                       { 
                         backgroundColor: theme.isDark ? 'rgba(246, 220, 160, 0.08)' : '#FFF0F3',
                         borderColor: theme.accent,
-                        shadowColor: theme.accent,
+                        shadowColor: theme.isDark ? 'transparent' : theme.accent,
+                        shadowOpacity: theme.isDark ? 0 : 0.1,
+                        elevation: theme.isDark ? 0 : 2,
                       }
                     ]}
                     onPress={() => {
