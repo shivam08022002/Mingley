@@ -69,6 +69,7 @@ export const PhoneInputScreen = ({ navigation }) => {
               keyboardType="phone-pad"
               showCountryCode={true}
               isGradientBorder={false}
+              maxLength={10}
               error={errors.phone?.message}
             />
 

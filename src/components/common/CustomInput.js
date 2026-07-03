@@ -6,6 +6,33 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../constants/theme';
 import { useTheme } from '../../theme/ThemeContext';
 
+const InputWrapper = ({ children, hasError, isGradientBorder, theme }) => {
+  if (isGradientBorder && !hasError) {
+    return (
+      <LinearGradient
+        colors={theme.isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#8A2387']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.gradientBorder}
+      >
+        <View style={[styles.innerContainer, { backgroundColor: theme.cardBackground }]}>{children}</View>
+      </LinearGradient>
+    );
+  }
+  return (
+    <View style={[
+      styles.container, 
+      { 
+        backgroundColor: theme.cardBackground, 
+        borderColor: theme.isDark ? theme.cardBorder : '#E8E8E8' 
+      }, 
+      hasError && styles.errorContainer
+    ]}>
+      {children}
+    </View>
+  );
+};
+
 export const CustomInput = ({
   control,
   name,
@@ -23,33 +50,6 @@ export const CustomInput = ({
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { theme } = useTheme();
 
-  const InputWrapper = ({ children, hasError }) => {
-    if (isGradientBorder && !hasError) {
-      return (
-        <LinearGradient
-          colors={theme.isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#8A2387']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.gradientBorder}
-        >
-          <View style={[styles.innerContainer, { backgroundColor: theme.cardBackground }]}>{children}</View>
-        </LinearGradient>
-      );
-    }
-    return (
-      <View style={[
-        styles.container, 
-        { 
-          backgroundColor: theme.cardBackground, 
-          borderColor: theme.isDark ? theme.cardBorder : '#E8E8E8' 
-        }, 
-        hasError && styles.errorContainer
-      ]}>
-        {children}
-      </View>
-    );
-  };
-
   return (
     <Controller
       control={control}
@@ -57,7 +57,7 @@ export const CustomInput = ({
       rules={rules}
       render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
         <View style={styles.wrapper}>
-          <InputWrapper hasError={!!error}>
+          <InputWrapper hasError={!!error} isGradientBorder={isGradientBorder} theme={theme}>
             {showCountryCode && (
               <>
                 <TouchableOpacity style={styles.countryCodeContainer} activeOpacity={0.7}>

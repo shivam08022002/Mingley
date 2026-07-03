@@ -287,7 +287,9 @@ export const useChatStore = create((set, get) => ({
       }));
       set({ chats });
     } catch (error) {
-      console.error('Fetch chats error:', error);
+      if (error?.response?.status !== 401) {
+        console.error('Fetch chats error:', error);
+      }
     }
   },
 

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Svg, { Path, Rect, Defs, Filter, FeFlood, FeColorMatrix, FeOffset, FeGaussianBlur, FeBlend, G } from 'react-native-svg';
 import { useTheme } from '../../theme/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
  */
 export const BottomSheetContainer = ({ children, containerStyle, contentStyle, height = 505, onClose }) => {
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const panY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   useEffect(() => {
@@ -126,7 +128,7 @@ export const BottomSheetContainer = ({ children, containerStyle, contentStyle, h
             </Svg>
           </View>
 
-          <View style={[styles.content, contentStyle]}>
+          <View style={[styles.content, { paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 24 }, contentStyle]}>
             {children}
           </View>
         </View>

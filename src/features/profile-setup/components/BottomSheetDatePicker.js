@@ -88,7 +88,7 @@ export const BottomSheetDatePicker = ({ visible, onClose, onSelectDate, selected
       onRequestClose={onClose}
     >
       <BottomSheetContainer 
-        height={height * 0.65} 
+        height={580} 
         onClose={onClose}
         containerStyle={styles.containerStyle}
       >

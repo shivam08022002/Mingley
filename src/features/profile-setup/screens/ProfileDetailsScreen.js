@@ -78,7 +78,15 @@ export const ProfileDetailsScreen = ({ navigation }) => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <DismissKeyboard>
         <View style={{ flex: 1 }}>
-          <View style={styles.header} />
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Icon name="chevron-back" size={24} color={theme.primary} />
+            </TouchableOpacity>
+          </View>
 
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -220,9 +228,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.m,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   skipText: {
     fontSize: 16,

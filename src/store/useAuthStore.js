@@ -6,13 +6,14 @@ export const useAuthStore = create((set, get) => ({
   isAuthenticated: false,
   user: null,
   isRestoring: true, // true while checking for a saved session on app start
+  isLoggingOut: false,
 
-  login: (userData) => set({ isAuthenticated: true, user: userData }),
+  login: (userData) => set({ isAuthenticated: true, user: userData, isLoggingOut: false }),
 
   logout: async () => {
     await safeStorage.removeItem('accessToken');
     await safeStorage.removeItem('refreshToken');
-    set({ isAuthenticated: false, user: null });
+    set({ isAuthenticated: false, user: null, isLoggingOut: true });
   },
 
   // Called ONCE when the app starts. Checks for saved tokens and restores

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DiscoverScreen } from '../features/discover/screens/DiscoverScreen';
@@ -20,11 +20,14 @@ const Tab = createBottomTabNavigator();
 export const BottomTabNavigator = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+
+  const isTablet = width > 500;
 
   // Dynamic bottom padding: if the device has a bottom inset (like notch or display buttons), 
   // use it. Otherwise, fallback to a sensible padding of 12 for older/flat screen styling.
   const bottomPadding = insets.bottom > 0 ? insets.bottom : 12;
-  const tabHeight = 60 + bottomPadding;
+  const tabHeight = isTablet ? 68 : (60 + bottomPadding);
 
   return (
     <View style={{ flex: 1 }}>
@@ -42,7 +45,7 @@ export const BottomTabNavigator = () => {
           tabBarShowLabel: false,
           tabBarStyle: {
             backgroundColor: theme.navBackground,
-            borderTopWidth: 1,
+            borderTopWidth: isTablet ? 0 : 1,
             borderTopColor: theme.isDark ? '#333333' : '#E2E8F0',
             borderBottomWidth: 0,
             elevation: theme.isDark ? 0 : 12,
@@ -51,8 +54,25 @@ export const BottomTabNavigator = () => {
             shadowRadius: 12,
             shadowOffset: { width: 0, height: -2 },
             height: tabHeight,
-            paddingBottom: bottomPadding,
-            paddingTop: 14,
+            paddingBottom: isTablet ? 0 : bottomPadding,
+            paddingTop: isTablet ? 0 : 14,
+            
+            // Foldable/Tablet floating capsule optimization
+            ...(isTablet && {
+              position: 'absolute',
+              bottom: insets.bottom > 0 ? insets.bottom + 12 : 20,
+              left: '50%',
+              marginLeft: -220, // centers the 440px wide tab bar
+              width: 440,
+              borderRadius: 30,
+              borderWidth: 1,
+              borderColor: theme.isDark ? '#333333' : '#E2E8F0',
+              elevation: 8,
+              shadowOpacity: 0.15,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 4 },
+              paddingHorizontal: 16,
+            }),
           },
         })}
       >

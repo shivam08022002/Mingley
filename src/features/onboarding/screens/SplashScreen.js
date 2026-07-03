@@ -5,17 +5,25 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { styles } from '../onboarding.styles';
 import { COLORS } from '../../../constants/theme';
 import { useTheme } from '../../../theme/ThemeContext';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 export const SplashScreen = ({ navigation }) => {
   const { theme, isDark } = useTheme();
+  const isLoggingOut = useAuthStore((s) => s.isLoggingOut);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('GetStarted');
-    }, 2000);
+    if (isLoggingOut) {
+      // Clear the logout redirect flag
+      useAuthStore.setState({ isLoggingOut: false });
+      navigation.replace('Login');
+    } else {
+      const timer = setTimeout(() => {
+        navigation.replace('GetStarted');
+      }, 2000);
 
-    return () => clearTimeout(timer);
-  }, [navigation]);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoggingOut, navigation]);
 
   return (
     <View style={styles.splashContainer}>

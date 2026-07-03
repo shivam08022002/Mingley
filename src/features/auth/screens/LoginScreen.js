@@ -25,10 +25,14 @@ const loginSchema = yup.object().shape({
 export const LoginScreen = ({ navigation }) => {
   const login = useAuthStore(state => state.login);
   const { theme, isDark } = useTheme();
-  const { control, handleSubmit, formState: { errors } } = useForm({
+  const { control, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
     defaultValues: { identifier: '', password: '' },
   });
+
+  const identifierVal = watch('identifier', '');
+  const isNumeric = /^[0-9]+$/.test(identifierVal);
+  const maxLength = isNumeric ? 10 : undefined;
 
   const onSubmit = async (data) => {
     // If the identifier looks like a phone number (all digits, 10 chars), prefix +91
@@ -47,7 +51,13 @@ export const LoginScreen = ({ navigation }) => {
       {/* Back button */}
       <TouchableOpacity
         style={[styles.backButton, { borderColor: theme.border, backgroundColor: theme.surface }]}
-        onPress={() => navigation.goBack()}
+        onPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            navigation.navigate('Welcome');
+          }
+        }}
         activeOpacity={0.7}
       >
         <Icon name="chevron-back" size={24} color={theme.primary} />
@@ -81,6 +91,7 @@ export const LoginScreen = ({ navigation }) => {
                 keyboardType="default"
                 showCountryCode={false}
                 autoCapitalize="none"
+                maxLength={maxLength}
                 error={errors.identifier?.message}
               />
 
@@ -92,12 +103,23 @@ export const LoginScreen = ({ navigation }) => {
                 error={errors.password?.message}
               />
 
-              <TouchableOpacity
-                style={styles.forgotPassword}
-                onPress={() => navigation.navigate('ForgotPassword')}
-              >
-                <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, marginBottom: 20 }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Welcome')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.forgotPasswordText, { color: theme.textSecondary }]}>
+                    New user? <Text style={{ color: theme.primary, fontWeight: '700' }}>Register here</Text>
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ForgotPassword')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
 
               <Button
                 title="Submit"

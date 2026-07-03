@@ -242,9 +242,10 @@ export const ProfileScreen = React.memo(() => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
       >
         <ProfileHeader
@@ -550,7 +551,7 @@ export const ProfileScreen = React.memo(() => {
 
 
 
-     </SafeAreaView>
+     </View>
   );
 });
 

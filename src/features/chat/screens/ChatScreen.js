@@ -10,6 +10,7 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 import { Image as FastImage } from 'expo-image';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPACING, TYPOGRAPHY } from '../../../constants/theme';
 import { ChatBubble } from '../components/ChatBubble';
 import { BottomSheetContainer } from '../../../components/common/BottomSheetContainer';
@@ -31,6 +32,7 @@ import { userService } from '../../../services/apiServices';
 // ─── Main component ───────────────────────────────────────────────────────────
 export const ChatScreen = ({ navigation, route }) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   usePreventScreenCapture();
   const routeUser = route?.params?.user || {};
   const initialChatId = route?.params?.chatId;
@@ -755,7 +757,14 @@ export const ChatScreen = ({ navigation, route }) => {
         )}
 
         {/* ── Input row ── */}
-        <View style={[styles.inputContainer, { backgroundColor: theme.navBackground, borderTopColor: theme.sectionDivider }]}>
+        <View style={[
+          styles.inputContainer,
+          { 
+            backgroundColor: theme.navBackground,
+            borderTopColor: theme.sectionDivider,
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 12
+          }
+        ]}>
           <View style={[styles.inputWrapper, { backgroundColor: theme.inputBackground, borderColor: theme.inputBorder }, !canSend && styles.inputWrapperDisabled]}>
             <TextInput
               style={[styles.input, { color: theme.textPrimary }]}

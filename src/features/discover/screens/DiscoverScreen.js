@@ -199,7 +199,7 @@ export const DiscoverScreen = React.memo(() => {
   }, [profiles, isLoading, cardsContainerHeight, handleSwipeLeft, handleSwipeRight, handleSwipeUp, navigation, theme]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       {/* Subtle Golden Background Glow in Dark Mode */}
       {theme.isDark && (
         <LinearGradient

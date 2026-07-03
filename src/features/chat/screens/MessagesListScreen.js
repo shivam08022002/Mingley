@@ -382,10 +382,11 @@ export const MessagesListScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <FlatList
         data={activeTab === 'messages' ? (loadingChats ? [] : chats) : (loadingSuperchats ? [] : (superchatTab === 'received' ? receivedSuperchats : sentSuperchats))}
         keyExtractor={item => item.id}
+        contentContainerStyle={{ paddingBottom: 110 }}
         ListHeaderComponent={ListHeader}
         renderItem={activeTab === 'messages' ? ({ item }) => (
           <MessageItem

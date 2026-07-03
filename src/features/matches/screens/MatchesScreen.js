@@ -163,7 +163,7 @@ export const MatchesScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
 
         {/* ── Header ── */}
@@ -237,7 +237,7 @@ export const MatchesScreen = () => {
 // ─── Screen styles ────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingBottom: 30 },
+  scrollContent: { paddingBottom: 110 },
 
   // Header
   headerContainer: { marginTop: SPACING.l, marginBottom: SPACING.m, paddingHorizontal: SPACING.l },
