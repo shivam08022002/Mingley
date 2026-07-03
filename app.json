@@ -10,7 +10,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.shivam.mingley",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Mingley uses your location to show you people nearby and calculate distance."
+        "NSLocationWhenInUseUsageDescription": "Mingley uses your location to show you people nearby and calculate distance.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
