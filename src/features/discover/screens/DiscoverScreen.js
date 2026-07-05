@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   actionButtonsFloating: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 10 : 20,
+    bottom: Platform.OS === 'ios' ? 35 : 20,
     left: 0,
     right: 0,
     marginTop: 0,

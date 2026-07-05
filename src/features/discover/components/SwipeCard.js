@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 115, // Pushes text above the floating buttons
+    paddingBottom: Platform.OS === 'ios' ? 140 : 115, // Pushes text above the floating buttons
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     borderTopWidth: 1,
