@@ -6,17 +6,54 @@ import { useToastStore } from '../store/useToastStore';
 import { navigationRef } from '../navigation/navigationRef';
 
 class SignalRService {
-  connection = null;
-  started = false;
-  onCallAnswered = null; // callback slot for active CallingScreen
+  constructor() {
+    this.connection = null;
+    this.started = false;
+    this.isConnecting = false;
+    this.listeners = {}; // eventName -> Set of callbacks
+    this.onCallAnswered = null; // compatibility callback slot
+  }
+
+  on(eventName, callback) {
+    if (!this.listeners[eventName]) {
+      this.listeners[eventName] = new Set();
+    }
+    this.listeners[eventName].add(callback);
+    // Return unsubscribe function for useEffect cleanup
+    return () => {
+      this.listeners[eventName]?.delete(callback);
+    };
+  }
+
+  _emit(eventName, payload) {
+    this.listeners[eventName]?.forEach((cb) => {
+      try {
+        cb(payload);
+      } catch (e) {
+        console.error(`[signalR] listener error for ${eventName}:`, e);
+      }
+    });
+  }
+
+  // Alias connect to start for compatibility
+  async connect() {
+    return this.start();
+  }
+
+  // Alias disconnect to stop for compatibility
+  async disconnect() {
+    return this.stop();
+  }
 
   async start() {
-    if (this.started) return;
+    if (this.started || this.isConnecting) return;
+    this.isConnecting = true;
 
     try {
       const token = await safeStorage.getItem('accessToken');
       if (!token) {
         console.warn('SignalR: No access token found, skipping connection.');
+        this.isConnecting = false;
         return;
       }
 
@@ -25,50 +62,47 @@ class SignalRService {
           skipNegotiation: true,
           transport: HttpTransportType.WebSockets,
         })
-        .withAutomaticReconnect()
-        .configureLogging(LogLevel.Information)
+        .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+        .configureLogging(LogLevel.Warning)
         .build();
 
-      // Listen for incoming call
+      // ── Incoming Call ──
       this.connection.on('IncomingCall', (data) => {
         console.log('SignalR Event: IncomingCall', data);
-        const { callId, callType, caller } = data;
-
-        if (navigationRef.isReady()) {
-          navigationRef.navigate('Calling', {
-            user: caller,
-            callType,
-            callId,
-            isIncoming: true,
-          });
-        }
+        this._emit('IncomingCall', data);
       });
 
-      // Listen for call answered
+      // ── Call Answered ──
       this.connection.on('CallAnswered', (data) => {
         console.log('SignalR Event: CallAnswered', data);
-        // Call screen will handle Agora token dynamically or let the timer run.
         if (this.onCallAnswered) {
-          this.onCallAnswered(data);
+          try { this.onCallAnswered(data); } catch (e) { console.error(e); }
         }
+        this._emit('CallAnswered', data);
       });
 
-      // Listen for call ended / declined / missed
+      // ── Call Ended ──
       this.connection.on('CallEnded', (data) => {
         console.log('SignalR Event: CallEnded', data);
         this.closeCallScreenIfActive(data.callId, 'Call ended.');
+        this._emit('CallEnded', data);
       });
 
+      // ── Call Declined ──
       this.connection.on('CallDeclined', (data) => {
         console.log('SignalR Event: CallDeclined', data);
         this.closeCallScreenIfActive(data.callId, 'Call declined by receiver.');
+        this._emit('CallDeclined', data);
       });
 
+      // ── Call Missed ──
       this.connection.on('CallMissed', (data) => {
         console.log('SignalR Event: CallMissed', data);
         this.closeCallScreenIfActive(data.callId, 'Call missed.');
+        this._emit('CallMissed', data);
       });
 
+      // ── Missed Call Toast ──
       this.connection.on('MissedCall', (data) => {
         console.log('SignalR Event: MissedCall', data);
         useToastStore.getState().showToast({
@@ -76,35 +110,41 @@ class SignalRService {
           text: `You missed a call from ${data.caller?.fullName || data.caller?.name || 'User'}`,
           type: 'info',
         });
+        this._emit('MissedCall', data);
       });
 
-      // Listen for new messages
+      // ── Messages ──
       this.connection.on('NewMessage', (data) => {
         console.log('SignalR Event: NewMessage', data);
         const { chatId, message } = data;
         useChatStore.getState().pushReceivedMessage(chatId, message);
+        this._emit('NewMessage', data);
       });
 
-      // Listen for read receipts
       this.connection.on('MessagesRead', (data) => {
         console.log('SignalR Event: MessagesRead', data);
         useChatStore.getState().fetchChats();
+        this._emit('MessagesRead', data);
       });
 
-      // Listen for new matches
+      this.connection.on('Typing', (data) => {
+        this._emit('Typing', data);
+      });
+
+      // ── Matches ──
       this.connection.on('NewMatch', (data) => {
         console.log('SignalR Event: NewMatch', data);
         const { matchId, user } = data;
         useMatchesStore.getState().pushNewMatch({ matchId, matchedUser: user });
-        // Duplicate match toast removed since full screen Match screen is displayed
+        this._emit('NewMatch', data);
       });
 
-      // Listen for general notifications
+      // ── General Notifications ──
       this.connection.on('NewNotification', (data) => {
         console.log('SignalR Event: NewNotification', data);
         const { title, body, type } = data;
 
-        // Skip call-related notifications to let the CallingScreen handle it natively
+        // Skip call-related notifications to let CallingScreen/IncomingCallScreen handle it
         if (
           type === 'call' ||
           type === 'incoming_call' ||
@@ -112,7 +152,7 @@ class SignalRService {
           body?.toLowerCase().includes('calling') ||
           body?.toLowerCase().includes('call')
         ) {
-          console.log('Skipping call notification toast to avoid overlap with CallingScreen.');
+          console.log('Skipping call notification toast to avoid overlap.');
           return;
         }
 
@@ -121,13 +161,19 @@ class SignalRService {
           text: body,
           type: type === 'error' ? 'error' : 'info',
         });
+        this._emit('NewNotification', data);
       });
 
-      // Listen for online status updates
+      // ── Online Status ──
       this.connection.on('UserOnlineStatus', (data) => {
         console.log('SignalR Event: UserOnlineStatus', data);
         useChatStore.getState().fetchChats();
+        this._emit('UserOnlineStatus', data);
       });
+
+      this.connection.onreconnecting(() => console.warn('[signalR] reconnecting...'));
+      this.connection.onreconnected(() => console.log('[signalR] reconnected'));
+      this.connection.onclose((err) => console.warn('[signalR] connection closed', err));
 
       await this.connection.start();
       this.started = true;
@@ -135,15 +181,19 @@ class SignalRService {
     } catch (error) {
       console.error('SignalR: Failed to connect:', error);
       this.started = false;
+    } finally {
+      this.isConnecting = false;
     }
   }
 
   closeCallScreenIfActive(callId, message) {
     if (navigationRef.isReady()) {
       const currentRoute = navigationRef.getCurrentRoute();
-      if (currentRoute?.name === 'Calling' && (currentRoute.params?.callId === callId || !callId)) {
+      if (
+        (currentRoute?.name === 'Calling' || currentRoute?.name === 'IncomingCall') &&
+        (currentRoute.params?.callId === callId || !callId)
+      ) {
         navigationRef.goBack();
-        // Duplicate termination toast removed since we are leaving the screen
       }
     }
   }
@@ -161,10 +211,8 @@ class SignalRService {
     }
   }
 
-  // ── Join a specific chat room group so this client receives that chat's live messages ──
   async joinChat(chatId) {
     if (!this.started || !this.connection || !chatId) return;
-    // If connection is still starting, wait briefly then retry
     if (this.connection.state !== 'Connected') {
       setTimeout(() => this.joinChat(chatId), 500);
       return;
@@ -177,7 +225,6 @@ class SignalRService {
     }
   }
 
-  // ── Leave a chat room group when the ChatScreen unmounts ──
   async leaveChat(chatId) {
     if (!this.started || !this.connection || !chatId) return;
     try {
@@ -190,4 +237,3 @@ class SignalRService {
 }
 
 export const signalRService = new SignalRService();
-

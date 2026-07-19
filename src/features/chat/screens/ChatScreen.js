@@ -1008,7 +1008,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   categoryScroll: {
-    marginBottom: 14,
+    marginBottom: 20,
     maxHeight: 40,
     width: '100%',
   },

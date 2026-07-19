@@ -102,6 +102,7 @@ if (Platform.OS === 'web') {
 import { useAuthStore } from './src/store/useAuthStore';
 import { signalRService } from './src/services/signalRService';
 import { registerForPushNotificationsAsync } from './src/services/pushNotificationService';
+import { navigationRef } from './src/navigation/navigationRef';
 
 // Inner app component that can consume the theme
 function AppContent() {
@@ -140,6 +141,22 @@ function AppContent() {
     }
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubIncoming = signalRService.on('IncomingCall', (data) => {
+      console.log('App: IncomingCall event received via listener', data);
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('IncomingCall', {
+          callId: data.callId,
+          callType: data.callType,
+          caller: data.caller,
+          timeoutIn: data.timeoutIn || 30,
+        });
+      }
+    });
+
+    return () => unsubIncoming();
   }, []);
 
   // Don't render the app until we've checked for a saved session — avoids

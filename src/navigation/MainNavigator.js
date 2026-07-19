@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ChatScreen } from '../features/chat/screens/ChatScreen';
 import { CallingScreen } from '../features/chat/screens/CallingScreen';
+import { IncomingCallScreen } from '../features/chat/screens/IncomingCallScreen';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { GalleryScreen } from '../features/profile/screens/GalleryScreen';
 import { SubscriptionIntroScreen } from '../features/subscription/screens/SubscriptionIntroScreen';
@@ -41,6 +42,11 @@ export const MainNavigator = () => {
         }}
       />
       <Stack.Screen name="Calling" component={CallingScreen} />
+      <Stack.Screen
+        name="IncomingCall"
+        component={IncomingCallScreen}
+        options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+      />
 
       {/* Detail / Module flows */}
       <Stack.Screen name="Gallery" component={GalleryScreen} />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, memo } from 'react';
+import React, { useEffect, useState, useRef, memo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   Dimensions,
   Alert,
   PermissionsAndroid,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
@@ -21,118 +20,85 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useChatStore } from '../../../store/useChatStore';
 import { callService } from '../../../services/apiServices';
 import { signalRService } from '../../../services/signalRService';
-import { useToastStore } from '../../../store/useToastStore';
-import { useSubscriptionStore } from '../../subscription/store/useSubscriptionStore';
 
 // ─── Agora SDK (native only) ─────────────────────────────────────────────────
-let createAgoraRtcEngine, RtcSurfaceView, ChannelProfileType, ClientRoleType;
+let createAgoraRtcEngine, RtcSurfaceView, ChannelProfileType, ClientRoleType, VideoSourceType;
+let isAgoraSdkAvailable = false;
 
 if (Platform.OS !== 'web') {
   try {
     const req = require;
     const Agora = req('react-native-agora');
     createAgoraRtcEngine = Agora.createAgoraRtcEngine;
-    RtcSurfaceView       = Agora.RtcSurfaceView;
-    ChannelProfileType   = Agora.ChannelProfileType;
-    ClientRoleType       = Agora.ClientRoleType;
+    RtcSurfaceView = Agora.RtcSurfaceView;
+    ChannelProfileType = Agora.ChannelProfileType;
+    ClientRoleType = Agora.ClientRoleType;
+    VideoSourceType = Agora.VideoSourceType;
+    isAgoraSdkAvailable = true;
   } catch (e) {
-    console.warn('[CallingScreen] Agora SDK not found. Voice/Video calling will be mocked.', e);
+    console.warn(
+      '[CallingScreen] Agora SDK not found. Voice/Video calling will be MOCKED — mic/camera will NOT work for real. This usually means react-native-agora is not linked (e.g. running in Expo Go instead of a custom dev client).',
+      e
+    );
   }
 }
 
 // Fallback mocks for web or when react-native-agora is not installed/loaded
 if (!ChannelProfileType) {
-  ChannelProfileType = {
-    ChannelProfileCommunication: 0,
-  };
+  ChannelProfileType = { ChannelProfileCommunication: 0 };
 }
 if (!ClientRoleType) {
-  ClientRoleType = {
-    ClientRoleBroadcaster: 1,
-  };
+  ClientRoleType = { ClientRoleBroadcaster: 1 };
+}
+if (!VideoSourceType) {
+  VideoSourceType = { VideoSourceCamera: 0, VideoSourceRemote: 1 };
 }
 if (!RtcSurfaceView) {
   RtcSurfaceView = View;
 }
 if (!createAgoraRtcEngine) {
-  // FIX 1 (Mock hardening): Only allow the mock engine in __DEV__ builds.
-  // In a production build without the real native module, show a clear error
-  // instead of silently faking a successful call with auto-fired callbacks.
-  if (!__DEV__) {
-    // Production: export a stub that immediately throws so callers surface the error.
-    createAgoraRtcEngine = () => ({
-      initialize: () => { throw new Error('[Agora] Native module not linked. Calling is unavailable.'); },
-      enableAudio: () => {},
-      enableVideo: () => {},
-      startPreview: () => {},
-      addListener: () => {},
-      setEnableSpeakerphone: () => {},
-      joinChannel: () => { throw new Error('[Agora] Native module not linked. Calling is unavailable.'); },
-      muteLocalAudioStream: () => {},
-      muteLocalVideoStream: () => {},
-      switchCamera: () => {},
-      leaveChannel: () => {},
-      release: () => {},
-    });
-  } else {
-    // DEV only: silent mock that simulates a successful call so the UI is
-    // exercisable without a real device / custom dev-client.
-    createAgoraRtcEngine = () => ({
-      initialize: () => {
-        console.log('[Agora Mock] initialize called');
-      },
-      enableAudio: () => {
-        console.log('[Agora Mock] enableAudio called');
-      },
-      enableVideo: () => {
-        console.log('[Agora Mock] enableVideo called');
-      },
-      startPreview: () => {
-        console.log('[Agora Mock] startPreview called');
-      },
-      addListener: (event, callback) => {
-        console.log(`[Agora Mock] addListener: ${event}`);
-        if (event === 'onJoinChannelSuccess') {
-          setTimeout(() => callback({ channelId: 'mock-channel' }, 0), 1000);
-        }
-        if (event === 'onUserJoined') {
-          setTimeout(() => callback({ channelId: 'mock-channel' }, 12345), 3000);
-        }
-      },
-      setEnableSpeakerphone: (enabled) => {
-        console.log(`[Agora Mock] setEnableSpeakerphone: ${enabled}`);
-      },
-      joinChannel: (token, channel, uid, options) => {
-        console.log(`[Agora Mock] joinChannel: ${channel}`);
-      },
-      muteLocalAudioStream: (muted) => {
-        console.log(`[Agora Mock] muteLocalAudioStream: ${muted}`);
-      },
-      muteLocalVideoStream: (muted) => {
-        console.log(`[Agora Mock] muteLocalVideoStream: ${muted}`);
-      },
-      switchCamera: () => {
-        console.log('[Agora Mock] switchCamera called');
-      },
-      leaveChannel: () => {
-        console.log('[Agora Mock] leaveChannel called');
-      },
-      release: () => {
-        console.log('[Agora Mock] release called');
-      },
-    });
-  }
+  createAgoraRtcEngine = () => ({
+    initialize: () => { console.log('[Agora Mock] initialize called'); },
+    enableAudio: () => { console.log('[Agora Mock] enableAudio called'); },
+    enableVideo: () => { console.log('[Agora Mock] enableVideo called'); },
+    disableVideo: () => { console.log('[Agora Mock] disableVideo called'); },
+    startPreview: () => { console.log('[Agora Mock] startPreview called'); },
+    registerEventHandler: (handlers) => {
+      console.log('[Agora Mock] registerEventHandler called');
+      if (handlers.onJoinChannelSuccess) {
+        setTimeout(() => handlers.onJoinChannelSuccess(), 1000);
+      }
+      if (handlers.onUserJoined) {
+        setTimeout(() => handlers.onUserJoined({}, 12345), 3000);
+      }
+    },
+    setChannelProfile: (profile) => { console.log('[Agora Mock] setChannelProfile', profile); },
+    setClientRole: (role) => { console.log('[Agora Mock] setClientRole', role); },
+    setDefaultAudioRouteToSpeakerphone: (enabled) => { console.log('[Agora Mock] setDefaultAudioRouteToSpeakerphone', enabled); },
+    setEnableSpeakerphone: (enabled) => { console.log('[Agora Mock] setEnableSpeakerphone', enabled); },
+    joinChannel: (token, channel, uid, options) => { console.log('[Agora Mock] joinChannel', channel); },
+    muteLocalAudioStream: (muted) => { console.log('[Agora Mock] muteLocalAudioStream', muted); },
+    muteLocalVideoStream: (muted) => { console.log('[Agora Mock] muteLocalVideoStream', muted); },
+    switchCamera: () => { console.log('[Agora Mock] switchCamera called'); },
+    leaveChannel: () => { console.log('[Agora Mock] leaveChannel called'); },
+    release: () => { console.log('[Agora Mock] release called'); },
+  });
 }
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const ICON_SIZE = 56;
+const END_CALL_SIZE = 84;
+const PIP_WIDTH = 110;
+const PIP_HEIGHT = 160;
 
 const CALLER_IMAGE_FALLBACK =
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80';
-const MY_CAMERA_IMAGE =
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=800&q=80';
 
 /* ─── Small reusable icon button ─────────────────────────────────────────── */
-const IconButton = memo(({ name, onPress, size = 24, backgroundColor = '#F5F5F5', iconColor = '#555', btnSize = 56 }) => (
+const IconButton = memo(({ name, onPress, size = 24, backgroundColor = '#F5F5F5', iconColor = '#555' }) => (
   <TouchableOpacity
-    style={[styles.iconButton, { backgroundColor, width: btnSize, height: btnSize, borderRadius: btnSize / 2 }]}
+    style={[styles.iconButton, { backgroundColor }]}
     onPress={onPress}
     activeOpacity={0.7}
   >
@@ -140,747 +106,505 @@ const IconButton = memo(({ name, onPress, size = 24, backgroundColor = '#F5F5F5'
   </TouchableOpacity>
 ));
 
-const soundEffects = new (class {
-  ctx = null;
-  osc1 = null;
-  osc2 = null;
-  gainNode = null;
-  interval = null;
-
-  startRinging(type) {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return;
-      
-      this.stop();
-      this.ctx = new AudioContextClass();
-      
-      const playTone = () => {
-        if (!this.ctx) return;
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-        
-        this.osc1 = this.ctx.createOscillator();
-        this.osc2 = this.ctx.createOscillator();
-        this.gainNode = this.ctx.createGain();
-        
-        if (type === 'dialing') {
-          this.osc1.frequency.value = 440;
-          this.osc2.frequency.value = 480;
-        } else {
-          this.osc1.frequency.value = 480;
-          this.osc2.frequency.value = 540;
-        }
-        
-        this.osc1.connect(this.gainNode);
-        this.osc2.connect(this.gainNode);
-        this.gainNode.connect(this.ctx.destination);
-        
-        this.gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
-        this.gainNode.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.1);
-        this.osc1.start();
-        this.osc2.start();
-        
-        const stopTime = this.ctx.currentTime + 1.5;
-        this.gainNode.gain.setValueAtTime(0.15, stopTime - 0.1);
-        this.gainNode.gain.linearRampToValueAtTime(0, stopTime);
-        this.osc1.stop(stopTime);
-        this.osc2.stop(stopTime);
-      };
-      
-      playTone();
-      this.interval = setInterval(playTone, 4000);
-    } catch (e) {
-      console.warn('Ringing sound failed:', e);
-    }
-  }
-
-  stop() {
-    if (this.interval) { clearInterval(this.interval); this.interval = null; }
-    if (this.osc1) { try { this.osc1.stop(); } catch {} this.osc1 = null; }
-    if (this.osc2) { try { this.osc2.stop(); } catch {} this.osc2 = null; }
-    if (this.ctx) { try { this.ctx.close(); } catch {} this.ctx = null; }
-  }
-})();
+/* ─── Ask for camera + mic permission (Android only) ─────────────────────── */
+async function requestCallPermissions(isVideo) {
+  if (Platform.OS !== 'android') return true;
+  const perms = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
+  if (isVideo) perms.push(PermissionsAndroid.PERMISSIONS.CAMERA);
+  const results = await PermissionsAndroid.requestMultiple(perms);
+  return Object.values(results).every((r) => r === PermissionsAndroid.RESULTS.GRANTED);
+}
 
 /* ─── Main screen ─────────────────────────────────────────────────────────── */
 export const CallingScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
 
-  // Responsive sizing
-  const isSmallPhone = SCREEN_HEIGHT < 700;
-  const ICON_SIZE = isSmallPhone ? 48 : 56;
-  const END_CALL_SIZE = isSmallPhone ? 72 : 84;
-  const PIP_WIDTH = isSmallPhone ? 90 : 110;
-  const PIP_HEIGHT = isSmallPhone ? 130 : 160;
-  const controlPanelHeight = isSmallPhone ? 100 : 120;
+  const { user } = route?.params || { user: { name: 'Unknown', image: CALLER_IMAGE_FALLBACK } };
+  const isVideoCall = (route?.params?.callType || 'audio') === 'video';
+  const targetId = user.id || user._id;
 
-  /* ── Route params ── */
-  const { user } = route?.params || {
-    user: {
-      name: 'Sara Christin',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
-      callerImage: CALLER_IMAGE_FALLBACK,
-    },
-  };
+  const safeRemoteImage = user.image || CALLER_IMAGE_FALLBACK;
 
-  const [remoteUser, setRemoteUser] = useState(user);
-  const myUser = useChatStore((s) => s.user);
-
-  const safeRemoteImage = remoteUser?.avatar || remoteUser?.image || remoteUser?.callerImage || CALLER_IMAGE_FALLBACK;
-  const safeSelfImage = myUser?.avatar || myUser?.image || MY_CAMERA_IMAGE;
-
+  /* ── Swap state (which feed is full-screen vs PiP) ── */
   const [swapped, setSwapped] = useState(false);
-  const fullImage = swapped ? safeSelfImage : safeRemoteImage;
-  const pipImage = swapped ? safeRemoteImage : safeSelfImage;
-  const pipLabel = swapped ? remoteUser?.name?.split(' ')[0] ?? 'Them' : 'You';
-
   const swapOpacity = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  /* ── Agora engine ref ── */
-  const agoraEngineRef = useRef(null);
-  const [agoraJoined, setAgoraJoined] = useState(false);
-  const [remoteUid, setRemoteUid] = useState(null);
-
-  /* ── Call API State ── */
-  const [callId, setCallId] = useState(null);
-  const callIdRef = useRef(null); // Keep a ref so SignalR callbacks can access it
-  const [agoraToken, setAgoraToken] = useState(null);
-  const [agoraAppId, setAgoraAppId] = useState(null);
-  const [agoraChannel, setAgoraChannel] = useState(null);
-  const [apiError, setApiError] = useState(null);
-  const [incomingAnswered, setIncomingAnswered] = useState(false);
-  const [outgoingAnswered, setOutgoingAnswered] = useState(false); // ← set to true when callee picks up
-  const isIncoming = route.params?.isIncoming || false;
-
-  /* ── Controls ── */
-  const [micMuted, setMicMuted] = useState(false);
-  const [speakerEnabled, setSpeakerEnabled] = useState(true);
-  const [videoEnabled, setVideoEnabled] = useState(route?.params?.callType === 'video');
-
-  /* ── Wallet ── */
-  const coins = useChatStore((s) => s.wallet.coins);
-  const deductCoins = useChatStore((s) => s.deductCoins);
-  const [costPerMin, setCostPerMin] = useState(route?.params?.callType === 'video' ? 100 : 10);
-  const [time, setTime] = useState(0);
-  const currentStatus = useSubscriptionStore((s) => s.currentStatus);
-
-  const LOW_BALANCE_THRESHOLD = costPerMin * 2;
-  const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0;
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     ANDROID PERMISSIONS
-  ───────────────────────────────────────────────────────────────────────── */
-  const requestAndroidPermissions = async (callType) => {
-    if (Platform.OS !== 'android') return true;
-    try {
-      const perms = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
-      if (callType === 'video') perms.push(PermissionsAndroid.PERMISSIONS.CAMERA);
-      const grants = await PermissionsAndroid.requestMultiple(perms);
-      return Object.values(grants).every((r) => r === PermissionsAndroid.RESULTS.GRANTED);
-    } catch {
-      return false;
-    }
-  };
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     INITIALIZE AGORA ENGINE
-  ───────────────────────────────────────────────────────────────────────── */
-  const initAgoraEngine = async (appId, callType) => {
-    if (agoraEngineRef.current) return;
-
-    const engine = createAgoraRtcEngine();
-    agoraEngineRef.current = engine;
-
-    engine.initialize({
-      appId,
-      channelProfile: ChannelProfileType.ChannelProfileCommunication,
-    });
-
-    engine.enableAudio();
-    if (callType === 'video') {
-      engine.enableVideo();
-      engine.startPreview();
-    }
-
-    engine.addListener('onUserJoined', (connection, uid) => {
-      console.log('Agora: Remote user joined uid=', uid);
-      setRemoteUid(uid);
-      // When remote user joins Agora channel, caller knows callee picked up
-      setOutgoingAnswered(true);
-    });
-
-    engine.addListener('onUserOffline', (connection, uid) => {
-      console.log('Agora: Remote user left uid=', uid);
-      setRemoteUid(null);
-      navigation.goBack();
-    });
-
-    engine.addListener('onJoinChannelSuccess', (connection, elapsed) => {
-      console.log('Agora: Joined channel', connection.channelId);
-      setAgoraJoined(true);
-    });
-
-    engine.addListener('onError', (err, msg) => {
-      console.error('Agora error', err, msg);
-    });
-
-    engine.setEnableSpeakerphone(true);
-  };
-
-  const joinAgoraChannel = async (appId, token, channel, callType) => {
-    if (Platform.OS === 'web') {
-      console.log('[Agora Mock Web] Channel join bypass');
-      setAgoraJoined(true);
-      return;
-    }
-    try {
-      // FIX 3 (Permission check): Capture the boolean result of the permission
-      // request and abort if any required permission was denied. Previously the
-      // return value was discarded, so the call would silently proceed even when
-      // mic/camera access was refused, resulting in no audio/video.
-      const permissionsGranted = await requestAndroidPermissions(callType);
-      if (!permissionsGranted) {
-        const missing = callType === 'video' ? 'microphone and camera' : 'microphone';
-        Alert.alert(
-          'Permissions Required',
-          `Mingley needs access to your ${missing} to make calls. Please grant the permission in Settings and try again.`,
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      await initAgoraEngine(appId, callType);
-
-      await agoraEngineRef.current.joinChannel(
-        token || null,
-        channel,
-        0,
-        {
-          clientRoleType: ClientRoleType.ClientRoleBroadcaster,
-          publishMicrophoneTrack: true,
-          publishCameraTrack: callType === 'video',
-          autoSubscribeAudio: true,
-          autoSubscribeVideo: callType === 'video',
-        }
-      );
-    } catch (err) {
-      console.error('Agora joinChannel failed:', err);
-      Alert.alert('Call Error', 'Could not connect to the call. Please try again.');
-    }
-  };
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     JOIN WHEN WE HAVE ALL THREE: appId, token/null, channel
-  ───────────────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    if (!agoraAppId || !agoraChannel || agoraJoined) return;
-    const callType = route?.params?.callType || 'audio';
-    joinAgoraChannel(agoraAppId, agoraToken, agoraChannel, callType);
-  }, [agoraAppId, agoraToken, agoraChannel]);
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     FIX: SIGNALR — Listen for CallAnswered (outgoing calls)
-     When callee picks up, the server sends a SignalR event "CallAnswered".
-     This transitions the caller from "Ringing…" → timer running.
-  ───────────────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    signalRService.onCallAnswered = (data) => {
-      const currentCallId = callIdRef.current;
-      // FIX 2 (CallAnswered guard): Require both IDs to be present and match.
-      // The original condition was inverted — `data.callId === currentCallId`
-      // was used as a PASS condition, meaning a missing callId on either side
-      // would also pass (treating it as a match). This caused foreign or
-      // premature events to flip the caller into "connected" state.
-      if (!currentCallId || !data?.callId || String(data.callId) !== String(currentCallId)) {
-        console.warn('[CallingScreen] CallAnswered ignored — callId mismatch', { received: data?.callId, current: currentCallId });
-        return;
-      }
-      console.log('[CallingScreen] CallAnswered received → outgoing call answered', data.callId);
-      setOutgoingAnswered(true);
-
-      // If we get Agora details in the answered payload, use them
-      const agoraObj = data?.agora;
-      if (agoraObj?.appId && !agoraJoined) {
-        setAgoraAppId(agoraObj.appId);
-        setAgoraToken(agoraObj.token || null);
-        setAgoraChannel(agoraObj.channelName || `call_${currentCallId}`);
-      }
-    };
-    return () => { signalRService.onCallAnswered = null; };
-  }, [agoraJoined]);
-
-  // Keep callIdRef in sync with state
-  useEffect(() => { callIdRef.current = callId; }, [callId]);
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     POLLING FALLBACK: Poll call status every 4s while ringing (outgoing only)
-     In case SignalR event is missed. Stops once call is connected.
-  ───────────────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    if (isIncoming || outgoingAnswered || !callId) return;
-
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await callService.getCallStatus?.(callId);
-        const status = res?.data?.status || res?.status;
-        if (status === 'active' || status === 'answered' || status === 'connected') {
-          console.log('[CallingScreen] Poll detected call answered, status=', status);
-          setOutgoingAnswered(true);
-          clearInterval(pollInterval);
-
-          // Grab Agora details if not yet connected
-          if (!agoraJoined) {
-            const agoraObj = res?.data?.agora || res?.agora;
-            if (agoraObj?.appId) {
-              setAgoraAppId(agoraObj.appId);
-              setAgoraToken(agoraObj.token || null);
-              setAgoraChannel(agoraObj.channelName || `call_${callId}`);
-            }
-          }
-        }
-      } catch (e) {
-        // Silently ignore poll errors
-      }
-    }, 4000);
-
-    return () => clearInterval(pollInterval);
-  }, [callId, isIncoming, outgoingAnswered, agoraJoined]);
-
-  /* ─────────────────────────────────────────────────────────────────────────
-     MOUNT: Initiate or receive call on server
-  ───────────────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    let activeCallId = null;
-
-    const startCallOnServer = async () => {
-      if (isIncoming) {
-        const incomingCallId = route.params?.callId;
-        if (incomingCallId) {
-          activeCallId = incomingCallId;
-          setCallId(incomingCallId);
-        }
-        return;
-      }
-
-      try {
-        const initialUser = route?.params?.user || {};
-        const targetId = initialUser.id || initialUser._id || '';
-        const response = await callService.initiateCall(targetId, route?.params?.callType || 'audio');
-
-        const newCallId = response.data?.callId || response.callId || response.data?.id || response.id;
-        const rate = response.data?.costPerMin ?? response.costPerMin ?? (route?.params?.callType === 'video' ? 100 : 10);
-        setCostPerMin(rate);
-
-        const serverTarget = response.data?.target || response.target;
-        if (serverTarget) {
-          setRemoteUser((prev) => ({
-            ...prev,
-            name: serverTarget.fullName || serverTarget.name || prev.name,
-            avatar: serverTarget.avatar || serverTarget.image || prev.avatar,
-            id: serverTarget.id || serverTarget._id || prev.id,
-          }));
-        }
-
-        if (newCallId) {
-          activeCallId = newCallId;
-          setCallId(newCallId);
-
-          const agoraObj = response.data?.agora || response.agora;
-          const appId = agoraObj?.appId;
-          const token = agoraObj?.token || agoraObj?.agoraToken || null;
-          const channel = agoraObj?.channelName || agoraObj?.channel || `call_${newCallId}`;
-
-          if (appId) {
-            setAgoraAppId(appId);
-            setAgoraToken(token);
-            setAgoraChannel(channel);
-          } else {
-            const tokenRes = await callService.getAgoraToken(newCallId);
-            const fallbackAppId = tokenRes.data?.appId || tokenRes.appId;
-            if (fallbackAppId) {
-              setAgoraAppId(fallbackAppId);
-              setAgoraToken(tokenRes.data?.token || tokenRes.token || null);
-              setAgoraChannel(tokenRes.data?.channelName || tokenRes.channelName || `call_${newCallId}`);
-            }
-          }
-        }
-      } catch (error) {
-        const errMsg = error.message || (typeof error === 'string' ? error : 'Call initiation failed');
-        setApiError(errMsg);
-        Alert.alert('Call Failed', errMsg, [{ text: 'OK', onPress: () => navigation.goBack() }]);
-      }
-    };
-
-    startCallOnServer();
-
-    return () => {
-      if (activeCallId) callService.endCall(activeCallId).catch(console.error);
-      if (agoraEngineRef.current) {
-        agoraEngineRef.current.leaveChannel();
-        agoraEngineRef.current.release();
-        agoraEngineRef.current = null;
-      }
-    };
-  }, [isIncoming]);
-
-  /* ── Animations ── */
-  useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 0.4, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ])).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.04, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ])).start();
-  }, []);
-
-  // isCallConnected: true once Agora is live AND either callee answered (outgoing) or caller answered (incoming)
-  const isCallConnected = agoraJoined && (isIncoming ? incomingAnswered : (outgoingAnswered || remoteUid !== null));
-
-  /* ── Timer: only when actually connected ── */
-  useEffect(() => {
-    if (!isCallConnected) return;
-    const t = setInterval(() => setTime((prev) => prev + 1), 1000);
-    return () => clearInterval(t);
-  }, [isCallConnected]);
-
-  // Ringing sound
-  useEffect(() => {
-    if (isCallConnected) {
-      soundEffects.stop();
-    } else {
-      if (isIncoming && !incomingAnswered) soundEffects.startRinging('incoming');
-      else if (!isIncoming && !outgoingAnswered) soundEffects.startRinging('dialing');
-    }
-    return () => soundEffects.stop();
-  }, [isCallConnected, isIncoming, incomingAnswered, outgoingAnswered]);
-
-  /* ── Answer incoming call ── */
-  const handleAnswer = async () => {
-    try {
-      if (!callId) return;
-      const response = await callService.answerCall(callId);
-      setIncomingAnswered(true);
-
-      const rate = response?.data?.costPerMin ?? response?.costPerMin ?? (route?.params?.callType === 'video' ? 100 : 10);
-      setCostPerMin(rate);
-
-      const agoraObj = response?.data?.agora || response?.agora;
-      const appId = agoraObj?.appId || response?.data?.appId || response?.appId;
-      const token = agoraObj?.token || agoraObj?.agoraToken || response?.data?.token || response?.token || null;
-      const channel = agoraObj?.channelName || agoraObj?.channel || response?.data?.channelName || `call_${callId}`;
-
-      if (appId) {
-        setAgoraAppId(appId);
-        setAgoraToken(token);
-        setAgoraChannel(channel);
-      } else {
-        const tokenRes = await callService.getAgoraToken(callId);
-        setAgoraAppId(tokenRes.data?.appId || tokenRes.appId);
-        setAgoraToken(tokenRes.data?.token || tokenRes.token || null);
-        setAgoraChannel(tokenRes.data?.channelName || tokenRes.channelName || `call_${callId}`);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to answer call.');
-    }
-  };
-
-  const handleDecline = async () => {
-    try { if (callId) await callService.declineCall(callId); } catch {}
-    navigation.goBack();
-  };
-
-  const handleHangUp = async () => {
-    try { if (callId) await callService.endCall(callId); } catch {}
-    navigation.goBack();
-  };
-
-  // 30 seconds ringing timeout
-  useEffect(() => {
-    if (isCallConnected) return;
-
-    const timeoutSecs = route.params?.timeoutIn || 30;
-    const timeoutTimer = setTimeout(() => {
-      console.log('[CallingScreen] Call timed out after', timeoutSecs, 'seconds');
-      useToastStore.getState().showToast({
-        title: 'Call Unanswered 📞',
-        text: 'The other person did not pick up the call.',
-        type: 'info'
-      });
-      if (isIncoming && !incomingAnswered) {
-        handleDecline();
-      } else {
-        handleHangUp();
-      }
-    }, timeoutSecs * 1000);
-
-    return () => clearTimeout(timeoutTimer);
-  }, [isCallConnected, isIncoming, incomingAnswered, callId]);
-
-  /* ── Coin deduction every minute ── */
-  useEffect(() => {
-    if (!isCallConnected || time === 0 || time % 60 !== 0) return;
-    if (coins < costPerMin) {
-      useToastStore.getState().showToast({ title: 'Call Disconnected 📞', text: 'Insufficient coins balance.', type: 'error' });
-      navigation.goBack();
-      return;
-    }
-    deductCoins(costPerMin);
-  }, [time, isCallConnected]);
-
-  /* ── Agora control handlers ── */
-  const toggleMic = () => { agoraEngineRef.current?.muteLocalAudioStream(!micMuted); setMicMuted((p) => !p); };
-  const toggleSpeaker = () => { agoraEngineRef.current?.setEnableSpeakerphone(!speakerEnabled); setSpeakerEnabled((p) => !p); };
-  const toggleVideo = async () => {
-    if (!videoEnabled) {
-      try {
-        await useSubscriptionStore.getState().fetchStatus();
-      } catch (e) {
-        console.error('Failed to fetch status before toggling video:', e);
-      }
-      const status = useSubscriptionStore.getState().currentStatus;
-      const planName = (status?.isActive && status?.planName)
-        ? status.planName.toLowerCase()
-        : 'free';
-      const hasPremium = planName === 'gold' || planName === 'platinum' || planName === 'vip';
-      if (planName === 'free' || planName === 'silver' || !hasPremium) {
-        Alert.alert(
-          '🔒 Premium Feature',
-          'Video calls are only available for Gold and higher tier members. Upgrade now to connect!',
-          [
-            { text: 'Later', style: 'cancel' },
-            { text: 'Upgrade', onPress: () => {
-              if (callId) callService.endCall(callId).catch(console.error);
-              navigation.navigate('SubscriptionPlans');
-            }}
-          ]
-        );
-        return;
-      }
-    }
-    agoraEngineRef.current?.muteLocalVideoStream(!videoEnabled ? false : true);
-    setVideoEnabled((p) => !p);
-  };
-  const flipCamera = () => agoraEngineRef.current?.switchCamera();
-
   const handleSwap = () => {
     Animated.timing(swapOpacity, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
-      setSwapped((p) => !p);
+      setSwapped((prev) => !prev);
       Animated.timing(swapOpacity, { toValue: 1, duration: 220, useNativeDriver: true }).start();
     });
   };
 
-  const formatTime = () => {
-    if (!isCallConnected) {
-      if (isIncoming && !incomingAnswered) return 'Incoming Call...';
-      if (!isIncoming && !outgoingAnswered) return 'Ringing...';
-      return 'Connecting...';
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  /* ── Call/RTC state ── */
+  const [callId, setCallId] = useState(route?.params?.callId || null);
+  const [connectionState, setConnectionState] = useState('connecting'); // connecting | connected | failed | ended
+  const [remoteUid, setRemoteUid] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  const engineRef = useRef(null);
+  const callIdRef = useRef(callId);
+  const hasEndedRef = useRef(false);
+
+  const coins = useChatStore((s) => s.wallet.coins);
+  const deductCoins = useChatStore((s) => s.deductCoins);
+
+  const RATE = 2;
+  const BILLING_DELAY = 10;
+  const LOW_BALANCE_THRESHOLD = RATE * 5;
+  const [time, setTime] = useState(0);
+  const isBilling = time >= BILLING_DELAY;
+  const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0 && isBilling;
+
+  /* ── End the call once, from anywhere (button, remote hangup, error) ── */
+  const endCall = useCallback(async (reason) => {
+    if (hasEndedRef.current) return;
+    hasEndedRef.current = true;
+
+    try { await engineRef.current?.leaveChannel(); } catch (e) { /* no-op */ }
+    try { engineRef.current?.release(); } catch (e) { /* no-op */ }
+    engineRef.current = null;
+
+    if (callIdRef.current) {
+      callService.endCall(callIdRef.current).catch((err) => console.error('endCall API failed:', err));
     }
+    navigation.goBack();
+  }, [navigation]);
+
+  /* ── Mount: request permissions, start/answer the call, join Agora channel ── */
+  useEffect(() => {
+    let unsubAnswered, unsubEnded, unsubDeclined;
+
+    const setupCall = async () => {
+      // Guard: don't let a missing native module silently masquerade as a working call in production
+      if (!isAgoraSdkAvailable && Platform.OS !== 'web') {
+        if (__DEV__) {
+          console.warn('[CallingScreen] Running on MOCK Agora engine — no real audio/video will flow. Rebuild with a custom dev client to test real calls.');
+        } else {
+          Alert.alert(
+            'Calling Unavailable',
+            'Voice/Video calling could not start on this build. Please update the app or contact support.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
+      }
+
+      const granted = await requestCallPermissions(isVideoCall);
+      if (!granted) {
+        setErrorMsg('Camera/microphone permission denied.');
+        Alert.alert('Permission required', 'Camera and microphone access are needed for calls.', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+        return;
+      }
+
+      try {
+        let agora, resolvedCallId;
+
+        if (route?.params?.isIncoming && route?.params?.callId) {
+          const res = await callService.answerCall(route.params.callId);
+          resolvedCallId = route.params.callId;
+          agora = res.agora || res.data?.agora;
+        } else {
+          const res = await callService.initiateCall(targetId, isVideoCall ? 'video' : 'audio');
+          resolvedCallId = res.callId || res.data?.callId;
+          agora = res.agora || res.data?.agora;
+        }
+
+        if (!resolvedCallId || !agora?.appId) {
+          throw new Error('Server did not return call/Agora details.');
+        }
+
+        setCallId(resolvedCallId);
+        callIdRef.current = resolvedCallId;
+
+        await joinAgoraChannel(agora, resolvedCallId);
+      } catch (error) {
+        const msg = error?.message || (typeof error === 'string' ? error : 'Call could not be started.');
+        setErrorMsg(msg);
+        setConnectionState('failed');
+        Alert.alert('Call Failed', msg, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      }
+    };
+
+    const joinAgoraChannel = async (agora, resolvedCallId) => {
+      const engine = createAgoraRtcEngine();
+      engineRef.current = engine;
+
+      engine.initialize({ appId: agora.appId });
+      engine.setChannelProfile(ChannelProfileType.ChannelProfileCommunication);
+      engine.setClientRole(ClientRoleType.ClientRoleBroadcaster);
+
+      if (isVideoCall) {
+        engine.enableVideo();
+        engine.startPreview();
+      } else {
+        engine.disableVideo();
+      }
+      engine.enableAudio();
+      engine.setDefaultAudioRouteToSpeakerphone(true);
+
+      engine.registerEventHandler({
+        onJoinChannelSuccess: () => {
+          console.log('[agora] joined channel', agora.channelName);
+        },
+        onUserJoined: (_conn, uid) => {
+          setRemoteUid(uid);
+          setConnectionState('connected');
+        },
+        onUserOffline: () => {
+          setRemoteUid(null);
+          endCall('remote_left');
+        },
+        onConnectionStateChanged: (_conn, state) => {
+          if (state === 5) {
+            setConnectionState('failed');
+            setErrorMsg('Could not connect to the call. Please try again.');
+          }
+        },
+        onError: (err, msg) => {
+          console.error('[agora] error', err, msg);
+        },
+      });
+
+      engine.joinChannel(agora.token || null, agora.channelName, agora.uid || 0, {
+        clientRoleType: ClientRoleType.ClientRoleBroadcaster,
+      });
+    };
+
+    setupCall();
+
+    // ── Listen for the call being answered / ended / declined from the other side ──
+    unsubAnswered = signalRService.on('CallAnswered', (data) => {
+      if (!callIdRef.current || !data?.callId || String(data.callId) !== String(callIdRef.current)) {
+        return;
+      }
+      setConnectionState('connected');
+    });
+    unsubEnded = signalRService.on('CallEnded', (data) => {
+      if (data.callId === callIdRef.current) endCall('remote_ended');
+    });
+    unsubDeclined = signalRService.on('CallDeclined', (data) => {
+      if (data.callId === callIdRef.current) {
+        Alert.alert('Call declined');
+        endCall('declined');
+      }
+    });
+
+    return () => {
+      unsubAnswered?.();
+      unsubEnded?.();
+      unsubDeclined?.();
+      if (!hasEndedRef.current) {
+        hasEndedRef.current = true;
+        try { engineRef.current?.leaveChannel(); } catch (e) { /* no-op */ }
+        try { engineRef.current?.release(); } catch (e) { /* no-op */ }
+        if (callIdRef.current) {
+          callService.endCall(callIdRef.current).catch(() => {});
+        }
+      }
+    };
+  }, []);
+
+  /* ── Animations + timer ── */
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 0.4, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scaleAnim, { toValue: 1.04, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  useEffect(() => {
+    if (connectionState !== 'connected') return;
+    const t = setInterval(() => setTime((prev) => prev + 1), 1000);
+    return () => clearInterval(t);
+  }, [connectionState]);
+
+  useEffect(() => {
+    if (time > BILLING_DELAY) {
+      if (coins <= 0) { endCall('no_coins'); return; }
+      deductCoins(RATE);
+    }
+  }, [time]);
+
+  const formatTime = () => {
+    if (connectionState !== 'connected') return 'Connecting...';
     const m = String(Math.floor(time / 60)).padStart(2, '0');
     const s = String(time % 60).padStart(2, '0');
     return `${m}:${s}`;
   };
 
-  const callStatus = isCallConnected ? 'Ongoing Call' : isIncoming ? 'Incoming Call' : 'Ringing';
-  const callType = route?.params?.callType || 'audio';
-  const isVideo = callType === 'video';
+  /* ── Control handlers ── */
+  const toggleMute = () => {
+    const next = !isMuted;
+    engineRef.current?.muteLocalAudioStream(next);
+    setIsMuted(next);
+  };
+  const toggleCamera = () => {
+    const next = !isCameraOff;
+    engineRef.current?.muteLocalVideoStream(next);
+    setIsCameraOff(next);
+  };
+  const toggleSpeaker = () => {
+    const next = !isSpeakerOn;
+    engineRef.current?.setEnableSpeakerphone(next);
+    setIsSpeakerOn(next);
+  };
+  const switchCamera = () => engineRef.current?.switchCamera();
 
-  // PiP position: place it above the control panel
-  const pipBottom = controlPanelHeight + Math.max(insets.bottom, 16) + 20;
+  const renderRemoteFeed = () => {
+    if (isVideoCall && remoteUid != null && Platform.OS !== 'web') {
+      return (
+        <RtcSurfaceView
+          style={StyleSheet.absoluteFillObject}
+          canvas={{ uid: remoteUid, sourceType: VideoSourceType.VideoSourceRemote }}
+        />
+      );
+    }
+    return (
+      <FastImage
+        source={{ uri: safeRemoteImage }}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+      />
+    );
+  };
 
-  /* ─────────────────────────────────────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────────────────────────────────────── */
+  const renderSelfFeed = () => {
+    if (isVideoCall && !isCameraOff && Platform.OS !== 'web') {
+      return (
+        <RtcSurfaceView
+          style={styles.pipImage}
+          canvas={{ uid: 0, sourceType: VideoSourceType.VideoSourceCamera }}
+        />
+      );
+    }
+    return <View style={[styles.pipImage, { backgroundColor: '#222' }]} />;
+  };
+
+  const renderBackground = () => {
+    if (isVideoCall) {
+      return (
+        <TouchableWithoutFeedback onPress={handleSwap}>
+          <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: swapOpacity, transform: [{ scale: scaleAnim }] }]}>
+            {swapped ? renderSelfFeed() : renderRemoteFeed()}
+          </Animated.View>
+        </TouchableWithoutFeedback>
+      );
+    }
+
+    // Audio Call: premium blurred background + central avatar card with breath animations
+    return (
+      <View style={StyleSheet.absoluteFillObject}>
+        <FastImage
+          source={{ uri: safeRemoteImage }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          blurRadius={35}
+        />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(10, 10, 15, 0.72)' }]} />
+
+        <View style={styles.audioCenterContainer}>
+          {/* Breathing ripple ring 1 */}
+          <Animated.View style={[styles.avatarRippleRing, {
+            transform: [{ scale: scaleAnim }],
+            opacity: pulseAnim.interpolate({
+              inputRange: [0.4, 1],
+              outputRange: [0.15, 0.45],
+            })
+          }]} />
+
+          {/* Breathing ripple ring 2 */}
+          <Animated.View style={[styles.avatarRippleRing2, {
+            transform: [{ scale: Animated.multiply(scaleAnim, 1.15) }],
+            opacity: pulseAnim.interpolate({
+              inputRange: [0.4, 1],
+              outputRange: [0.05, 0.25],
+            })
+          }]} />
+
+          {/* Central Avatar */}
+          <Animated.View style={[styles.audioAvatarContainer, { transform: [{ scale: scaleAnim }] }]}>
+            <FastImage
+              source={{ uri: safeRemoteImage }}
+              style={styles.audioAvatar}
+              contentFit="cover"
+            />
+          </Animated.View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* ── Full-screen video / avatar feed ── */}
-      <TouchableWithoutFeedback onPress={handleSwap}>
-        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: swapOpacity, transform: [{ scale: scaleAnim }] }]}>
-          {isVideo && agoraJoined && remoteUid && !swapped && Platform.OS !== 'web' ? (
-            <RtcSurfaceView canvas={{ uid: remoteUid }} style={StyleSheet.absoluteFillObject} />
-          ) : isVideo && agoraJoined && swapped && Platform.OS !== 'web' ? (
-            <RtcSurfaceView canvas={{ uid: 0 }} style={StyleSheet.absoluteFillObject} />
-          ) : (
-            <FastImage source={{ uri: fullImage }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
-          )}
-        </Animated.View>
-      </TouchableWithoutFeedback>
+      {renderBackground()}
 
-      {/* Gradient overlay */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.6)', 'transparent', 'transparent', 'rgba(0,0,0,0.8)']}
+        colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(0,0,0,0.75)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
 
-      {/* ── HUD ── */}
       <SafeAreaView style={styles.hud} edges={['top']} pointerEvents="box-none">
-
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: isSmallPhone ? 6 : 10 }]}>
-          <TouchableOpacity style={styles.backButton} onPress={handleHangUp} activeOpacity={0.7}>
-            <Icon name="chevron-down" size={26} color="#FFFFFF" />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => endCall('back_button')} activeOpacity={0.7}>
+            <Icon name="chevron-down" size={28} color="#FFFFFF" />
           </TouchableOpacity>
-          <View style={styles.rateTag}>
-            <Icon name="logo-bitcoin" size={12} color="#FFD700" style={{ marginRight: 4 }} />
-            <Text style={[styles.rateText, isSmallPhone && { fontSize: 10 }]}>{costPerMin} coins/min</Text>
-          </View>
+
+          {isBilling ? (
+            <View style={styles.rateTag}>
+              <Icon name="logo-bitcoin" size={13} color="#FFD700" style={{ marginRight: 4 }} />
+              <Text style={styles.rateText}>{RATE} coins/sec</Text>
+            </View>
+          ) : (
+            <View style={styles.rateTag}>
+              <Icon name="time-outline" size={13} color="rgba(255,255,255,0.75)" style={{ marginRight: 4 }} />
+              <Text style={[styles.rateText, { color: 'rgba(255,255,255,0.75)' }]}>Free for {BILLING_DELAY - time}s</Text>
+            </View>
+          )}
+
           <View style={styles.balanceBadge}>
-            <Icon name="logo-bitcoin" size={isSmallPhone ? 14 : 16} color="#FFD700" style={{ marginRight: 5 }} />
-            <Text style={[styles.balanceText, isSmallPhone && { fontSize: 13 }]}>{coins}</Text>
+            <Icon name="logo-bitcoin" size={16} color="#FFD700" style={{ marginRight: 5 }} />
+            <Text style={styles.balanceText}>{coins}</Text>
           </View>
         </View>
 
-        {isLowBalance && (
-          <View style={styles.lowBalanceBar}>
-            <Icon name="warning-outline" size={13} color="#92400E" style={{ marginRight: 6 }} />
-            <Text style={[styles.lowBalanceText, isSmallPhone && { fontSize: 11 }]}>Low balance – call will end soon!</Text>
+        {__DEV__ && !isAgoraSdkAvailable && Platform.OS !== 'web' && (
+          <View style={styles.mockWarningBar}>
+            <Icon name="bug-outline" size={13} color="#FFFFFF" style={{ marginRight: 6 }} />
+            <Text style={styles.mockWarningText}>DEV: Agora native module not linked — calling is MOCKED</Text>
           </View>
         )}
 
-        {/* Caller info block */}
-        <View style={[styles.callerInfoBlock, { marginTop: isSmallPhone ? 28 : 50 }]}>
-          <LinearGradient
-            colors={['#E94057', '#F27121']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.statusBadge}
-          >
-            <Text style={[styles.statusText, isSmallPhone && { fontSize: 10 }]}>{callStatus}</Text>
-            <Icon name="pulse" size={12} color="#FFF" style={{ marginLeft: 6 }} />
+        {isLowBalance && (
+          <View style={styles.lowBalanceBar}>
+            <Icon name="warning-outline" size={14} color="#92400E" style={{ marginRight: 6 }} />
+            <Text style={styles.lowBalanceText}>Low balance – call will end soon!</Text>
+          </View>
+        )}
+
+        <View style={styles.callerInfoBlock}>
+          <LinearGradient colors={['#E94057', '#F27121']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.statusBadge}>
+            <Text style={styles.statusText}>{connectionState === 'connected' ? 'Ongoing Call' : 'Connecting'}</Text>
+            <Icon name="pulse" size={13} color="#FFF" style={{ marginLeft: 6 }} />
           </LinearGradient>
 
-          <Text
-            style={[
-              styles.mainUserName,
-              isSmallPhone && { fontSize: 26, marginBottom: 8 }
-            ]}
-          >
-            {swapped ? 'You' : remoteUser?.name}
-          </Text>
+          <Text style={styles.mainUserName}>{swapped ? 'You' : user.name}</Text>
 
           <View style={styles.timeTag}>
             <Animated.View style={[styles.pulseDot, { opacity: pulseAnim }]} />
-            <Text style={[styles.timeLabel, isSmallPhone && { fontSize: 12 }]}>{formatTime()}</Text>
+            <Text style={styles.timeLabel}>{formatTime()}</Text>
           </View>
 
-          {apiError && (
-            <View style={{ marginTop: 10, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.2)' }}>
-              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '600' }}>{apiError}</Text>
+          {errorMsg && (
+            <View style={{ marginTop: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.2)' }}>
+              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '600' }}>{errorMsg}</Text>
             </View>
           )}
         </View>
 
-        {/* PiP — always above control panel */}
-        <TouchableOpacity
-          style={[styles.pipWrapper, { bottom: pipBottom }]}
-          onPress={handleSwap}
-          activeOpacity={0.88}
-        >
-          <Animated.View style={[
-            styles.pipFrame,
-            { opacity: swapOpacity, width: PIP_WIDTH, height: PIP_HEIGHT }
-          ]}>
-            {isVideo && agoraJoined && Platform.OS !== 'web' ? (
-              <RtcSurfaceView
-                canvas={{ uid: swapped ? remoteUid || 0 : 0 }}
-                style={styles.pipImage}
-              />
-            ) : (
-              <FastImage source={{ uri: pipImage }} style={styles.pipImage} contentFit="cover" />
-            )}
-            <View style={styles.pipSwapIcon}>
-              <Icon name="swap-horizontal" size={11} color="#FFF" />
-            </View>
-            <View style={styles.pipLabelWrap}>
-              <Text style={styles.pipLabelText} numberOfLines={1}>{pipLabel}</Text>
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
-
+        {isVideoCall && (
+          <TouchableOpacity
+            style={[styles.pipWrapper, { bottom: 10 + Math.max(insets.bottom, 16) }]}
+            onPress={handleSwap}
+            activeOpacity={0.88}
+          >
+            <Animated.View style={[styles.pipFrame, { opacity: swapOpacity }]}>
+              {swapped ? renderRemoteFeed() : renderSelfFeed()}
+              <View style={styles.pipSwapIcon}>
+                <Icon name="swap-horizontal" size={12} color="#FFF" />
+              </View>
+              <View style={styles.pipLabelWrap}>
+                <Text style={styles.pipLabelText} numberOfLines={1}>{swapped ? (user.name?.split(' ')[0] ?? 'Them') : 'You'}</Text>
+              </View>
+            </Animated.View>
+          </TouchableOpacity>
+        )}
       </SafeAreaView>
 
-      {/* ── Control panel ── */}
-      <View style={[
-        styles.controlPanel,
-        { paddingBottom: Math.max(insets.bottom, 20), minHeight: controlPanelHeight + Math.max(insets.bottom, 20) }
-      ]}>
+      <View style={[styles.controlPanel, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <View style={styles.panelBg} />
-        <View style={[styles.controlsLayout, isSmallPhone && { gap: 8 }]}>
-          {isIncoming && !incomingAnswered ? (
+        <View style={styles.controlsLayout}>
+          {!isVideoCall ? (
+            // Premium audio-specific layouts
             <>
-              {/* Decline */}
-              <TouchableOpacity
-                style={[styles.hangUpBtn, { backgroundColor: '#FFF', width: END_CALL_SIZE, height: END_CALL_SIZE, borderRadius: END_CALL_SIZE / 2 }]}
-                onPress={handleDecline}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.hangUpInner, { borderRadius: (END_CALL_SIZE - 16) / 2, backgroundColor: '#E94057' }]}>
-                  <Icon name="call" size={isSmallPhone ? 28 : 34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
-                </View>
-              </TouchableOpacity>
-              {/* Answer */}
-              <TouchableOpacity
-                style={[styles.hangUpBtn, { backgroundColor: '#FFF', width: END_CALL_SIZE, height: END_CALL_SIZE, borderRadius: END_CALL_SIZE / 2 }]}
-                onPress={handleAnswer}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.hangUpInner, { borderRadius: (END_CALL_SIZE - 16) / 2, backgroundColor: '#4CAF50' }]}>
-                  <Icon name="call" size={isSmallPhone ? 28 : 34} color="#FFFFFF" />
-                </View>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <View style={styles.sideGroup}>
+              <View style={styles.controlWrapper}>
                 <IconButton
-                  name={videoEnabled ? 'videocam' : 'videocam-off'}
-                  backgroundColor={videoEnabled ? '#F5F5F5' : '#FF4D67'}
-                  iconColor={videoEnabled ? '#555' : '#FFFFFF'}
-                  onPress={toggleVideo}
-                  btnSize={ICON_SIZE}
-                  size={isSmallPhone ? 20 : 24}
+                  name={isMuted ? 'mic-off-outline' : 'mic-outline'}
+                  onPress={toggleMute}
+                  size={26}
+                  backgroundColor={isMuted ? '#FEE2E2' : '#F5F5F5'}
+                  iconColor={isMuted ? '#DC2626' : '#555'}
                 />
-                {isVideo ? (
-                  <IconButton name="camera-reverse" onPress={flipCamera} size={isSmallPhone ? 18 : 22} btnSize={ICON_SIZE} />
-                ) : (
-                  <IconButton name="chatbubble-outline" onPress={() => navigation.goBack()} size={isSmallPhone ? 18 : 22} btnSize={ICON_SIZE} />
-                )}
+                <Text style={styles.controlBtnLabel}>{isMuted ? 'Muted' : 'Mute'}</Text>
               </View>
 
-              {/* Hang up */}
-              <TouchableOpacity
-                style={[styles.hangUpBtn, { width: END_CALL_SIZE, height: END_CALL_SIZE, borderRadius: END_CALL_SIZE / 2 }]}
-                onPress={handleHangUp}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.hangUpInner, { borderRadius: (END_CALL_SIZE - 16) / 2 }]}>
-                  <Icon name="call" size={isSmallPhone ? 28 : 34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+              <View style={styles.controlWrapper}>
+                <TouchableOpacity style={styles.hangUpBtn} onPress={() => endCall('user_ended')} activeOpacity={0.8}>
+                  <View style={styles.hangUpInner}>
+                    <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.controlBtnLabel}>End</Text>
+              </View>
+
+              <View style={styles.controlWrapper}>
+                <IconButton
+                  name={isSpeakerOn ? 'volume-high-outline' : 'volume-medium-outline'}
+                  onPress={toggleSpeaker}
+                  size={26}
+                  backgroundColor={isSpeakerOn ? '#E0F2FE' : '#F5F5F5'}
+                  iconColor={isSpeakerOn ? '#0284C7' : '#555'}
+                />
+                <Text style={styles.controlBtnLabel}>{isSpeakerOn ? 'Speaker' : 'Earpiece'}</Text>
+              </View>
+            </>
+          ) : (
+            // Video calling controls
+            <>
+              <View style={styles.sideGroup}>
+                <IconButton
+                  name={isCameraOff ? 'videocam-off-outline' : 'videocam-outline'}
+                  onPress={toggleCamera}
+                />
+                <IconButton name="camera-reverse-outline" onPress={switchCamera} size={22} />
+              </View>
+
+              <TouchableOpacity style={styles.hangUpBtn} onPress={() => endCall('user_ended')} activeOpacity={0.8}>
+                <View style={styles.hangUpInner}>
+                  <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
                 </View>
               </TouchableOpacity>
 
               <View style={styles.sideGroup}>
                 <IconButton
-                  name={speakerEnabled ? 'volume-high' : 'volume-mute'}
-                  backgroundColor={speakerEnabled ? '#F5F5F5' : '#E5E7EB'}
-                  iconColor={speakerEnabled ? '#555' : '#9CA3AF'}
+                  name={isSpeakerOn ? 'volume-high-outline' : 'volume-medium-outline'}
                   onPress={toggleSpeaker}
-                  size={isSmallPhone ? 20 : 26}
-                  btnSize={ICON_SIZE}
+                  size={26}
                 />
                 <IconButton
-                  name={micMuted ? 'mic-off' : 'mic'}
-                  backgroundColor={micMuted ? '#FF4D67' : '#F5F5F5'}
-                  iconColor={micMuted ? '#FFFFFF' : '#555'}
-                  onPress={toggleMic}
-                  size={isSmallPhone ? 20 : 26}
-                  btnSize={ICON_SIZE}
+                  name={isMuted ? 'mic-off-outline' : 'mic-outline'}
+                  onPress={toggleMute}
+                  size={26}
+                  backgroundColor={isMuted ? '#FEE2E2' : '#F5F5F5'}
+                  iconColor={isMuted ? '#DC2626' : '#555'}
                 />
               </View>
             </>
@@ -891,90 +615,139 @@ export const CallingScreen = ({ navigation, route }) => {
   );
 };
 
-/* ─── Styles ──────────────────────────────────────────────────────────────── */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   hud: { ...StyleSheet.absoluteFillObject },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 18, height: 56,
+    paddingHorizontal: 20, paddingTop: 10, height: 60,
   },
   backButton: {
-    width: 34, height: 34, borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.22)',
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
   balanceBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 24, borderWidth: 1.5, borderColor: '#FFD700',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 13, paddingVertical: 7, borderRadius: 24, borderWidth: 1.5, borderColor: '#FFD700',
   },
   balanceText: { color: '#FFF', fontSize: 14, fontWeight: '800', fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium' },
   rateTag: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)',
   },
-  rateText: { color: '#FFD700', fontSize: 11, fontWeight: '700' },
+  rateText: { color: '#FFD700', fontSize: 11, fontWeight: '700', fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium' },
   lowBalanceBar: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'center', backgroundColor: '#FBBF24',
+    paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, marginTop: 6,
+  },
+  lowBalanceText: { fontSize: 12, fontWeight: '700', color: '#78350F', fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium' },
+  mockWarningBar: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
-    backgroundColor: '#FBBF24', paddingHorizontal: 14, paddingVertical: 5,
-    borderRadius: 20, marginTop: 4,
+    backgroundColor: '#DC2626', paddingHorizontal: 14, paddingVertical: 5,
+    borderRadius: 20, marginTop: 6,
   },
-  lowBalanceText: { fontSize: 12, fontWeight: '700', color: '#78350F' },
-  callerInfoBlock: { alignItems: 'center' },
+  mockWarningText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
+  callerInfoBlock: { alignItems: 'center', marginTop: 50 },
   statusBadge: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, height: 30,
-    borderRadius: 100, marginBottom: 12, elevation: 8,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, height: 32, borderRadius: 100,
+    marginBottom: 14, shadowColor: '#E94057', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8,
   },
-  statusText: { fontSize: 11, color: '#FFF', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.5 },
+  statusText: {
+    fontSize: 11, color: '#FFF', fontWeight: '800', fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    textTransform: 'uppercase', letterSpacing: 1.5,
+  },
   mainUserName: {
-    fontSize: 32, fontWeight: 'bold', color: '#FFF', marginBottom: 10,
-    textAlign: 'center',
-    textShadow: '0px 3px 10px rgba(0,0,0,0.45)',
+    fontSize: 34, fontWeight: 'bold', color: '#FFF', fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    marginBottom: 12, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.45)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 10,
   },
   timeTag: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 100, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.18)',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.18)',
   },
-  pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E94057', marginRight: 8 },
-  timeLabel: { fontSize: 14, fontWeight: '700', color: '#FFF' },
-  pipWrapper: { position: 'absolute', right: 16 },
+  pulseDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#E94057', marginRight: 9 },
+  timeLabel: { fontSize: 14, fontWeight: '700', color: '#FFF', fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium' },
+  pipWrapper: { position: 'absolute', right: 18, top: 450, bottom: 0 },
   pipFrame: {
-    borderRadius: 18, borderWidth: 3, borderColor: 'rgba(255,255,255,0.65)',
-    overflow: 'hidden', backgroundColor: '#111', elevation: 20,
+    width: PIP_WIDTH, height: PIP_HEIGHT, borderRadius: 20, borderWidth: 3, borderColor: 'rgba(255,255,255,0.65)',
+    overflow: 'hidden', backgroundColor: '#111', shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.6, shadowRadius: 16, elevation: 20,
   },
   pipImage: { width: '100%', height: '100%' },
-  pipSwapIcon: {
-    position: 'absolute', top: 6, right: 6,
-    backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 9, padding: 4,
-  },
-  pipLabelWrap: { position: 'absolute', bottom: 7, left: 0, right: 0, alignItems: 'center' },
+  pipSwapIcon: { position: 'absolute', top: 7, right: 7, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10, padding: 4 },
+  pipLabelWrap: { position: 'absolute', bottom: 8, left: 0, right: 0, alignItems: 'center' },
   pipLabelText: {
-    fontSize: 10, fontWeight: '700', color: '#FFF',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, overflow: 'hidden',
+    fontSize: 11, fontWeight: '700', color: '#FFF', backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, overflow: 'hidden',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
   },
-  controlPanel: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingTop: 24, paddingHorizontal: 20,
-  },
+  controlPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 30, paddingHorizontal: 20 },
   panelBg: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: -120,
-    backgroundColor: 'rgba(255,255,255,0.97)',
-    borderTopLeftRadius: 40, borderTopRightRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.97)', borderTopLeftRadius: 44, borderTopRightRadius: 44,
   },
-  controlsLayout: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
+  controlsLayout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sideGroup: { flexDirection: 'row', flex: 1, justifyContent: 'space-evenly', alignItems: 'center' },
-  iconButton: { justifyContent: 'center', alignItems: 'center', elevation: 3 },
-  hangUpBtn: { backgroundColor: '#FFF', padding: 8, elevation: 14 },
-  hangUpInner: { flex: 1, backgroundColor: '#E94057', justifyContent: 'center', alignItems: 'center' },
+  iconButton: {
+    width: ICON_SIZE, height: ICON_SIZE, borderRadius: ICON_SIZE / 2, justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3,
+  },
+  hangUpBtn: {
+    width: END_CALL_SIZE, height: END_CALL_SIZE, borderRadius: END_CALL_SIZE / 2, backgroundColor: '#FFF', padding: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.28, shadowRadius: 18, elevation: 14,
+  },
+  hangUpInner: {
+    flex: 1, borderRadius: (END_CALL_SIZE - 16) / 2, backgroundColor: '#E94057', justifyContent: 'center', alignItems: 'center',
+  },
+  audioCenterContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 60,
+  },
+  avatarRippleRing: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  avatarRippleRing2: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  },
+  audioAvatarContainer: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
+    overflow: 'hidden',
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  audioAvatar: {
+    width: '100%',
+    height: '100%',
+  },
+  controlWrapper: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  controlBtnLabel: {
+    fontSize: 12,
+    color: '#555555',
+    fontWeight: '600',
+    marginTop: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+  },
 });

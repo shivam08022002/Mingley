@@ -17,7 +17,7 @@ import { useFilterStore } from '../store/useFilterStore';
 import { useDiscoverStore } from '../store/useDiscoverStore';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../theme/ThemeContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
