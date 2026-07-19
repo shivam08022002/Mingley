@@ -173,6 +173,25 @@ export const SwipeCard = forwardRef(
       };
     });
 
+    const superOverlayStyle = useAnimatedStyle(() => {
+      const opacity = interpolate(
+        translateY.value,
+        [SWIPE_THRESHOLD_UP, 0],
+        [1, 0],
+        Extrapolate.CLAMP
+      );
+      const scale = interpolate(
+        translateY.value,
+        [SWIPE_THRESHOLD_UP, 0],
+        [1.1, 0.7],
+        Extrapolate.CLAMP
+      );
+      return {
+        opacity,
+        transform: [{ scale }],
+      };
+    });
+
     const { theme } = useTheme();
 
     return (
@@ -196,6 +215,9 @@ export const SwipeCard = forwardRef(
               </Animated.View>
               <Animated.View style={[styles.overlayContainer, dislikeOverlayStyle]} pointerEvents="none">
                 <Icon name="close" size={54} color="#E86B32" />
+              </Animated.View>
+              <Animated.View style={[styles.overlayContainer, superOverlayStyle]} pointerEvents="none">
+                <Icon name="star" size={54} color="#7C3AED" />
               </Animated.View>
             </Animated.View>
           </GestureDetector>

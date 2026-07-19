@@ -55,50 +55,73 @@ if (!RtcSurfaceView) {
   RtcSurfaceView = View;
 }
 if (!createAgoraRtcEngine) {
-  createAgoraRtcEngine = () => ({
-    initialize: () => {
-      console.log('[Agora Mock] initialize called');
-    },
-    enableAudio: () => {
-      console.log('[Agora Mock] enableAudio called');
-    },
-    enableVideo: () => {
-      console.log('[Agora Mock] enableVideo called');
-    },
-    startPreview: () => {
-      console.log('[Agora Mock] startPreview called');
-    },
-    addListener: (event, callback) => {
-      console.log(`[Agora Mock] addListener: ${event}`);
-      if (event === 'onJoinChannelSuccess') {
-        setTimeout(() => callback({ channelId: 'mock-channel' }, 0), 1000);
-      }
-      if (event === 'onUserJoined') {
-        setTimeout(() => callback({ channelId: 'mock-channel' }, 12345), 3000);
-      }
-    },
-    setEnableSpeakerphone: (enabled) => {
-      console.log(`[Agora Mock] setEnableSpeakerphone: ${enabled}`);
-    },
-    joinChannel: (token, channel, uid, options) => {
-      console.log(`[Agora Mock] joinChannel: ${channel}`);
-    },
-    muteLocalAudioStream: (muted) => {
-      console.log(`[Agora Mock] muteLocalAudioStream: ${muted}`);
-    },
-    muteLocalVideoStream: (muted) => {
-      console.log(`[Agora Mock] muteLocalVideoStream: ${muted}`);
-    },
-    switchCamera: () => {
-      console.log('[Agora Mock] switchCamera called');
-    },
-    leaveChannel: () => {
-      console.log('[Agora Mock] leaveChannel called');
-    },
-    release: () => {
-      console.log('[Agora Mock] release called');
-    },
-  });
+  // FIX 1 (Mock hardening): Only allow the mock engine in __DEV__ builds.
+  // In a production build without the real native module, show a clear error
+  // instead of silently faking a successful call with auto-fired callbacks.
+  if (!__DEV__) {
+    // Production: export a stub that immediately throws so callers surface the error.
+    createAgoraRtcEngine = () => ({
+      initialize: () => { throw new Error('[Agora] Native module not linked. Calling is unavailable.'); },
+      enableAudio: () => {},
+      enableVideo: () => {},
+      startPreview: () => {},
+      addListener: () => {},
+      setEnableSpeakerphone: () => {},
+      joinChannel: () => { throw new Error('[Agora] Native module not linked. Calling is unavailable.'); },
+      muteLocalAudioStream: () => {},
+      muteLocalVideoStream: () => {},
+      switchCamera: () => {},
+      leaveChannel: () => {},
+      release: () => {},
+    });
+  } else {
+    // DEV only: silent mock that simulates a successful call so the UI is
+    // exercisable without a real device / custom dev-client.
+    createAgoraRtcEngine = () => ({
+      initialize: () => {
+        console.log('[Agora Mock] initialize called');
+      },
+      enableAudio: () => {
+        console.log('[Agora Mock] enableAudio called');
+      },
+      enableVideo: () => {
+        console.log('[Agora Mock] enableVideo called');
+      },
+      startPreview: () => {
+        console.log('[Agora Mock] startPreview called');
+      },
+      addListener: (event, callback) => {
+        console.log(`[Agora Mock] addListener: ${event}`);
+        if (event === 'onJoinChannelSuccess') {
+          setTimeout(() => callback({ channelId: 'mock-channel' }, 0), 1000);
+        }
+        if (event === 'onUserJoined') {
+          setTimeout(() => callback({ channelId: 'mock-channel' }, 12345), 3000);
+        }
+      },
+      setEnableSpeakerphone: (enabled) => {
+        console.log(`[Agora Mock] setEnableSpeakerphone: ${enabled}`);
+      },
+      joinChannel: (token, channel, uid, options) => {
+        console.log(`[Agora Mock] joinChannel: ${channel}`);
+      },
+      muteLocalAudioStream: (muted) => {
+        console.log(`[Agora Mock] muteLocalAudioStream: ${muted}`);
+      },
+      muteLocalVideoStream: (muted) => {
+        console.log(`[Agora Mock] muteLocalVideoStream: ${muted}`);
+      },
+      switchCamera: () => {
+        console.log('[Agora Mock] switchCamera called');
+      },
+      leaveChannel: () => {
+        console.log('[Agora Mock] leaveChannel called');
+      },
+      release: () => {
+        console.log('[Agora Mock] release called');
+      },
+    });
+  }
 }
 
 const CALLER_IMAGE_FALLBACK =
@@ -315,7 +338,21 @@ export const CallingScreen = ({ navigation, route }) => {
       return;
     }
     try {
-      await requestAndroidPermissions(callType);
+      // FIX 3 (Permission check): Capture the boolean result of the permission
+      // request and abort if any required permission was denied. Previously the
+      // return value was discarded, so the call would silently proceed even when
+      // mic/camera access was refused, resulting in no audio/video.
+      const permissionsGranted = await requestAndroidPermissions(callType);
+      if (!permissionsGranted) {
+        const missing = callType === 'video' ? 'microphone and camera' : 'microphone';
+        Alert.alert(
+          'Permissions Required',
+          `Mingley needs access to your ${missing} to make calls. Please grant the permission in Settings and try again.`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       await initAgoraEngine(appId, callType);
 
       await agoraEngineRef.current.joinChannel(
@@ -353,17 +390,24 @@ export const CallingScreen = ({ navigation, route }) => {
   useEffect(() => {
     signalRService.onCallAnswered = (data) => {
       const currentCallId = callIdRef.current;
-      if (!data?.callId || !currentCallId || data.callId === currentCallId) {
-        console.log('[CallingScreen] CallAnswered received → outgoing call answered');
-        setOutgoingAnswered(true);
+      // FIX 2 (CallAnswered guard): Require both IDs to be present and match.
+      // The original condition was inverted — `data.callId === currentCallId`
+      // was used as a PASS condition, meaning a missing callId on either side
+      // would also pass (treating it as a match). This caused foreign or
+      // premature events to flip the caller into "connected" state.
+      if (!currentCallId || !data?.callId || String(data.callId) !== String(currentCallId)) {
+        console.warn('[CallingScreen] CallAnswered ignored — callId mismatch', { received: data?.callId, current: currentCallId });
+        return;
+      }
+      console.log('[CallingScreen] CallAnswered received → outgoing call answered', data.callId);
+      setOutgoingAnswered(true);
 
-        // If we get Agora details in the answered payload, use them
-        const agoraObj = data?.agora;
-        if (agoraObj?.appId && !agoraJoined) {
-          setAgoraAppId(agoraObj.appId);
-          setAgoraToken(agoraObj.token || null);
-          setAgoraChannel(agoraObj.channelName || `call_${currentCallId}`);
-        }
+      // If we get Agora details in the answered payload, use them
+      const agoraObj = data?.agora;
+      if (agoraObj?.appId && !agoraJoined) {
+        setAgoraAppId(agoraObj.appId);
+        setAgoraToken(agoraObj.token || null);
+        setAgoraChannel(agoraObj.channelName || `call_${currentCallId}`);
       }
     };
     return () => { signalRService.onCallAnswered = null; };

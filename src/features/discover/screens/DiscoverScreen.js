@@ -12,10 +12,12 @@ import { SwipeCard } from '../components/SwipeCard';
 import { ActionButtons } from '../components/ActionButtons';
 import { FilterSheet } from '../components/FilterSheet';
 import { SuperchatModal } from '../components/SuperchatModal';
+import { TutorialOverlay } from '../components/TutorialOverlay';
 import { useFilterStore } from '../store/useFilterStore';
 import { useDiscoverStore } from '../store/useDiscoverStore';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../theme/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TITLE_FONT = Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif';
 const TITLE_MED = Platform.OS === 'ios' ? 'AvenirNext-Medium' : 'sans-serif-medium';
@@ -56,6 +58,8 @@ export const DiscoverScreen = React.memo(() => {
   const [cardsContainerHeight, setCardsContainerHeight] = useState(0);
   const swipeRef = useRef(null);
   const lastFiltersRef = useRef(null);
+
+
 
   const handleReload = useCallback(async () => {
     resetPage();
@@ -277,6 +281,9 @@ export const DiscoverScreen = React.memo(() => {
         onClose={() => setSuperchatVisible(false)}
         user={profiles[0]}
       />
+
+      {/* Onboarding Tutorial Overlay */}
+      <TutorialOverlay />
     </SafeAreaView>
   );
 });

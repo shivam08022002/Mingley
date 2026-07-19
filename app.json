@@ -11,6 +11,8 @@
       "bundleIdentifier": "com.shivam.mingley",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Mingley uses your location to show you people nearby and calculate distance.",
+        "NSMicrophoneUsageDescription": "Allow Mingley to access your microphone for voice and video calls.",
+        "NSCameraUsageDescription": "Allow Mingley to access your camera for video calls.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
@@ -24,7 +26,10 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/appicon_foreground.png",
