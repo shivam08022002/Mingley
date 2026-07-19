@@ -27,8 +27,7 @@ let isAgoraSdkAvailable = false;
 
 if (Platform.OS !== 'web') {
   try {
-    const req = require;
-    const Agora = req('react-native-agora');
+    const Agora = require('react-native-agora');
     createAgoraRtcEngine = Agora.createAgoraRtcEngine;
     RtcSurfaceView = Agora.RtcSurfaceView;
     ChannelProfileType = Agora.ChannelProfileType;
