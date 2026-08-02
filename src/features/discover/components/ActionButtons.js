@@ -14,10 +14,10 @@ export const ActionButtons = ({ onDislike, onLike, onSuperchat, style }) => {
         style={[
           styles.button,
           styles.smallButton,
-          { 
-            backgroundColor: theme.cardBackground, 
-            borderWidth: 1.5, 
-            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder 
+          {
+            backgroundColor: theme.cardBackground,
+            borderWidth: 1.5,
+            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder
           },
         ]}
         onPress={onDislike}
@@ -39,10 +39,10 @@ export const ActionButtons = ({ onDislike, onLike, onSuperchat, style }) => {
         style={[
           styles.button,
           styles.smallButton,
-          { 
-            backgroundColor: theme.cardBackground, 
-            borderWidth: 1.5, 
-            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder 
+          {
+            backgroundColor: theme.cardBackground,
+            borderWidth: 1.5,
+            borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder
           },
         ]}
         onPress={onSuperchat}

@@ -257,6 +257,45 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
     [setAgeRange]
   );
 
+  // ── Live-apply: reload profiles on every filter change (no Apply button needed) ──
+  const isReadyRef = useRef(false);
+
+  const debouncedAutoApply = useCallback(
+    debounce(async () => {
+      if (!isReadyRef.current || !onApply) return;
+      try {
+        const state = useFilterStore.getState();
+        await userService.updatePreferences({
+          interestedIn: state.interestedIn,
+          minAge: state.ageRange[0],
+          maxAge: state.ageRange[1],
+          maxDistance: state.distance,
+          relationshipType: state.relationshipType,
+          nearbyOnly: state.nearbyOnly,
+          onlineOnly: state.onlineStatus,
+          verifiedOnly: state.verifiedOnly,
+          location: state.location,
+        });
+        onApply();
+      } catch (err) {
+        console.warn('[FilterSheet] live-apply silently failed:', err);
+      }
+    }, 700),
+    [onApply]
+  );
+
+  // Reset ready flag whenever the sheet closes so re-opening doesn’t mis-fire
+  useEffect(() => {
+    if (!visible) isReadyRef.current = false;
+  }, [visible]);
+
+  // Trigger whenever the user actually changes a filter value
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { debouncedAutoApply(); }, [
+    interestedIn, distance, ageRange, onlineStatus,
+    nearbyOnly, verifiedOnly, interests, relationshipType,
+  ]);
+
   useEffect(() => {
     const fetchInterestsAndPreferences = async () => {
       setLoadingInterests(true);
@@ -308,6 +347,8 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
         console.error('Fetch filter data error:', error);
       } finally {
         setLoadingInterests(false);
+        // Mark ready — any change AFTER this point is user-driven
+        isReadyRef.current = true;
       }
     };
     if (visible) fetchInterestsAndPreferences();
@@ -355,33 +396,6 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
     },
   });
 
-  const handleApply = useCallback(async () => {
-    try {
-      const {
-        interestedIn, distance, ageRange, onlineStatus,
-        verifiedOnly, nearbyOnly, relationshipType, location
-      } = useFilterStore.getState();
-
-      await userService.updatePreferences({
-        interestedIn,
-        minAge: ageRange[0],
-        maxAge: ageRange[1],
-        maxDistance: distance,
-        relationshipType,
-        nearbyOnly,
-        onlineOnly: onlineStatus,
-        verifiedOnly,
-        location
-      });
-      if (onApply) {
-        onApply();
-      }
-      onClose();
-    } catch (error) {
-      console.error('Update preferences error:', error);
-      onClose(); // Still close if it fails, or show alert
-    }
-  }, [onClose, onApply]);
   const handleClear = useCallback(() => reset(), [reset]);
 
   // const detectGPSLocation = async () => {
@@ -799,16 +813,6 @@ export const FilterSheet = React.memo(({ visible, onClose, onApply }) => {
             )}
           </Section>
 
-          {/* Apply */}
-          <TouchableOpacity style={s.applyBtn} onPress={handleApply}>
-            <LinearGradient
-              colors={theme.isDark ? ['#F6DCA0', '#D4AF37'] : ['#E94057', '#8A2387']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={s.applyGradient}
-            >
-              <Text style={[s.applyText, theme.isDark && { color: '#0A0A0A', fontWeight: '800' }]}>Apply Filters</Text>
-            </LinearGradient>
-          </TouchableOpacity>
         </ScrollView>
       </BottomSheetContainer>
 

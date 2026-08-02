@@ -1,6 +1,6 @@
 PODS:
-  - AgoraIrisRTC_iOS (4.5.3-build.1)
-  - AgoraRtcEngine_Special_iOS (4.5.3.70)
+  - AgoraIrisRTC_iOS2 (4.6.2-build.1)
+  - AgoraVideo_Special_iOS (4.6.2.70)
   - EXApplication (7.0.8):
     - ExpoModulesCore
   - EXAV (16.0.8):
@@ -1382,9 +1382,9 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
-  - react-native-agora (4.5.4):
-    - AgoraIrisRTC_iOS (= 4.5.3-build.1)
-    - AgoraRtcEngine_Special_iOS (= 4.5.3.70)
+  - react-native-agora (4.6.2):
+    - AgoraIrisRTC_iOS2 (= 4.6.2-build.1)
+    - AgoraVideo_Special_iOS (= 4.6.2.70)
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2307,8 +2307,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - AgoraIrisRTC_iOS
-    - AgoraRtcEngine_Special_iOS
+    - AgoraIrisRTC_iOS2
+    - AgoraVideo_Special_iOS
     - libavif
     - libdav1d
     - libwebp
@@ -2510,8 +2510,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  AgoraIrisRTC_iOS: d6468160cad25d36c2b6cb5e9bd5b17ba4e58677
-  AgoraRtcEngine_Special_iOS: 48063561d21b07524358ee0a17abc6be762c58f7
+  AgoraIrisRTC_iOS2: 13996c3c78134da357634f6a1a12741436658886
+  AgoraVideo_Special_iOS: 9bd42c487f936f4d335d5630e2632f0b08e214f5
   EXApplication: 1e98d4b1dccdf30627f92917f4b2c5a53c330e5f
   EXAV: b60fcf142fae6684d295bc28cd7cfcb3335570ea
   EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
@@ -2566,7 +2566,7 @@ SPEC CHECKSUMS:
   React-logger: 50fdb9a8236da90c0b1072da5c32ee03aeb5bf28
   React-Mapbuffer: 9050ee10c19f4f7fca8963d0211b2854d624973e
   React-microtasksnativemodule: f775db9e991c6f3b8ccbc02bfcde22770f96e23b
-  react-native-agora: b17144c976d366fbd85b25a0fa5899a157805f96
+  react-native-agora: c37da1d6b8f05956793a2d30491cc3689cb33fd3
   react-native-razorpay: abd4d43bf5d22e2df46fe57fa924e5fcd45e3097
   react-native-safe-area-context: 37e680fc4cace3c0030ee46e8987d24f5d3bdab2
   react-native-worklets-core: 3a098cd17188379c1a0ecbdea1f7d28f70dbb2a0

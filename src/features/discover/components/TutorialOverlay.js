@@ -104,7 +104,12 @@ const WelcomeScreen = ({ theme, onStart, onSkip, bgImage }) => {
   return (
     <View style={s.welcomeRoot}>
       {/* Background image (blurred via opacity overlay) */}
-      <FastImage source={{ uri: bgImage }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+      <FastImage
+        source={{ uri: bgImage }}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        contentPosition="top"
+      />
       <LinearGradient
         colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.65)', 'rgba(0,0,0,0.88)']}
         locations={[0, 0.45, 1]}
@@ -139,7 +144,7 @@ const WelcomeScreen = ({ theme, onStart, onSkip, bgImage }) => {
 
         {/* Skip */}
         <TouchableOpacity onPress={onSkip} activeOpacity={0.7} style={s.skipTouchable}>
-          <Text style={s.skipLabel}>
+          <Text style={[s.skipLabel, { color: 'rgba(255,255,255,0.6)' }]}>
             Skip
           </Text>
         </TouchableOpacity>
@@ -151,7 +156,7 @@ const WelcomeScreen = ({ theme, onStart, onSkip, bgImage }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SWIPEABLE TUTORIAL CARD (Replica discover screen + dim focus backdrop)
 // ═══════════════════════════════════════════════════════════════════════════════
-const SwipeTutorialCard = ({ stepIndex, profile, imageUrl, stepConfig, theme, onCorrectSwipe }) => {
+const SwipeTutorialCard = ({ stepIndex, profile, imageUrl, stepConfig, theme, onCorrectSwipe, onSkip }) => {
   const insets = useSafeAreaInsets();
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -251,6 +256,16 @@ const SwipeTutorialCard = ({ stepIndex, profile, imageUrl, stepConfig, theme, on
 
   return (
     <View style={[s.discoverContainer, { backgroundColor: theme.background }]}>
+
+      {/* Skip tutorial button (top-right) */}
+      <TouchableOpacity
+        style={s.swipeSkipBtn}
+        onPress={onSkip}
+        activeOpacity={0.8}
+      >
+        <Text style={[s.swipeSkipText, { color: theme.isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)' }]}>Skip tutorial</Text>
+        <Icon name="chevron-forward" size={13} color={theme.isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)'} />
+      </TouchableOpacity>
 
       {/* 1. Header (Discover screen match) */}
       <View style={[s.discoverHeader, { paddingTop: insets.top + SPACING.m }]}>
@@ -574,6 +589,7 @@ export const TutorialOverlay = () => {
           stepConfig={SWIPE_STEPS[swipeStep]}
           theme={theme}
           onCorrectSwipe={handleCorrectSwipe}
+          onSkip={handleSkipWelcome}
         />
       )}
 
@@ -646,6 +662,25 @@ const s = StyleSheet.create({
   },
   skipLabel: {
     fontSize: 14,
+    fontWeight: '600',
+    fontFamily: TITLE_FONT,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  swipeSkipBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    zIndex: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    gap: 4,
+  },
+  swipeSkipText: {
+    fontSize: 13,
     fontWeight: '600',
     fontFamily: TITLE_FONT,
   },

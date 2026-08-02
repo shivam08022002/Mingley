@@ -12,6 +12,7 @@ import {
   Dimensions,
   Alert,
   PermissionsAndroid,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as FastImage } from 'expo-image';
@@ -21,13 +22,18 @@ import { useChatStore } from '../../../store/useChatStore';
 import { callService } from '../../../services/apiServices';
 import { signalRService } from '../../../services/signalRService';
 
-// ─── Agora SDK (native only) ─────────────────────────────────────────────────
+// ─── Agora SDK (native only, web gets mock) ──────────────────────────────────
 let createAgoraRtcEngine, RtcSurfaceView, ChannelProfileType, ClientRoleType, VideoSourceType;
 let isAgoraSdkAvailable = false;
 
-if (Platform.OS !== 'web') {
+// On web, Metro statically traces require() calls and crashes on native-only
+// modules even inside an if-block. We use a variable-indirected require so the
+// static analyser cannot follow it, while the runtime Platform check keeps web
+// safe at execution time.
+const _nativeRequire = Platform.OS !== 'web' ? require : null;
+if (_nativeRequire) {
   try {
-    const Agora = require('react-native-agora');
+    const Agora = _nativeRequire('react-native-agora');
     createAgoraRtcEngine = Agora.createAgoraRtcEngine;
     RtcSurfaceView = Agora.RtcSurfaceView;
     ChannelProfileType = Agora.ChannelProfileType;
@@ -36,8 +42,8 @@ if (Platform.OS !== 'web') {
     isAgoraSdkAvailable = true;
   } catch (e) {
     console.warn(
-      '[CallingScreen] Agora SDK not found. Voice/Video calling will be MOCKED — mic/camera will NOT work for real. This usually means react-native-agora is not linked (e.g. running in Expo Go instead of a custom dev client).',
-      e
+      '[CallingScreen] Agora SDK not found. Voice/Video calling will be MOCKED — mic/camera will NOT work for real.',
+      e?.message || e
     );
   }
 }
@@ -117,6 +123,73 @@ async function requestCallPermissions(isVideo) {
 /* ─── Main screen ─────────────────────────────────────────────────────────── */
 export const CallingScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // ─── Full theme palette ───────────────────────────────────────────────────
+  const T = isDark ? {
+    // Dark — deep charcoal panel, glowing neon-tinted buttons
+    bgOverlay:      'rgba(8, 8, 14, 0.78)',
+    panelBg:        'rgba(14, 14, 20, 0.97)',
+    panelBorder:    'rgba(255,255,255,0.07)',
+    labelColor:     '#9CA3AF',
+    nameColor:      '#FFFFFF',
+    headerBtnBg:    'rgba(255,255,255,0.12)',
+    headerBtnBorder:'rgba(255,255,255,0.1)',
+    balanceBg:      'rgba(255,215,0,0.1)',
+    balanceBorder:  '#FFD700',
+    rateBg:         'rgba(255,215,0,0.08)',
+    rateBorder:     'rgba(255,215,0,0.25)',
+    timeBg:         'rgba(255,255,255,0.10)',
+    timeBorder:     'rgba(255,255,255,0.12)',
+    avatarBorder:   'rgba(233,64,87,0.7)',
+    avatarGlow:     '#E94057',
+    ripple1Border:  'rgba(233,64,87,0.35)',
+    ripple1Bg:      'rgba(233,64,87,0.05)',
+    ripple2Border:  'rgba(233,64,87,0.15)',
+    ripple2Bg:      'rgba(233,64,87,0.02)',
+    pipBorder:      'rgba(255,255,255,0.55)',
+    // Buttons
+    btnDefaultBg:   'rgba(255,255,255,0.09)',
+    btnDefaultIcon: '#D1D5DB',
+    btnActiveBg:    'rgba(255,255,255,0.15)',
+    btnMuteBg:      'rgba(220,38,38,0.20)',
+    btnMuteIcon:    '#F87171',
+    btnSpeakerBg:   'rgba(96,165,250,0.18)',
+    btnSpeakerIcon: '#60A5FA',
+    hangUpOuter:    'rgba(255,255,255,0.08)',
+  } : {
+    // Light — clean white frosted panel, soft pastels
+    bgOverlay:      'rgba(0,0,0,0.52)',
+    panelBg:        'rgba(255,255,255,0.98)',
+    panelBorder:    'rgba(0,0,0,0.06)',
+    labelColor:     '#6B7280',
+    nameColor:      '#FFFFFF',
+    headerBtnBg:    'rgba(255,255,255,0.25)',
+    headerBtnBorder:'rgba(255,255,255,0.2)',
+    balanceBg:      'rgba(0,0,0,0.45)',
+    balanceBorder:  '#FFD700',
+    rateBg:         'rgba(0,0,0,0.3)',
+    rateBorder:     'rgba(255,215,0,0.35)',
+    timeBg:         'rgba(255,255,255,0.22)',
+    timeBorder:     'rgba(255,255,255,0.22)',
+    avatarBorder:   'rgba(255,255,255,0.9)',
+    avatarGlow:     '#FFFFFF',
+    ripple1Border:  'rgba(255,255,255,0.45)',
+    ripple1Bg:      'rgba(255,255,255,0.06)',
+    ripple2Border:  'rgba(255,255,255,0.22)',
+    ripple2Bg:      'rgba(255,255,255,0.02)',
+    pipBorder:      'rgba(255,255,255,0.72)',
+    // Buttons
+    btnDefaultBg:   '#F3F4F6',
+    btnDefaultIcon: '#374151',
+    btnActiveBg:    '#E5E7EB',
+    btnMuteBg:      '#FEE2E2',
+    btnMuteIcon:    '#DC2626',
+    btnSpeakerBg:   '#DBEAFE',
+    btnSpeakerIcon: '#2563EB',
+    hangUpOuter:    '#FFFFFF',
+  };
 
   const { user } = route?.params || { user: { name: 'Unknown', image: CALLER_IMAGE_FALLBACK } };
   const isVideoCall = (route?.params?.callType || 'audio') === 'video';
@@ -170,7 +243,7 @@ export const CallingScreen = ({ navigation, route }) => {
     engineRef.current = null;
 
     if (callIdRef.current) {
-      callService.endCall(callIdRef.current).catch((err) => console.error('endCall API failed:', err));
+      callService.endCall(callIdRef.current).catch((err) => console.warn('endCall API failed:', err));
     }
     navigation.goBack();
   }, [navigation]);
@@ -249,8 +322,43 @@ export const CallingScreen = ({ navigation, route }) => {
       engine.enableAudio();
       engine.setDefaultAudioRouteToSpeakerphone(true);
 
+      let refreshCount = 0;
+      let isRefreshing = false;
+      const MAX_REFRESH = 2;
+
+      const refreshToken = async () => {
+        if (isRefreshing) return;
+        if (refreshCount >= MAX_REFRESH) {
+          console.warn('[agora] Max token refresh attempts reached (2). Token invalid on backend.');
+          setConnectionState('failed');
+          setErrorMsg('Call failed: Invalid credentials from server.');
+          return;
+        }
+
+        isRefreshing = true;
+        refreshCount += 1;
+
+        try {
+          const res = await callService.getAgoraToken(resolvedCallId);
+          const newToken = res.token || res.agoraToken || res.data?.token || res.data?.agoraToken;
+          if (newToken && engineRef.current) {
+            engineRef.current.renewToken?.(newToken);
+            console.log('[agora] token renewed successfully');
+          } else {
+            console.warn('[agora] Server did not return a new Agora token.');
+            setConnectionState('failed');
+            setErrorMsg('Call failed: Unable to refresh token.');
+          }
+        } catch (e) {
+          console.warn('[agora] failed to renew token:', e);
+        } finally {
+          isRefreshing = false;
+        }
+      };
+
       engine.registerEventHandler({
         onJoinChannelSuccess: () => {
+          refreshCount = 0;
           console.log('[agora] joined channel', agora.channelName);
         },
         onUserJoined: (_conn, uid) => {
@@ -267,12 +375,30 @@ export const CallingScreen = ({ navigation, route }) => {
             setErrorMsg('Could not connect to the call. Please try again.');
           }
         },
+        onTokenPrivilegeWillExpire: () => {
+          console.log('[agora] token privilege will expire, renewing...');
+          refreshToken();
+        },
+        onRequestToken: () => {
+          console.log('[agora] request token received, renewing...');
+          refreshToken();
+        },
         onError: (err, msg) => {
-          console.error('[agora] error', err, msg);
+          console.warn('[agora] RTC event code:', err, msg);
+          if (err === 109 || err === 110) {
+            if (refreshCount < MAX_REFRESH) {
+              console.warn('[agora] Token invalid/expired (code ' + err + '). Attempting refresh (attempt ' + (refreshCount + 1) + '/' + MAX_REFRESH + ')...');
+              refreshToken();
+            } else {
+              console.warn('[agora] Token error ' + err + ' persisted after refresh attempt.');
+              setConnectionState('failed');
+              setErrorMsg('Call failed: Invalid Agora token credentials.');
+            }
+          }
         },
       });
 
-      engine.joinChannel(agora.token || null, agora.channelName, agora.uid || 0, {
+      engine.joinChannel(agora.token || '', agora.channelName, Number(agora.uid) || 0, {
         clientRoleType: ClientRoleType.ClientRoleBroadcaster,
       });
     };
@@ -305,7 +431,7 @@ export const CallingScreen = ({ navigation, route }) => {
         try { engineRef.current?.leaveChannel(); } catch (e) { /* no-op */ }
         try { engineRef.current?.release(); } catch (e) { /* no-op */ }
         if (callIdRef.current) {
-          callService.endCall(callIdRef.current).catch(() => {});
+          callService.endCall(callIdRef.current).catch(() => { });
         }
       }
     };
@@ -413,36 +539,39 @@ export const CallingScreen = ({ navigation, route }) => {
           source={{ uri: safeRemoteImage }}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
-          blurRadius={35}
+          blurRadius={isDark ? 42 : 30}
         />
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(10, 10, 15, 0.72)' }]} />
+        {/* Theme-aware dark/light overlay tint */}
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: T.bgOverlay }]} />
 
         <View style={styles.audioCenterContainer}>
           {/* Breathing ripple ring 1 */}
-          <Animated.View style={[styles.avatarRippleRing, {
-            transform: [{ scale: scaleAnim }],
-            opacity: pulseAnim.interpolate({
-              inputRange: [0.4, 1],
-              outputRange: [0.15, 0.45],
-            })
-          }]} />
+          <Animated.View style={[
+            styles.avatarRippleRing,
+            { borderColor: T.ripple1Border, backgroundColor: T.ripple1Bg },
+            {
+              transform: [{ scale: scaleAnim }],
+              opacity: pulseAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.15, 0.55] }),
+            },
+          ]} />
 
           {/* Breathing ripple ring 2 */}
-          <Animated.View style={[styles.avatarRippleRing2, {
-            transform: [{ scale: Animated.multiply(scaleAnim, 1.15) }],
-            opacity: pulseAnim.interpolate({
-              inputRange: [0.4, 1],
-              outputRange: [0.05, 0.25],
-            })
-          }]} />
+          <Animated.View style={[
+            styles.avatarRippleRing2,
+            { borderColor: T.ripple2Border, backgroundColor: T.ripple2Bg },
+            {
+              transform: [{ scale: Animated.multiply(scaleAnim, 1.15) }],
+              opacity: pulseAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.05, 0.28] }),
+            },
+          ]} />
 
           {/* Central Avatar */}
-          <Animated.View style={[styles.audioAvatarContainer, { transform: [{ scale: scaleAnim }] }]}>
-            <FastImage
-              source={{ uri: safeRemoteImage }}
-              style={styles.audioAvatar}
-              contentFit="cover"
-            />
+          <Animated.View style={[
+            styles.audioAvatarContainer,
+            { borderColor: T.avatarBorder, shadowColor: T.avatarGlow },
+            { transform: [{ scale: scaleAnim }] },
+          ]}>
+            <FastImage source={{ uri: safeRemoteImage }} style={styles.audioAvatar} contentFit="cover" />
           </Animated.View>
         </View>
       </View>
@@ -455,31 +584,38 @@ export const CallingScreen = ({ navigation, route }) => {
 
       {renderBackground()}
 
+      {/* Vignette gradient — slightly stronger in light to keep UI readable */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.55)', 'transparent', 'rgba(0,0,0,0.75)']}
+        colors={isDark
+          ? ['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.82)']
+          : ['rgba(0,0,0,0.5)', 'transparent', 'rgba(0,0,0,0.68)']}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
 
       <SafeAreaView style={styles.hud} edges={['top']} pointerEvents="box-none">
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => endCall('back_button')} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: T.headerBtnBg, borderColor: T.headerBtnBorder }]}
+            onPress={() => endCall('back_button')}
+            activeOpacity={0.7}
+          >
             <Icon name="chevron-down" size={28} color="#FFFFFF" />
           </TouchableOpacity>
 
           {isBilling ? (
-            <View style={styles.rateTag}>
+            <View style={[styles.rateTag, { backgroundColor: T.rateBg, borderColor: T.rateBorder }]}>
               <Icon name="logo-bitcoin" size={13} color="#FFD700" style={{ marginRight: 4 }} />
               <Text style={styles.rateText}>{RATE} coins/sec</Text>
             </View>
           ) : (
-            <View style={styles.rateTag}>
-              <Icon name="time-outline" size={13} color="rgba(255,255,255,0.75)" style={{ marginRight: 4 }} />
-              <Text style={[styles.rateText, { color: 'rgba(255,255,255,0.75)' }]}>Free for {BILLING_DELAY - time}s</Text>
+            <View style={[styles.rateTag, { backgroundColor: T.rateBg, borderColor: T.rateBorder }]}>
+              <Icon name="time-outline" size={13} color="rgba(255,255,255,0.8)" style={{ marginRight: 4 }} />
+              <Text style={[styles.rateText, { color: 'rgba(255,255,255,0.8)' }]}>Free for {BILLING_DELAY - time}s</Text>
             </View>
           )}
 
-          <View style={styles.balanceBadge}>
+          <View style={[styles.balanceBadge, { backgroundColor: T.balanceBg, borderColor: T.balanceBorder }]}>
             <Icon name="logo-bitcoin" size={16} color="#FFD700" style={{ marginRight: 5 }} />
             <Text style={styles.balanceText}>{coins}</Text>
           </View>
@@ -500,21 +636,39 @@ export const CallingScreen = ({ navigation, route }) => {
         )}
 
         <View style={styles.callerInfoBlock}>
-          <LinearGradient colors={['#E94057', '#F27121']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.statusBadge}>
-            <Text style={styles.statusText}>{connectionState === 'connected' ? 'Ongoing Call' : 'Connecting'}</Text>
+          {/* Status badge */}
+          <LinearGradient
+            colors={isDark ? ['#B91C3C', '#C2410C'] : ['#E94057', '#F27121']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={[
+              styles.statusBadge,
+              isDark && { shadowColor: '#E94057', shadowOpacity: 0.6 },
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {connectionState === 'connected' ? 'Ongoing Call' : 'Connecting'}
+            </Text>
             <Icon name="pulse" size={13} color="#FFF" style={{ marginLeft: 6 }} />
           </LinearGradient>
 
-          <Text style={styles.mainUserName}>{swapped ? 'You' : user.name}</Text>
+          {/* Caller name */}
+          <Text style={[styles.mainUserName, { color: T.nameColor }]}>
+            {swapped ? 'You' : user.name}
+          </Text>
 
-          <View style={styles.timeTag}>
+          {/* Timer chip */}
+          <View style={[styles.timeTag, { backgroundColor: T.timeBg, borderColor: T.timeBorder }]}>
             <Animated.View style={[styles.pulseDot, { opacity: pulseAnim }]} />
             <Text style={styles.timeLabel}>{formatTime()}</Text>
           </View>
 
           {errorMsg && (
-            <View style={{ marginTop: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.2)' }}>
-              <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '600' }}>{errorMsg}</Text>
+            <View style={{
+              marginTop: 12, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12,
+              backgroundColor: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.12)',
+              borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)',
+            }}>
+              <Text style={{ color: '#F87171', fontSize: 11, fontWeight: '700' }}>{errorMsg}</Text>
             </View>
           )}
         </View>
@@ -525,13 +679,15 @@ export const CallingScreen = ({ navigation, route }) => {
             onPress={handleSwap}
             activeOpacity={0.88}
           >
-            <Animated.View style={[styles.pipFrame, { opacity: swapOpacity }]}>
+            <Animated.View style={[styles.pipFrame, { opacity: swapOpacity, borderColor: T.pipBorder }]}>
               {swapped ? renderRemoteFeed() : renderSelfFeed()}
               <View style={styles.pipSwapIcon}>
                 <Icon name="swap-horizontal" size={12} color="#FFF" />
               </View>
               <View style={styles.pipLabelWrap}>
-                <Text style={styles.pipLabelText} numberOfLines={1}>{swapped ? (user.name?.split(' ')[0] ?? 'Them') : 'You'}</Text>
+                <Text style={styles.pipLabelText} numberOfLines={1}>
+                  {swapped ? (user.name?.split(' ')[0] ?? 'Them') : 'You'}
+                </Text>
               </View>
             </Animated.View>
           </TouchableOpacity>
@@ -539,29 +695,41 @@ export const CallingScreen = ({ navigation, route }) => {
       </SafeAreaView>
 
       <View style={[styles.controlPanel, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <View style={styles.panelBg} />
+        {/* Panel background — themed + top border separator */}
+        <View style={[
+          styles.panelBg,
+          { backgroundColor: T.panelBg, borderTopColor: T.panelBorder },
+          isDark && { borderTopWidth: 1 },
+        ]} />
+
         <View style={styles.controlsLayout}>
           {!isVideoCall ? (
-            // Premium audio-specific layouts
+            // ── Audio controls ────────────────────────────────────────────
             <>
               <View style={styles.controlWrapper}>
                 <IconButton
                   name={isMuted ? 'mic-off-outline' : 'mic-outline'}
                   onPress={toggleMute}
                   size={26}
-                  backgroundColor={isMuted ? '#FEE2E2' : '#F5F5F5'}
-                  iconColor={isMuted ? '#DC2626' : '#555'}
+                  backgroundColor={isMuted ? T.btnMuteBg : T.btnDefaultBg}
+                  iconColor={isMuted ? T.btnMuteIcon : T.btnDefaultIcon}
                 />
-                <Text style={styles.controlBtnLabel}>{isMuted ? 'Muted' : 'Mute'}</Text>
+                <Text style={[styles.controlBtnLabel, { color: T.labelColor }]}>
+                  {isMuted ? 'Muted' : 'Mute'}
+                </Text>
               </View>
 
               <View style={styles.controlWrapper}>
-                <TouchableOpacity style={styles.hangUpBtn} onPress={() => endCall('user_ended')} activeOpacity={0.8}>
+                <TouchableOpacity
+                  style={[styles.hangUpBtn, { backgroundColor: T.hangUpOuter }]}
+                  onPress={() => endCall('user_ended')}
+                  activeOpacity={0.8}
+                >
                   <View style={styles.hangUpInner}>
                     <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
                   </View>
                 </TouchableOpacity>
-                <Text style={styles.controlBtnLabel}>End</Text>
+                <Text style={[styles.controlBtnLabel, { color: T.labelColor }]}>End</Text>
               </View>
 
               <View style={styles.controlWrapper}>
@@ -569,24 +737,38 @@ export const CallingScreen = ({ navigation, route }) => {
                   name={isSpeakerOn ? 'volume-high-outline' : 'volume-medium-outline'}
                   onPress={toggleSpeaker}
                   size={26}
-                  backgroundColor={isSpeakerOn ? '#E0F2FE' : '#F5F5F5'}
-                  iconColor={isSpeakerOn ? '#0284C7' : '#555'}
+                  backgroundColor={isSpeakerOn ? T.btnSpeakerBg : T.btnDefaultBg}
+                  iconColor={isSpeakerOn ? T.btnSpeakerIcon : T.btnDefaultIcon}
                 />
-                <Text style={styles.controlBtnLabel}>{isSpeakerOn ? 'Speaker' : 'Earpiece'}</Text>
+                <Text style={[styles.controlBtnLabel, { color: T.labelColor }]}>
+                  {isSpeakerOn ? 'Speaker' : 'Earpiece'}
+                </Text>
               </View>
             </>
           ) : (
-            // Video calling controls
+            // ── Video controls ────────────────────────────────────────────
             <>
               <View style={styles.sideGroup}>
                 <IconButton
                   name={isCameraOff ? 'videocam-off-outline' : 'videocam-outline'}
                   onPress={toggleCamera}
+                  backgroundColor={T.btnDefaultBg}
+                  iconColor={T.btnDefaultIcon}
                 />
-                <IconButton name="camera-reverse-outline" onPress={switchCamera} size={22} />
+                <IconButton
+                  name="camera-reverse-outline"
+                  onPress={switchCamera}
+                  size={22}
+                  backgroundColor={T.btnDefaultBg}
+                  iconColor={T.btnDefaultIcon}
+                />
               </View>
 
-              <TouchableOpacity style={styles.hangUpBtn} onPress={() => endCall('user_ended')} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={[styles.hangUpBtn, { backgroundColor: T.hangUpOuter }]}
+                onPress={() => endCall('user_ended')}
+                activeOpacity={0.8}
+              >
                 <View style={styles.hangUpInner}>
                   <Icon name="call" size={34} color="#FFFFFF" style={{ transform: [{ rotate: '135deg' }] }} />
                 </View>
@@ -597,13 +779,15 @@ export const CallingScreen = ({ navigation, route }) => {
                   name={isSpeakerOn ? 'volume-high-outline' : 'volume-medium-outline'}
                   onPress={toggleSpeaker}
                   size={26}
+                  backgroundColor={isSpeakerOn ? T.btnSpeakerBg : T.btnDefaultBg}
+                  iconColor={isSpeakerOn ? T.btnSpeakerIcon : T.btnDefaultIcon}
                 />
                 <IconButton
                   name={isMuted ? 'mic-off-outline' : 'mic-outline'}
                   onPress={toggleMute}
                   size={26}
-                  backgroundColor={isMuted ? '#FEE2E2' : '#F5F5F5'}
-                  iconColor={isMuted ? '#DC2626' : '#555'}
+                  backgroundColor={isMuted ? T.btnMuteBg : T.btnDefaultBg}
+                  iconColor={isMuted ? T.btnMuteIcon : T.btnDefaultIcon}
                 />
               </View>
             </>
@@ -682,7 +866,8 @@ const styles = StyleSheet.create({
   controlPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 30, paddingHorizontal: 20 },
   panelBg: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: -120,
-    backgroundColor: 'rgba(255,255,255,0.97)', borderTopLeftRadius: 44, borderTopRightRadius: 44,
+    borderTopLeftRadius: 44, borderTopRightRadius: 44,
+    // backgroundColor is injected at render time from the colorScheme token
   },
   controlsLayout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sideGroup: { flexDirection: 'row', flex: 1, justifyContent: 'space-evenly', alignItems: 'center' },
@@ -744,9 +929,9 @@ const styles = StyleSheet.create({
   },
   controlBtnLabel: {
     fontSize: 12,
-    color: '#555555',
     fontWeight: '600',
     marginTop: 8,
     fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif-medium',
+    // color is injected at render time from the colorScheme token (panelLabelColor)
   },
 });

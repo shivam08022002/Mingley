@@ -5,6 +5,18 @@ import { useMatchesStore } from '../features/matches/store/useMatchesStore';
 import { useToastStore } from '../store/useToastStore';
 import { navigationRef } from '../navigation/navigationRef';
 
+const customSignalRLogger = {
+  log: (logLevel, message) => {
+    if (logLevel >= LogLevel.Error) {
+      console.warn('[SignalR Error]', message);
+    } else if (logLevel >= LogLevel.Warning) {
+      console.warn('[SignalR Warning]', message);
+    } else {
+      console.log('[SignalR]', message);
+    }
+  },
+};
+
 class SignalRService {
   constructor() {
     this.connection = null;
@@ -30,7 +42,7 @@ class SignalRService {
       try {
         cb(payload);
       } catch (e) {
-        console.error(`[signalR] listener error for ${eventName}:`, e);
+        console.warn(`[signalR] listener error for ${eventName}:`, e);
       }
     });
   }
@@ -63,8 +75,11 @@ class SignalRService {
           transport: HttpTransportType.WebSockets,
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
-        .configureLogging(LogLevel.Warning)
+        .configureLogging(customSignalRLogger)
         .build();
+
+      this.connection.serverTimeoutInMilliseconds = 60000;
+      this.connection.keepAliveIntervalInMilliseconds = 15000;
 
       // ── Incoming Call ──
       this.connection.on('IncomingCall', (data) => {
@@ -179,7 +194,7 @@ class SignalRService {
       this.started = true;
       console.log('SignalR: Connection established successfully.');
     } catch (error) {
-      console.error('SignalR: Failed to connect:', error);
+      console.warn('SignalR: Failed to connect:', error);
       this.started = false;
     } finally {
       this.isConnecting = false;
@@ -207,7 +222,7 @@ class SignalRService {
       this.started = false;
       console.log('SignalR: Connection stopped successfully.');
     } catch (error) {
-      console.error('SignalR: Failed to stop connection:', error);
+      console.warn('SignalR: Failed to stop connection:', error);
     }
   }
 
@@ -221,7 +236,7 @@ class SignalRService {
       await this.connection.invoke('JoinChat', chatId);
       console.log(`SignalR: Joined chat group chat_${chatId}`);
     } catch (error) {
-      console.error('SignalR: JoinChat failed:', error);
+      console.warn('SignalR: JoinChat failed:', error);
     }
   }
 
@@ -231,7 +246,7 @@ class SignalRService {
       await this.connection.invoke('LeaveChat', chatId);
       console.log(`SignalR: Left chat group chat_${chatId}`);
     } catch (error) {
-      console.error('SignalR: LeaveChat failed:', error);
+      console.warn('SignalR: LeaveChat failed:', error);
     }
   }
 }
