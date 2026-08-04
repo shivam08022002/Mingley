@@ -12,6 +12,7 @@ import { SwipeCard } from '../components/SwipeCard';
 import { ActionButtons } from '../components/ActionButtons';
 import { FilterSheet } from '../components/FilterSheet';
 import { SuperchatModal } from '../components/SuperchatModal';
+import { BoostModal } from '../components/BoostModal';
 import { TutorialOverlay } from '../components/TutorialOverlay';
 import { useFilterStore } from '../store/useFilterStore';
 import { useDiscoverStore } from '../store/useDiscoverStore';
@@ -55,6 +56,7 @@ export const DiscoverScreen = React.memo(() => {
 
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [isSuperchatVisible, setSuperchatVisible] = useState(false);
+  const [isBoostVisible, setBoostVisible] = useState(false);
   const [cardsContainerHeight, setCardsContainerHeight] = useState(0);
   const swipeRef = useRef(null);
   const lastFiltersRef = useRef(null);
@@ -169,6 +171,8 @@ export const DiscoverScreen = React.memo(() => {
 
   const triggerDislike = () => swipeRef.current?.swipeLeft();
   const triggerLike = () => swipeRef.current?.swipeRight();
+  const triggerSuperLike = () => handleSwipeUp();
+  const triggerBoost = () => setBoostVisible(true);
   const triggerSuperchat = () => {
     if (profiles.length > 0) {
       setSuperchatVisible(true);
@@ -240,8 +244,8 @@ export const DiscoverScreen = React.memo(() => {
         <TouchableOpacity
           style={[
             styles.headerButton,
-            { 
-              borderColor: hasActive ? theme.accent : (theme.isDark ? theme.accent : theme.actionButtonBorder), 
+            {
+              borderColor: hasActive ? theme.accent : (theme.isDark ? theme.accent : theme.actionButtonBorder),
               backgroundColor: theme.cardBackground,
               borderRadius: theme.isDark ? 26 : 16
             },
@@ -264,7 +268,9 @@ export const DiscoverScreen = React.memo(() => {
         {TopCards}
         {profiles.length > 0 && (
           <ActionButtons
+            onBoost={triggerBoost}
             onDislike={triggerDislike}
+            onSuperLike={triggerSuperLike}
             onLike={triggerLike}
             onSuperchat={triggerSuperchat}
             style={styles.actionButtonsFloating}
@@ -280,6 +286,12 @@ export const DiscoverScreen = React.memo(() => {
         visible={isSuperchatVisible}
         onClose={() => setSuperchatVisible(false)}
         user={profiles[0]}
+      />
+
+      {/* Boost Modal */}
+      <BoostModal
+        visible={isBoostVisible}
+        onClose={() => setBoostVisible(false)}
       />
 
       {/* Onboarding Tutorial Overlay */}
@@ -322,7 +334,7 @@ const styles = StyleSheet.create({
   },
   actionButtonsFloating: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 35 : 20,
+    bottom: 20,
     left: 0,
     right: 0,
     marginTop: 0,

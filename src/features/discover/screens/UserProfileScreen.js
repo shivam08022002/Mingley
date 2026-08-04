@@ -238,7 +238,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
                 onPress={handleSuperchat}
                 activeOpacity={0.8}
               >
-                <Icon name="flash" size={24} color={isDark ? theme.accent : '#7C3AED'} />
+                <Icon name="chatbubble" size={22} color={isDark ? theme.accent : '#D97706'} />
               </TouchableOpacity>
             </View>
           )}
@@ -422,7 +422,7 @@ export const UserProfileScreen = ({ navigation, route }) => {
               onPress={handleSuperchat}
               activeOpacity={0.7}
             >
-              <Icon name="flash" size={18} color="#7C3AED" />
+              <Icon name="chatbubble-ellipses" size={18} color={isDark ? theme.accent : '#D97706'} />
               <Text style={[styles.superchatBannerText, { color: theme.accent }]}>
                 Send a Superchat to stand out! 💬
               </Text>

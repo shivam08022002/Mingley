@@ -23,6 +23,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import FAIcon from 'react-native-vector-icons/FontAwesome5';
 import { Image as FastImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ActionButtons } from './ActionButtons';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useProfileStore } from '../../profile/store/useProfileStore';
@@ -402,17 +403,9 @@ const SwipeTutorialCard = ({ stepIndex, profile, imageUrl, stepConfig, theme, on
           </Animated.View>
         </GestureDetector>
 
-        {/* 4. Action Row (Discover screen match) */}
-        <View style={s.discoverActionButtons}>
-          <TouchableOpacity style={[s.actionBtnSmall, { backgroundColor: theme.cardBackground, borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder }]}>
-            <Icon name="close" size={32} color={theme.isDark ? theme.accent : '#FF6B6B'} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[s.actionBtnLarge, { backgroundColor: theme.likeButton }]}>
-            <Icon name="heart" size={44} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity style={[s.actionBtnSmall, { backgroundColor: theme.cardBackground, borderColor: theme.isDark ? theme.accent : theme.actionButtonBorder }]}>
-            <Icon name="flash" size={32} color={theme.isDark ? theme.accent : '#7C3AED'} />
-          </TouchableOpacity>
+        {/* 4. Action Row (Floating replica of DiscoverScreen.js) */}
+        <View style={s.actionButtonsFloating}>
+          <ActionButtons />
         </View>
 
         {/* 5. Image Hint Overlay (Floats absolute, doesn't shift layout) */}
@@ -810,7 +803,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 140 : 115, // Perfect action button spacing matching SwipeCard.js
+    paddingBottom: 88, // Exact parity with SwipeCard.js across all platforms
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     borderTopWidth: 1,
@@ -904,42 +897,15 @@ const s = StyleSheet.create({
     elevation: 10,
   },
 
-  // Discover ActionButtons replica
-  discoverActionButtons: {
+  // ActionButtons floating container matching DiscoverScreen.js
+  actionButtonsFloating: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 35 : 20,
+    bottom: 20,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
-    zIndex: 5,
-  },
-  actionBtnSmall: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  actionBtnLarge: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 10,
+    marginTop: 0,
+    marginBottom: 0,
+    zIndex: 100,
   },
 
   // Floating Image Instruction Overlay styles

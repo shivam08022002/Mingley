@@ -208,7 +208,11 @@ class SignalRService {
         (currentRoute?.name === 'Calling' || currentRoute?.name === 'IncomingCall') &&
         (currentRoute.params?.callId === callId || !callId)
       ) {
-        navigationRef.goBack();
+        if (navigationRef.canGoBack()) {
+          navigationRef.goBack();
+        } else {
+          navigationRef.reset({ index: 0, routes: [{ name: 'Home' }] });
+        }
       }
     }
   }

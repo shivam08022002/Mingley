@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
     bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 140 : 115, // Pushes text above the floating buttons
+    paddingTop: 14,
+    paddingBottom: 88, // Clears action buttons with equal vertical spacing around superlike pill across all platforms
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     borderTopWidth: 1,
@@ -462,6 +462,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
+    marginBottom: 10,
     paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',

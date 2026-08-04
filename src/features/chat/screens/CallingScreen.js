@@ -26,68 +26,53 @@ import { signalRService } from '../../../services/signalRService';
 let createAgoraRtcEngine, RtcSurfaceView, ChannelProfileType, ClientRoleType, VideoSourceType;
 let isAgoraSdkAvailable = false;
 
-// On web, Metro statically traces require() calls and crashes on native-only
-// modules even inside an if-block. We use a variable-indirected require so the
-// static analyser cannot follow it, while the runtime Platform check keeps web
-// safe at execution time.
-const _nativeRequire = Platform.OS !== 'web' ? require : null;
-if (_nativeRequire) {
+if (Platform.OS !== 'web') {
   try {
-    const Agora = _nativeRequire('react-native-agora');
-    createAgoraRtcEngine = Agora.createAgoraRtcEngine;
-    RtcSurfaceView = Agora.RtcSurfaceView;
-    ChannelProfileType = Agora.ChannelProfileType;
-    ClientRoleType = Agora.ClientRoleType;
-    VideoSourceType = Agora.VideoSourceType;
-    isAgoraSdkAvailable = true;
+    const Agora = require('react-native-agora');
+    createAgoraRtcEngine = Agora.createAgoraRtcEngine || (typeof Agora.default === 'function' ? Agora.default : null);
+    RtcSurfaceView = Agora.RtcSurfaceView || View;
+    ChannelProfileType = Agora.ChannelProfileType || { ChannelProfileCommunication: 0 };
+    ClientRoleType = Agora.ClientRoleType || { ClientRoleBroadcaster: 1 };
+    VideoSourceType = Agora.VideoSourceType || { VideoSourceCamera: 0, VideoSourceRemote: 1 };
+
+    if (typeof createAgoraRtcEngine === 'function') {
+      isAgoraSdkAvailable = true;
+      console.log('[CallingScreen] REAL Agora SDK engine loaded successfully');
+    }
   } catch (e) {
-    console.warn(
-      '[CallingScreen] Agora SDK not found. Voice/Video calling will be MOCKED — mic/camera will NOT work for real.',
-      e?.message || e
-    );
+    console.error('[CallingScreen] Error loading native react-native-agora module:', e);
   }
 }
 
-// Fallback mocks for web or when react-native-agora is not installed/loaded
-if (!ChannelProfileType) {
-  ChannelProfileType = { ChannelProfileCommunication: 0 };
-}
-if (!ClientRoleType) {
-  ClientRoleType = { ClientRoleBroadcaster: 1 };
-}
-if (!VideoSourceType) {
-  VideoSourceType = { VideoSourceCamera: 0, VideoSourceRemote: 1 };
-}
-if (!RtcSurfaceView) {
-  RtcSurfaceView = View;
-}
-if (!createAgoraRtcEngine) {
-  createAgoraRtcEngine = () => ({
-    initialize: () => { console.log('[Agora Mock] initialize called'); },
-    enableAudio: () => { console.log('[Agora Mock] enableAudio called'); },
-    enableVideo: () => { console.log('[Agora Mock] enableVideo called'); },
-    disableVideo: () => { console.log('[Agora Mock] disableVideo called'); },
-    startPreview: () => { console.log('[Agora Mock] startPreview called'); },
-    registerEventHandler: (handlers) => {
-      console.log('[Agora Mock] registerEventHandler called');
-      if (handlers.onJoinChannelSuccess) {
-        setTimeout(() => handlers.onJoinChannelSuccess(), 1000);
-      }
-      if (handlers.onUserJoined) {
-        setTimeout(() => handlers.onUserJoined({}, 12345), 3000);
-      }
-    },
-    setChannelProfile: (profile) => { console.log('[Agora Mock] setChannelProfile', profile); },
-    setClientRole: (role) => { console.log('[Agora Mock] setClientRole', role); },
-    setDefaultAudioRouteToSpeakerphone: (enabled) => { console.log('[Agora Mock] setDefaultAudioRouteToSpeakerphone', enabled); },
-    setEnableSpeakerphone: (enabled) => { console.log('[Agora Mock] setEnableSpeakerphone', enabled); },
-    joinChannel: (token, channel, uid, options) => { console.log('[Agora Mock] joinChannel', channel); },
-    muteLocalAudioStream: (muted) => { console.log('[Agora Mock] muteLocalAudioStream', muted); },
-    muteLocalVideoStream: (muted) => { console.log('[Agora Mock] muteLocalVideoStream', muted); },
-    switchCamera: () => { console.log('[Agora Mock] switchCamera called'); },
-    leaveChannel: () => { console.log('[Agora Mock] leaveChannel called'); },
-    release: () => { console.log('[Agora Mock] release called'); },
-  });
+// Fallback for web platform only
+if (Platform.OS === 'web') {
+  if (!ChannelProfileType) ChannelProfileType = { ChannelProfileCommunication: 0 };
+  if (!ClientRoleType) ClientRoleType = { ClientRoleBroadcaster: 1 };
+  if (!VideoSourceType) VideoSourceType = { VideoSourceCamera: 0, VideoSourceRemote: 1 };
+  if (!RtcSurfaceView) RtcSurfaceView = View;
+  if (!createAgoraRtcEngine) {
+    createAgoraRtcEngine = () => ({
+      initialize: () => { console.log('[Agora Web] initialize called'); },
+      enableAudio: () => { console.log('[Agora Web] enableAudio called'); },
+      enableVideo: () => { console.log('[Agora Web] enableVideo called'); },
+      disableVideo: () => { console.log('[Agora Web] disableVideo called'); },
+      startPreview: () => { console.log('[Agora Web] startPreview called'); },
+      registerEventHandler: (handlers) => {
+        if (handlers.onJoinChannelSuccess) setTimeout(() => handlers.onJoinChannelSuccess(), 1000);
+        if (handlers.onUserJoined) setTimeout(() => handlers.onUserJoined({}, 12345), 3000);
+      },
+      setChannelProfile: () => {},
+      setClientRole: () => {},
+      setDefaultAudioRouteToSpeakerphone: () => {},
+      setEnableSpeakerphone: () => {},
+      joinChannel: () => {},
+      muteLocalAudioStream: () => {},
+      muteLocalVideoStream: () => {},
+      switchCamera: () => {},
+      leaveChannel: () => {},
+      release: () => {},
+    });
+  }
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -233,6 +218,15 @@ export const CallingScreen = ({ navigation, route }) => {
   const isBilling = time >= BILLING_DELAY;
   const isLowBalance = coins <= LOW_BALANCE_THRESHOLD && coins > 0 && isBilling;
 
+  /* ── Safe navigation back helper ── */
+  const safeGoBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    }
+  }, [navigation]);
+
   /* ── End the call once, from anywhere (button, remote hangup, error) ── */
   const endCall = useCallback(async (reason) => {
     if (hasEndedRef.current) return;
@@ -245,33 +239,19 @@ export const CallingScreen = ({ navigation, route }) => {
     if (callIdRef.current) {
       callService.endCall(callIdRef.current).catch((err) => console.warn('endCall API failed:', err));
     }
-    navigation.goBack();
-  }, [navigation]);
+    safeGoBack();
+  }, [callService, safeGoBack]);
 
   /* ── Mount: request permissions, start/answer the call, join Agora channel ── */
   useEffect(() => {
     let unsubAnswered, unsubEnded, unsubDeclined;
 
     const setupCall = async () => {
-      // Guard: don't let a missing native module silently masquerade as a working call in production
-      if (!isAgoraSdkAvailable && Platform.OS !== 'web') {
-        if (__DEV__) {
-          console.warn('[CallingScreen] Running on MOCK Agora engine — no real audio/video will flow. Rebuild with a custom dev client to test real calls.');
-        } else {
-          Alert.alert(
-            'Calling Unavailable',
-            'Voice/Video calling could not start on this build. Please update the app or contact support.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-          );
-          return;
-        }
-      }
-
       const granted = await requestCallPermissions(isVideoCall);
       if (!granted) {
         setErrorMsg('Camera/microphone permission denied.');
         Alert.alert('Permission required', 'Camera and microphone access are needed for calls.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
+          { text: 'OK', onPress: safeGoBack },
         ]);
         return;
       }
@@ -301,7 +281,7 @@ export const CallingScreen = ({ navigation, route }) => {
         const msg = error?.message || (typeof error === 'string' ? error : 'Call could not be started.');
         setErrorMsg(msg);
         setConnectionState('failed');
-        Alert.alert('Call Failed', msg, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+        Alert.alert('Call Failed', msg, [{ text: 'OK', onPress: safeGoBack }]);
       }
     };
 
@@ -398,9 +378,28 @@ export const CallingScreen = ({ navigation, route }) => {
         },
       });
 
-      engine.joinChannel(agora.token || '', agora.channelName, Number(agora.uid) || 0, {
-        clientRoleType: ClientRoleType.ClientRoleBroadcaster,
+      const agoraToken = agora.token || agora.agoraToken || '';
+      const channelName = agora.channelName || agora.channel || resolvedCallId;
+      const rawUid = agora.uid ?? 0;
+      const numericUid = Number(rawUid);
+
+      console.log('[agora] joining channel:', {
+        appId: agora.appId,
+        channelName,
+        rawUid,
+        numericUid,
+        tokenSnippet: agoraToken ? agoraToken.substring(0, 15) + '...' : 'EMPTY',
       });
+
+      if (isNaN(numericUid) && typeof rawUid === 'string') {
+        engine.joinChannelWithUserAccount(agoraToken, channelName, String(rawUid), {
+          clientRoleType: ClientRoleType.ClientRoleBroadcaster,
+        });
+      } else {
+        engine.joinChannel(agoraToken, channelName, isNaN(numericUid) ? 0 : numericUid, {
+          clientRoleType: ClientRoleType.ClientRoleBroadcaster,
+        });
+      }
     };
 
     setupCall();
@@ -620,13 +619,6 @@ export const CallingScreen = ({ navigation, route }) => {
             <Text style={styles.balanceText}>{coins}</Text>
           </View>
         </View>
-
-        {__DEV__ && !isAgoraSdkAvailable && Platform.OS !== 'web' && (
-          <View style={styles.mockWarningBar}>
-            <Icon name="bug-outline" size={13} color="#FFFFFF" style={{ marginRight: 6 }} />
-            <Text style={styles.mockWarningText}>DEV: Agora native module not linked — calling is MOCKED</Text>
-          </View>
-        )}
 
         {isLowBalance && (
           <View style={styles.lowBalanceBar}>
