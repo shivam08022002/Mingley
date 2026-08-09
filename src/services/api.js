@@ -31,7 +31,7 @@ const safeStorage = {
   }
 };
 
-export const BASE_URL = 'http://139.59.80.82';
+export const BASE_URL = 'http://167.99.147.60';
 
 const api = axios.create({
   baseURL: BASE_URL,

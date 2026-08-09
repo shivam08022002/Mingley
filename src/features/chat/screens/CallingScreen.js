@@ -201,7 +201,7 @@ export const CallingScreen = ({ navigation, route }) => {
   const [remoteUid, setRemoteUid] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const engineRef = useRef(null);
@@ -300,7 +300,7 @@ export const CallingScreen = ({ navigation, route }) => {
         engine.disableVideo();
       }
       engine.enableAudio();
-      engine.setDefaultAudioRouteToSpeakerphone(true);
+      engine.setDefaultAudioRouteToSpeakerphone(false);
 
       let refreshCount = 0;
       let isRefreshing = false;
@@ -490,34 +490,38 @@ export const CallingScreen = ({ navigation, route }) => {
   };
   const switchCamera = () => engineRef.current?.switchCamera();
 
-  const renderRemoteFeed = () => {
+  const renderRemoteFeed = (isPip = false) => {
     if (isVideoCall && remoteUid != null && Platform.OS !== 'web') {
       return (
         <RtcSurfaceView
-          style={StyleSheet.absoluteFillObject}
+          style={isPip ? styles.pipImage : StyleSheet.absoluteFillObject}
           canvas={{ uid: remoteUid, sourceType: VideoSourceType.VideoSourceRemote }}
+          zOrderMediaOverlay={isPip}
+          zOrderOnTop={isPip}
         />
       );
     }
     return (
       <FastImage
         source={{ uri: safeRemoteImage }}
-        style={StyleSheet.absoluteFillObject}
+        style={isPip ? styles.pipImage : StyleSheet.absoluteFillObject}
         contentFit="cover"
       />
     );
   };
 
-  const renderSelfFeed = () => {
+  const renderSelfFeed = (isPip = false) => {
     if (isVideoCall && !isCameraOff && Platform.OS !== 'web') {
       return (
         <RtcSurfaceView
-          style={styles.pipImage}
+          style={isPip ? styles.pipImage : StyleSheet.absoluteFillObject}
           canvas={{ uid: 0, sourceType: VideoSourceType.VideoSourceCamera }}
+          zOrderMediaOverlay={isPip}
+          zOrderOnTop={isPip}
         />
       );
     }
-    return <View style={[styles.pipImage, { backgroundColor: '#222' }]} />;
+    return <View style={[isPip ? styles.pipImage : StyleSheet.absoluteFillObject, { backgroundColor: '#222' }]} />;
   };
 
   const renderBackground = () => {
@@ -525,7 +529,7 @@ export const CallingScreen = ({ navigation, route }) => {
       return (
         <TouchableWithoutFeedback onPress={handleSwap}>
           <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: swapOpacity, transform: [{ scale: scaleAnim }] }]}>
-            {swapped ? renderSelfFeed() : renderRemoteFeed()}
+            {swapped ? renderSelfFeed(false) : renderRemoteFeed(false)}
           </Animated.View>
         </TouchableWithoutFeedback>
       );
@@ -672,7 +676,7 @@ export const CallingScreen = ({ navigation, route }) => {
             activeOpacity={0.88}
           >
             <Animated.View style={[styles.pipFrame, { opacity: swapOpacity, borderColor: T.pipBorder }]}>
-              {swapped ? renderRemoteFeed() : renderSelfFeed()}
+              {swapped ? renderRemoteFeed(true) : renderSelfFeed(true)}
               <View style={styles.pipSwapIcon}>
                 <Icon name="swap-horizontal" size={12} color="#FFF" />
               </View>

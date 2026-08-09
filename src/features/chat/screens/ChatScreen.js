@@ -445,37 +445,54 @@ export const ChatScreen = ({ navigation, route }) => {
       <Modal visible={giftModalVisible} transparent animationType="fade" onRequestClose={() => setGiftModalVisible(false)}>
         <BottomSheetContainer onClose={() => setGiftModalVisible(false)} height={340}>
           <View style={{ flex: 1, width: '100%' }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
               <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Send a Gift</Text>
               {sendingGift && <ActivityIndicator color="#E94057" />}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
               <Text style={[styles.modalSub, { color: theme.textSecondary }]}>Balance: </Text>
-              <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
-              <Text style={[styles.modalSubBold, { color: theme.textPrimary }]}>{wallet.coins} coins</Text>
+              <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 3 }} />
+              <Text style={[styles.modalSubBold, { color: theme.isDark ? '#FFD700' : '#E94057' }]}>{wallet.coins} coins</Text>
             </View>
 
             {/* Category tabs selection */}
             {giftCategories && giftCategories.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll} contentContainerStyle={styles.categoryScrollContent}>
                 <TouchableOpacity
-                  style={[styles.categoryTab, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }, selectedGiftCategory === 'all' && styles.categoryTabActive]}
+                  style={[
+                    styles.categoryTab,
+                    { backgroundColor: theme.isDark ? theme.surface : '#FFF0F3', borderColor: theme.isDark ? theme.actionButtonBorder : '#FFD6DE' },
+                    selectedGiftCategory === 'all' && styles.categoryTabActive
+                  ]}
                   onPress={() => setSelectedGiftCategory('all')}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.categoryTabText, selectedGiftCategory === 'all' && styles.categoryTabTextActive]}>All</Text>
+                  <Text style={[
+                    styles.categoryTabText,
+                    { color: theme.isDark ? theme.textSecondary : '#E94057' },
+                    selectedGiftCategory === 'all' && styles.categoryTabTextActive
+                  ]}>All</Text>
                 </TouchableOpacity>
                 {giftCategories.map((cat, idx) => {
                   const name = typeof cat === 'string' ? cat : cat.title || cat.name || cat.label || `Category ${idx + 1}`;
                   const id = typeof cat === 'string' ? cat : cat.category || cat.id || cat.key || name;
+                  const isCatSelected = selectedGiftCategory === id;
                   return (
                     <TouchableOpacity
                       key={id}
-                      style={[styles.categoryTab, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }, selectedGiftCategory === id && styles.categoryTabActive]}
+                      style={[
+                        styles.categoryTab,
+                        { backgroundColor: theme.isDark ? theme.surface : '#FFF0F3', borderColor: theme.isDark ? theme.actionButtonBorder : '#FFD6DE' },
+                        isCatSelected && styles.categoryTabActive
+                      ]}
                       onPress={() => setSelectedGiftCategory(id)}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.categoryTabText, selectedGiftCategory === id && styles.categoryTabTextActive]}>{name}</Text>
+                      <Text style={[
+                        styles.categoryTabText,
+                        { color: theme.isDark ? theme.textSecondary : '#E94057' },
+                        isCatSelected && styles.categoryTabTextActive
+                      ]}>{name}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -497,20 +514,23 @@ export const ChatScreen = ({ navigation, route }) => {
                       key={gift.id}
                       style={[
                         styles.giftCardHorizontal,
-                        theme.isDark && { backgroundColor: theme.surface, borderColor: theme.actionButtonBorder },
-                        (!afford || sendingGift) && [styles.giftCardDisabled, theme.isDark && { backgroundColor: theme.background, borderColor: theme.actionButtonBorder }]
+                        { backgroundColor: theme.isDark ? theme.surface : '#FFF0F3', borderColor: theme.isDark ? theme.actionButtonBorder : '#FFD6DE' },
+                        (!afford || sendingGift) && [
+                          styles.giftCardDisabled,
+                          { backgroundColor: theme.isDark ? theme.background : '#F5F5F5', borderColor: theme.isDark ? theme.actionButtonBorder : '#E0E0E0' }
+                        ]
                       ]}
                       onPress={() => handleSendGift(gift)}
                       disabled={!afford || sendingGift}
                       activeOpacity={0.75}
                     >
-                      <View style={[styles.giftIconWrap, theme.isDark && { backgroundColor: theme.background }]}>
-                        <Icon name={gift.icon || 'gift-outline'} size={32} color={afford ? '#E94057' : '#999'} />
+                      <View style={[styles.giftIconWrap, { backgroundColor: theme.isDark ? theme.background : '#FFFFFF' }]}>
+                        <Icon name={gift.icon || 'gift-outline'} size={24} color={afford ? '#E94057' : (theme.isDark ? '#555' : '#999')} />
                       </View>
                       <Text style={[styles.giftCardLabel, { color: theme.textPrimary }]} numberOfLines={1}>{gift.name}</Text>
                       <View style={styles.giftCardCostRow}>
-                        <Icon name="logo-bitcoin" size={11} color={afford ? '#FFD700' : '#C0C0C0'} />
-                        <Text style={[styles.giftCardCost, !afford && { color: '#C0C0C0' }]}>{cost}</Text>
+                        <Icon name="logo-bitcoin" size={11} color={afford ? '#FFD700' : (theme.isDark ? '#555' : '#C0C0C0')} style={{ marginRight: 2 }} />
+                        <Text style={[styles.giftCardCost, { color: afford ? (theme.isDark ? '#FFD700' : '#E94057') : (theme.isDark ? '#666' : '#C0C0C0') }]}>{cost}</Text>
                       </View>
                     </TouchableOpacity>
                   );
@@ -523,35 +543,113 @@ export const ChatScreen = ({ navigation, route }) => {
   };
 
   // ── Send Coins Modal ──────────────────────────────────────────────────────
-  const renderCoinsModal = () => (
-    <Modal visible={coinsModalVisible} transparent animationType="fade" onRequestClose={() => setCoinsModalVisible(false)}>
-      <BottomSheetContainer onClose={() => setCoinsModalVisible(false)} height={320}>
-        <View style={{ flex: 1, width: '100%' }}>
-          <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Send Coins</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-            <Text style={[styles.modalSub, { color: theme.textSecondary }]}>Your balance: </Text>
-            <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 2 }} />
-            <Text style={[styles.modalSubBold, { color: theme.textPrimary }]}>{wallet.coins} coins</Text>
+  const renderCoinsModal = () => {
+    const presetAmounts = [100, 250, 500, 1000];
+    const parsedAmt = parseInt(coinInputText, 10);
+    const isSendingDisabled = !coinInputText || sendingCoins || isNaN(parsedAmt) || parsedAmt <= 0 || parsedAmt > wallet.coins;
+
+    return (
+      <Modal visible={coinsModalVisible} transparent animationType="fade" onRequestClose={() => setCoinsModalVisible(false)}>
+        <BottomSheetContainer onClose={() => setCoinsModalVisible(false)} height={330}>
+          <View style={{ flex: 1, width: '100%' }}>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Send Coins</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+              <Text style={[styles.modalSub, { color: theme.textSecondary }]}>Your balance: </Text>
+              <Icon name="logo-bitcoin" size={14} color="#FFD700" style={{ marginRight: 3 }} />
+              <Text style={[styles.modalSubBold, { color: theme.isDark ? '#FFD700' : '#E94057' }]}>{wallet.coins} coins</Text>
+            </View>
+
+            {/* Quick preset chips with equal spacing & width */}
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+              {presetAmounts.map((amt) => {
+                const isSelected = coinInputText === String(amt);
+                return (
+                  <TouchableOpacity
+                    key={amt}
+                    style={[
+                      styles.presetChip,
+                      {
+                        flex: 1,
+                        justifyContent: 'center',
+                        backgroundColor: isSelected
+                          ? '#E94057'
+                          : (theme.isDark ? theme.surface : '#FFF0F3'),
+                        borderColor: isSelected
+                          ? '#E94057'
+                          : (theme.isDark ? theme.actionButtonBorder : '#FFD6DE'),
+                      }
+                    ]}
+                    onPress={() => setCoinInputText(String(amt))}
+                    activeOpacity={0.7}
+                  >
+                    <Icon
+                      name="logo-bitcoin"
+                      size={11}
+                      color={isSelected ? '#FFF' : '#FFD700'}
+                      style={{ marginRight: 2 }}
+                    />
+                    <Text
+                      style={[
+                        styles.presetChipText,
+                        { color: isSelected ? '#FFF' : (theme.isDark ? theme.textPrimary : '#E94057') }
+                      ]}
+                    >
+                      {amt}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TextInput
+              style={[
+                styles.amountInput,
+                {
+                  backgroundColor: theme.inputBackground,
+                  color: theme.textPrimary,
+                  borderColor: theme.inputBorder
+                }
+              ]}
+              placeholder="Enter coin amount"
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="numeric"
+              value={coinInputText}
+              onChangeText={setCoinInputText}
+            />
+
+            <TouchableOpacity
+              style={[
+                styles.modalActionBtn,
+                isSendingDisabled && [
+                  styles.modalActionBtnDisabled,
+                  { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.12)' : '#E5E7EB' }
+                ]
+              ]}
+              onPress={handleTransferCoins}
+              disabled={isSendingDisabled}
+              activeOpacity={0.8}
+            >
+              {sendingCoins ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <>
+                  <Icon
+                    name="paper-plane-outline"
+                    size={16}
+                    color={isSendingDisabled ? (theme.isDark ? '#666' : '#999') : '#fff'}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.modalActionBtnText, isSendingDisabled && { color: theme.isDark ? '#666' : '#999' }]}>
+                    Send to {partnerInfo.name}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-          <TextInput style={[styles.amountInput, { backgroundColor: theme.inputBackground, color: theme.textPrimary, borderColor: theme.inputBorder }]} placeholder="Enter amount" placeholderTextColor={theme.textSecondary} keyboardType="numeric" value={coinInputText} onChangeText={setCoinInputText} />
-          <TouchableOpacity
-            style={[styles.modalActionBtn, (!coinInputText || sendingCoins) && styles.modalActionBtnDisabled]}
-            onPress={handleTransferCoins}
-            disabled={!coinInputText || sendingCoins}
-          >
-            {sendingCoins ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <>
-                <Icon name="paper-plane-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={styles.modalActionBtnText}>Send to {partnerInfo.name}</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      </BottomSheetContainer>
-    </Modal>
-  );
+        </BottomSheetContainer>
+      </Modal>
+    );
+  };
 
   // ── Three-dot menu dropdown overlay ───────────────────────────────────────
   const renderMenuModal = () => {
@@ -933,6 +1031,19 @@ const styles = StyleSheet.create({
   giftCardCostRow: { flexDirection: 'row', alignItems: 'center', gap: 3, justifyContent: 'center' },
   giftCardCost: { fontSize: 12, fontWeight: '700', color: '#E94057' },
 
+  presetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  presetChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
   // ── Coins/cashout input ───────────────────────────────────────────────────
   amountInput: {
     borderWidth: 1.5, borderColor: '#F0F0F0', borderRadius: 14,
@@ -981,35 +1092,35 @@ const styles = StyleSheet.create({
   giftScrollContainer: {
     paddingRight: 24,
     flexDirection: 'row',
-    gap: 16,
-    paddingVertical: 12,
+    gap: 12,
+    paddingVertical: 4,
   },
   giftCardHorizontal: {
-    width: 110,
+    width: 98,
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    borderRadius: 16,
     backgroundColor: '#FFF0F3',
     borderWidth: 1.5,
     borderColor: '#FFD6DE',
-    boxShadow: '0px 4px 6px rgba(0,0,0,0.05)',
+    boxShadow: '0px 2px 4px rgba(0,0,0,0.05)',
     elevation: 2,
   },
   giftIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     boxShadow: '0px 2px 4px rgba(0,0,0,0.05)',
     elevation: 1,
   },
   categoryScroll: {
-    marginBottom: 20,
-    maxHeight: 40,
+    marginBottom: 10,
+    maxHeight: 34,
     width: '100%',
   },
   categoryScrollContent: {
